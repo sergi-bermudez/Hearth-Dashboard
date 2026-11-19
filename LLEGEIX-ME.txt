@@ -1,0 +1,42 @@
+﻿HEARTH 3.0 - el dashboard de casa per a l'iPad
+===============================================
+
+Què és
+  Un servidor molt lleuger per a Windows i unes pàgines HTML pensades per a
+  aparells antics (Safari 9 de l'iPad 2/3, iOS 9), en horitzontal i en vertical.
+
+  Inici ....... rellotge, temps, agenda, passi de fotos de fons i el que sona.
+                Tres estils (Fotos, Vidre, Fosc). TV i vídeo incrustats (S/M/L).
+  Escoltar .... Música (etiquetes: artistes, àlbums, estils, dècades), Spotify,
+                Ràdio (per país, idioma i estil) i Pòdcasts.
+  Mirar ....... Pel·lícules (com el Plex), TV del món (iptv-org) i YouTube.
+  Fotos ....... les fotos del PC i les de Google Fotos (sincronització nocturna).
+  Missatges ... WhatsApp (llegir i respondre) amb avisos al dashboard.
+  Documents ... processador de textos com el WordPad, amb imatges de l'iPad.
+  Webs ........ webs del PC (per exemple Google Home) vistes i tocades a l'iPad.
+  Mode infantil amb PIN, i idiomes: català, castellà, anglès, portuguès, francès.
+
+Instal·lació (un sol cop)
+  1. Descomprimeix la carpeta en un lloc fix (per exemple C:\Hearth).
+  2. Doble clic a "Instal-la Hearth.bat" i accepta el permís de Windows.
+     Configura la xarxa i el tallafoc, fa que Hearth s'engegui sol, crea les
+     icones de l'escriptori i baixa yt-dlp i (si vols) ffmpeg.
+  3. S'obre la pàgina de benvinguda amb un codi QR i l'adreça
+     http://hearth.local:8080  (no canvia encara que canviï la IP del PC).
+  4. A l'iPad: obre l'adreça al Safari > Compartir > Afegir a la pantalla d'inici.
+
+Si alguna cosa no va
+  - "Inicia Hearth (amb finestra).bat" engega el servidor amb una finestra
+    visible per veure els errors. També queden a dades\registre.txt.
+  - Si l'iPad no hi arriba: la xarxa del PC ha de ser "Privada".
+  - Google Fotos: si falla, envia el fitxer dades\gfotos-diagnostic.txt.
+  - Spotify a l'iPad necessita el VB-Cable (gratuït, vb-audio.com/Cable).
+
+Desinstal·lar
+  "Desinstal-la Hearth.bat" treu l'inici automàtic, els permisos i les icones.
+  Després pots esborrar la carpeta. Les teves fotos i música no es toquen.
+
+Avís
+  Ús personal a casa amb els teus comptes. Algunes funcions (Spotify, WhatsApp,
+  YouTube amb yt-dlp) fan servir les webs d'aquests serveis d'una manera que
+  potser no permeten les seves condicions d'ús.

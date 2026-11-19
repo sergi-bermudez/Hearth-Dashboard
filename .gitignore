@@ -1,0 +1,9 @@
+# Dades personals i memòria cau
+dades/
+config.json
+# Programes que baixa l'instal·lador
+eines/*.exe
+ffmpeg/
+yt-dlp.exe
+ffmpeg.exe
+*.tmp

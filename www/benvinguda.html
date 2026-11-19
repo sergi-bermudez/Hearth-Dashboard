@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="favicon.png">
+<title>Benvinguda · Hearth</title>
+<script src="i18n.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",-apple-system,Helvetica,Arial,sans-serif;background:#16122b;color:#fff;background:linear-gradient(135deg,#2a1a4a,#120f24)}
+.cos{max-width:980px;margin:0 auto;padding:40px 28px}
+.cap{display:flex;align-items:center;margin-bottom:28px}
+.cap img{width:84px;height:84px;margin-right:20px}
+.cap h1{font-size:40px;margin:0}
+.cap p{margin:4px 0 0;color:#c9c2dd;font-size:18px}
+.dues{display:flex;gap:28px;flex-wrap:wrap}
+.targ{background:rgba(255,255,255,.07);border-radius:22px;padding:24px 26px;flex:1;min-width:300px}
+.qr{text-align:center}
+.qr svg{border-radius:14px;width:260px;height:260px}
+.adr{font-size:26px;font-weight:600;color:#ffb35c;margin:14px 0 4px;word-break:break-all}
+.alt{color:#a9a2bd;font-size:15px}
+h2{margin:0 0 12px;font-size:22px}
+ol{padding-left:22px;line-height:1.55;font-size:17px;margin:0}
+ol li{margin-bottom:10px}
+a{color:#ffb35c}
+.boto{display:inline-block;background:#ff8a3d;color:#1a1030;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:14px;margin:6px 8px 0 0}
+.boto.sec{background:rgba(255,255,255,.12);color:#fff}
+select{font-size:16px;padding:8px 10px;border-radius:10px}
+</style>
+</head>
+<body>
+<div class="cos">
+  <div class="cap"><img src="icona-512.png" alt=""><div><h1>Hearth</h1><p>El dashboard de casa ja funciona en aquest PC.</p></div></div>
+  <div class="dues">
+    <div class="targ qr">
+      <h2>Obre-ho a l'iPad</h2>
+      <div id="qr"></div>
+      <div class="adr" id="adr"></div>
+      <div class="alt" id="alt"></div>
+      <p class="alt" style="margin-top:14px">Escaneja el codi o escriu l'adreça al Safari. Després toca «Compartir» ▸ «Afegir a la pantalla d'inici».</p>
+    </div>
+    <div class="targ">
+      <h2>Primers passos</h2>
+      <p>Idioma: <select id="llengua" onchange="canviaLlengua(this.value);location.reload()"></select></p>
+      <ol>
+        <li>Tria les carpetes de <b>fotos</b>, <b>música</b> i <b>pel·lícules</b>. <a href="/#config:carpetes">Carpetes</a></li>
+        <li>Posa la teva <b>ciutat</b> (per al temps) i l'<b>estil</b> de la pantalla d'inici. <a href="/#config:inici">Pantalla d'inici</a></li>
+        <li>Inicia sessió a <b>Google</b> per a Google Fotos i l'agenda (s'obre una finestra en aquest PC). <a href="/#config:gfotos">Google</a></li>
+        <li>Opcional: <b>Spotify</b>, <b>WhatsApp</b>, <b>YouTube</b> i el <b>mode infantil</b>. <a href="/#config">Configuració</a></li>
+      </ol>
+      <p><a class="boto" href="/">Obre Hearth</a><a class="boto sec" href="/#config">Configuració</a></p>
+    </div>
+  </div>
+</div>
+<script src="qr.js"></script>
+<script>
+function $(i) { return document.getElementById(i); }
+(function () {
+  var h = '';
+  for (var i = 0; i < LLENGUES.length; i++) h += '<option value="' + LLENGUES[i][0] + '"' + (LLENGUES[i][0] == LANG ? ' selected' : '') + '>' + LLENGUES[i][1] + '</option>';
+  $('llengua').innerHTML = h;
+  var x = new XMLHttpRequest();
+  x.open('GET', '/api/admin/config', true);
+  x.onload = function () {
+    var d = {}; try { d = JSON.parse(x.responseText); } catch (e) { }
+    var port = d.port || location.port || 8080, nom = d.nomXarxa || 'hearth.local';
+    var u = 'http://' + nom + ':' + port + '/';
+    $('qr').innerHTML = QR.svg(u, 260);
+    $('adr').textContent = u.replace(/\/$/, '');
+    var ips = d.ips || [];
+    $('alt').textContent = ips.length ? T('Si no hi arriba, fes servir:') + ' ' + ips.map(function (ip) { return 'http://' + ip + ':' + port; }).join('  ·  ') : '';
+  };
+  x.send();
+})();
+</script>
+</body>
+</html>

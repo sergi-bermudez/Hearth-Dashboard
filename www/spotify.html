@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<title>Spotify</title>
+<script src="i18n.js"></script>
+<style>
+.ara{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;background:#16251c;background:-webkit-linear-gradient(135deg,#1c3a28,#121a16);background:linear-gradient(135deg,#1c3a28,#121a16);border-radius:20px;padding:18px;margin-bottom:20px}
+.ara .im{width:120px;height:120px;border-radius:12px;background:#24302a center/cover no-repeat;-webkit-flex:none;flex:none;margin-right:20px;box-shadow:0 8px 20px rgba(0,0,0,.4);text-align:center;line-height:120px}
+.ara .im .ic{width:50px;height:50px;fill:#4a5d52}
+.ara .t{font-size:24px;font-weight:700;line-height:1.2;max-height:2.4em;overflow:hidden}
+.ara .a{color:#a9b9ae;margin-top:4px}
+.ara .ctl{margin-top:12px}
+.ara .ctl button{background:rgba(255,255,255,.1);border-radius:24px;padding:9px 14px;margin-right:6px}
+.ara .ctl button.gp{background:#2fd36b;color:#06210f}
+.ara .ctl button.on{color:#2fd36b}
+.res h2 .ic{fill:#2fd36b}
+.ajuda{background:rgba(255,200,80,.08);border:1px solid rgba(255,200,80,.25);border-radius:16px;padding:16px 18px;margin-bottom:18px;line-height:1.5}
+.it .im.rodo{border-radius:50%}
+.canco .mini{width:48px;height:48px}
+</style>
+</head>
+<body>
+<div id="pag">
+  <div class="capc"><h1>Spotify</h1></div>
+  <div id="ajuda" class="ajuda amagat"></div>
+  <div class="ara" id="ara"></div>
+  <div class="cerca"><input type="search" id="q" placeholder="Cançons, artistes, discos o llistes" onkeydown="if(event.keyCode==13)cerca()"><button class="pri" onclick="cerca()" id="b-cerca"></button></div>
+  <div id="res" class="res"></div>
+  <div id="bib"></div>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('spotify');
+$('b-cerca').innerHTML = svg(IC.cerca) + ' Cercar';
+var S = { estat: null, res: null, bib: null, t: null };
+
+function pintaAra() {
+  var d = S.estat, h;
+  if (!d) { $('ara').innerHTML = '<div class="gris">Connectant amb el Spotify del PC…</div>'; return; }
+  var escolta = Casa && Casa.R.cua.length && Casa.R.cua[Casa.R.pos].k == 'spotify';
+  h = '<div class="im" style="background-image:' + bg(d.art ? imgx(d.art, 300) : '') + '">' + (d.art ? '' : svg(IC.spotify)) + '</div><div class="flex1">' +
+    '<div class="gris petit">' + (d.anunci ? 'ANUNCI' : d.sona ? 'SONANT AL PC' : 'EN PAUSA') + '</div>' +
+    '<div class="t">' + esc(d.titol || 'No sona res') + '</div><div class="a">' + esc(d.artista || 'Busca alguna cosa aquí sota') + '</div>' +
+    '<div class="ctl"><button onclick="ordre(\'ant\')">' + svg(IC.ant) + '</button><button class="gp" onclick="ordre(\'playpausa\')">' + svg(d.sona ? IC.pausa : IC.play) + '</button>' +
+    '<button onclick="ordre(\'seg\')">' + svg(IC.seg) + '</button><button class="' + (d.aleatori ? 'on' : '') + '" onclick="ordre(\'aleatori\')">' + svg(IC.aleatori) + '</button>' +
+    (escolta ? '' : '<button onclick="escolta()">' + svg(IC.musica) + ' Escoltar a l\'iPad</button>') + '</div></div>';
+  $('ara').innerHTML = h;
+}
+function estat() {
+  getJson(api('spotify/estat'), function (d) {
+    S.estat = d;
+    var a = $('ajuda');
+    if (!d.sessio) { a.className = 'ajuda'; a.innerHTML = '<b>Cal iniciar sessió a Spotify</b> (només un cop).<br>Ves a <a href="#" onclick="Casa.obre(\'config\',\'spotify\');return false">Configuració ▸ Spotify</a> i prem «Iniciar sessió al PC».'; }
+    else a.className = 'ajuda amagat';
+    pintaAra();
+    if (d.sessio && !S.bib) biblioteca();
+  }, function (st, txt) {
+    var m = '';
+    try { m = JSON.parse(txt).error; } catch (e) { }
+    var a = $('ajuda');
+    a.className = 'ajuda';
+    a.innerHTML = '<b>El Spotify del PC no respon.</b><br>' + esc(m || 'Comprova que el servidor està en marxa.') + '<br>Mira-ho a <a href="#" onclick="Casa.obre(\'config\',\'spotify\');return false">Configuració ▸ Spotify</a>.';
+    $('ara').innerHTML = '';
+  });
+}
+function ordre(o) {
+  if (Casa) Casa.spotifyOrdre(o);
+  setTimeout(estat, 600);
+}
+function escolta() { if (Casa) Casa.spotify(); setTimeout(pintaAra, 300); }
+function seccio(titol, l, tipus) {
+  if (!l || !l.length) return '';
+  var h = '<h2>' + esc(titol) + '</h2>';
+  if (tipus == 'cancons') {
+    h += '<div class="llista">';
+    for (var i = 0; i < l.length; i++)
+      h += '<div class="el canco" onclick="toca(' + js(l[i].uri) + ')"><div class="mini"' + (l[i].img ? ' data-bg="' + esc(imgx(l[i].img, 96)) + '"' : '') + '></div><div class="t">' + esc(l[i].t) +
+        '<div class="sub">' + esc(l[i].a) + '</div></div><span class="gris petit">' + durada(l[i].dur) + '</span></div>';
+    return h + '</div>';
+  }
+  h += '<div class="gra">';
+  for (i = 0; i < l.length; i++)
+    h += '<div class="it quad" onclick="toca(' + js(l[i].uri) + ')"><div class="im' + (tipus == 'artistes' ? ' rodo' : '') + '"' + (l[i].img ? ' data-bg="' + esc(imgx(l[i].img, 300)) + '"' : '') + '><div class="lletra">' + svg(IC.spotify) + '</div></div><div class="nm">' + esc(l[i].t) + (l[i].a ? '<br><span class="gris">' + esc(l[i].a) + '</span>' : '') + '</div></div>';
+  return h + '</div>';
+}
+function cerca() {
+  var q = retalla($('q').value);
+  if (!q) { $('res').innerHTML = ''; $('bib').className = ''; return; }
+  $('q').blur();
+  $('res').innerHTML = '<div class="gris">Cercant…</div>';
+  getJson(api('spotify/cerca', { q: q }), function (d) {
+    $('bib').className = 'amagat';
+    $('res').innerHTML = '<button onclick="$(\'q\').value=\'\';cerca()">‹ Tornar a la biblioteca</button>' +
+      seccio('Cançons', d.cancons, 'cancons') + seccio('Artistes', d.artistes, 'artistes') + seccio('Discos', d.albums, 'albums') + seccio('Llistes', d.llistes, 'llistes') +
+      (d.cancons.length + d.artistes.length + d.albums.length + d.llistes.length ? '' : '<div class="ajuda">' + (d.error ? esc(d.error) : 'No he trobat res.') + '</div>');
+    setTimeout(mandros, 30);
+  }, function (st, txt) { var m = ''; try { m = JSON.parse(txt).error; } catch (e) { } $('res').innerHTML = '<div class="ajuda">No s\'ha pogut cercar. ' + esc(m) + '</div>'; });
+}
+function biblioteca() {
+  getJson(api('spotify/biblioteca'), function (d) { S.bib = d; $('bib').innerHTML = seccio('La teva biblioteca', d.llistes, 'llistes'); setTimeout(mandros, 30); }, function () { });
+}
+function toca(uri) {
+  avis('Posant-ho al Spotify del PC…');
+  post(api('spotify/toca', { uri: uri }), '', function (t) {
+    var d = null;
+    try { d = JSON.parse(t); } catch (e) { }
+    if (d && d.ok === false) { avis(d.error || 'No s\'ha pogut reproduir', 5000); return; }
+    if (Casa) Casa.spotify();
+    setTimeout(estat, 1500);
+  }, errXarxa('reproduir-ho'));
+}
+function comenca() { clearInterval(S.t); S.t = setInterval(estat, 3000); estat(); }
+window.casaMostra = comenca;
+window.casaAmaga = function () { clearInterval(S.t); };
+window.casaTanca = window.casaAmaga;
+window.casaEstat = pintaAra;
+iniciaMandros();
+pintaAra();
+comenca();
+</script>
+</body>
+</html>

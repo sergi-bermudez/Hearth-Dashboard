@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<title>Música</title>
+<script src="i18n.js"></script>
+<style>
+.llista .el.sona .n,.llista .el.sona .t{color:#ff5fa2}
+.pest{margin-bottom:14px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pest button{margin-right:8px;border-radius:22px;padding:9px 18px}
+.pest button.on{background:#fff;color:#111}
+.el .d{color:#8d95a1;font-size:14px;margin-left:10px;-webkit-flex:none;flex:none}
+.el .t .sub{display:block}
+.xips2 .xip{font-size:17px;padding:12px 20px}
+.xips2 .xip small{color:#8d95a1;margin-left:6px;font-size:13px}
+.xip.on small{color:#555}
+.nota-idx{color:#8d95a1;font-size:14px;margin:-6px 0 12px}
+</style>
+</head>
+<body>
+<div id="pag">
+  <div class="capc"><h1>Música</h1><button onclick="totAleatori()" id="b-alea"></button></div>
+  <div class="pest" id="pest"></div>
+  <div class="cerca amagat" id="cerca-bloc"><input type="search" id="q" placeholder="Cançó, artista, àlbum o estil…" onkeydown="if(event.keyCode==13)cerca()"><button class="pri" onclick="cerca()">Cercar</button></div>
+  <div class="nota-idx" id="nota"></div>
+  <div class="cami" id="cami"></div>
+  <div id="album"></div>
+  <div class="gra" id="gra"></div>
+  <div class="llista" id="pistes"></div>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('musica');
+$('b-alea').innerHTML = svg(IC.aleatori) + ' ' + T('Tot aleatori');
+var PEST = [['artistes', 'Artistes'], ['albums', 'Àlbums'], ['generes', 'Estils'], ['anys', 'Dècades'], ['cancons', 'Cançons'], ['carpetes', 'Carpetes'], ['cerca', 'Cercar']];
+var M = { pest: ls('musica.pest') || 'artistes', pistes: [], pila: [], cami: '' };
+
+function pintaPest() {
+  var h = '';
+  for (var i = 0; i < PEST.length; i++) h += '<button class="' + (PEST[i][0] == M.pest ? 'on' : '') + '" onclick="triaPest(\'' + PEST[i][0] + '\')">' + esc(T(PEST[i][1])) + '</button>';
+  $('pest').innerHTML = h;
+  $('cerca-bloc').className = M.pest == 'cerca' ? 'cerca' : 'cerca amagat';
+}
+function neteja() { $('cami').innerHTML = ''; $('album').innerHTML = ''; $('gra').innerHTML = ''; $('pistes').innerHTML = ''; $('pag').scrollTop = 0; }
+function triaPest(p) {
+  M.pest = p; ls('musica.pest', p); M.pila = [];
+  pintaPest(); neteja();
+  if (p == 'carpetes') { obreCarpeta(''); return; }
+  if (p == 'cerca') { $('q').focus(); return; }
+  if (p == 'cancons') { vista({ vista: 'cancons', limit: 500 }, T('Cançons')); return; }
+  vista({ vista: p }, T(PEST[indexPest(p)][1]));
+}
+function indexPest(p) { for (var i = 0; i < PEST.length; i++) if (PEST[i][0] == p) return i; return 0; }
+function cerca() {
+  var q = retalla($('q').value);
+  if (!q) return;
+  $('q').blur();
+  M.pila = [];
+  vista({ vista: 'cancons', q: q, limit: 300 }, '«' + q + '»');
+}
+function portada(p, m) { var d = p.indexOf('/') >= 0 ? p.substring(0, p.lastIndexOf('/')) : ''; return api('portada', { c: 'musica', p: d, m: m || 300 }); }
+
+/* Navegació amb «engrunes»: Artistes ▸ Artista ▸ Àlbum */
+function vista(f, titol) {
+  M.pila.push({ f: f, t: titol });
+  carregaVista();
+}
+function torna(i) { M.pila = M.pila.slice(0, i + 1); carregaVista(); }
+function pintaEngrunes() {
+  var h = '';
+  for (var i = 0; i < M.pila.length; i++) h += (i ? ' <span class="gris">›</span> ' : '') + (i < M.pila.length - 1 ? '<a onclick="torna(' + i + ')">' + esc(M.pila[i].t) + '</a>' : '<b>' + esc(M.pila[i].t) + '</b>');
+  $('cami').innerHTML = M.pila.length > 1 ? h : '';
+}
+function carregaVista() {
+  var v = M.pila[M.pila.length - 1], f = v.f;
+  neteja(); pintaEngrunes();
+  $('gra').innerHTML = '<div class="gris" style="margin:8px">' + T('Carregant…') + '</div>';
+  getJson(api('musica', f), function (d) {
+    $('nota').textContent = d.indexant ? Tf('Llegint les etiquetes de la música ({1})… Torna-hi d\'aquí a una estona per veure-ho tot.', d.estat || '') : '';
+    if (d.grups) pintaGrups(f, d.grups); else pintaCancons(f, d.cancons || [], v.t);
+  }, function (st) { $('gra').innerHTML = ''; errXarxa(T('carregar la música'))(st); });
+}
+function pintaGrups(f, g) {
+  var h = '', i, x;
+  M.grups = g;
+  if (f.vista == 'generes' || f.vista == 'anys') {
+    h = '<div class="xips2">';
+    for (i = 0; i < g.length; i++) h += '<span class="xip" onclick="obreGrup(' + i + ')">' + esc(g[i].nom) + '<small>' + g[i].n + '</small></span>';
+    $('gra').innerHTML = '';
+    $('pistes').innerHTML = h + '</div>';
+    if (!g.length) $('pistes').innerHTML = '<div class="gris">' + T('No hi ha etiquetes d\'estil a la teva música.') + '</div>';
+    return;
+  }
+  for (i = 0; i < g.length; i++) {
+    x = g[i];
+    var sub = f.vista == 'albums' ? (x.a || '') + (x.y ? ' · ' + x.y : '') : (x.na > 1 ? Tf('{1} àlbums', x.na) : Tf('{1} cançons', x.n));
+    h += '<div class="it quad" onclick="obreGrup(' + i + ')"><div class="im" data-bg="' + esc(portada(x.p, 300)) + '"><div class="lletra">' + svg(f.vista == 'albums' ? IC.disc : IC.musica) + '</div></div>' +
+      '<div class="nm">' + esc(x.nom) + '<br><span class="gris petit">' + esc(sub) + '</span></div></div>';
+  }
+  $('gra').innerHTML = h || '<div class="gris" style="margin:8px">' + T('No hi ha música. Revisa la carpeta a Configuració.') + '</div>';
+  setTimeout(mandros, 30);
+}
+function obreGrup(i) {
+  var x = M.grups[i], f = M.pila[M.pila.length - 1].f, n = {};
+  for (var k in f) if (f.hasOwnProperty(k)) n[k] = f[k];
+  if (f.vista == 'artistes') { n.vista = 'albums'; n.artista = x.nom; vista(n, x.nom); }
+  else if (f.vista == 'albums') { n.vista = 'cancons'; n.album = x.nom; if (x.a) n.artista = x.a; vista(n, x.nom); }
+  else if (f.vista == 'generes') { n.vista = 'albums'; n.genere = x.nom; vista(n, x.nom); }
+  else if (f.vista == 'anys') { n.vista = 'albums'; n.any = x.nom; vista(n, x.nom); }
+}
+function pistaItem(c) {
+  return { t: c.t, s: [c.a, c.al].filter(function (x) { return x; }).join(' · '), u: fUrl('musica', c.p), art: portada(c.p, 400), k: 'musica', id: c.p };
+}
+function pintaCancons(f, l, titol) {
+  M.pistes = [];
+  var h = '', i, alb = f.album && l.length;
+  for (i = 0; i < l.length; i++) {
+    var c = l[i], e = ext(c.p), ok = dins(EXT_AUD, e);
+    if (ok) M.pistes.push(pistaItem(c));
+    h += '<div class="el' + (ok ? '' : ' no') + '" data-id="' + esc(c.p) + '" onclick="' + (ok ? 'toca(' + (M.pistes.length - 1) + ')' : 'noCompat(\'' + e + '\')') + '">' +
+      (alb ? '<div class="n">' + (c.n || '') + '</div>' : '<div class="mini" data-bg="' + esc(portada(c.p, 96)) + '"><span class="lletra">' + svg(IC.musica) + '</span></div>') +
+      '<div class="t">' + esc(c.t) + (alb ? '' : '<span class="sub">' + esc([c.a, c.al].filter(function (x) { return x; }).join(' · ')) + '</span>') + '</div>' +
+      (c.d ? '<span class="d">' + durada(c.d) + '</span>' : '') + '</div>';
+  }
+  var art = l.length ? portada(l[0].p, 400) : '';
+  if (M.pistes.length)
+    $('album').innerHTML = '<div class="album">' + (alb ? '<div class="im" style="background-image:' + bg(art) + '"></div>' : '') + '<div>' +
+      '<div class="gris petit">' + esc(alb ? (l[0].a || '') + (l[0].y ? ' · ' + l[0].y : '') + (l[0].g ? ' · ' + l[0].g : '') : Tf('{1} cançons', l.length)) + '</div><h1>' + esc(titol) + '</h1>' +
+      '<button class="pri" onclick="toca(0)">' + svg(IC.play) + ' ' + T('Reproduir') + '</button> <button onclick="aleatori()">' + svg(IC.aleatori) + ' ' + T('Aleatori') + '</button></div></div>';
+  $('gra').innerHTML = '';
+  $('pistes').innerHTML = h || '<div class="gris">' + T('Cap cançó.') + '</div>';
+  marca();
+  setTimeout(mandros, 30);
+}
+
+/* ---------- Carpetes ---------- */
+function nomPista(n) {
+  var t = senseExt(n).replace(/_/g, ' ');
+  var m = t.match(/^(\d{1,3})[\s.\-]+(.+)$/);
+  return m ? { n: parseInt(m[1], 10), t: m[2] } : { n: null, t: t };
+}
+function obreCarpeta(cami) {
+  M.cami = cami;
+  neteja();
+  $('cami').innerHTML = camiHtml(T('Música'), cami, 'obreCarpeta');
+  $('gra').innerHTML = '<div class="gris" style="margin:8px">' + T('Carregant…') + '</div>';
+  llistaCarpeta('musica', cami, function (d) {
+    var h = '', i, f, portadaF = null;
+    for (i = 0; i < d.fitxers.length; i++) {
+      f = d.fitxers[i];
+      if (dins(EXT_IMG, ext(f.n)) && /^(cover|folder|front|portada|album)/i.test(f.n)) portadaF = f.n;
+    }
+    if (!portadaF) for (i = 0; i < d.fitxers.length; i++) if (dins(EXT_IMG, ext(d.fitxers[i].n))) { portadaF = d.fitxers[i].n; break; }
+    for (i = 0; i < d.carpetes.length; i++) {
+      f = d.carpetes[i];
+      h += '<div class="it quad" onclick="obreCarpeta(' + js(uneix(cami, f.n)) + ')"><div class="im" data-bg="' + esc(api('portada', { c: 'musica', p: uneix(cami, f.n), m: 300 })) + '">' +
+        '<div class="lletra">' + svg(IC.disc) + '</div></div><div class="nm">' + esc(f.n) + '</div></div>';
+    }
+    $('gra').innerHTML = h;
+    var art = portadaF ? miniUrl('musica', uneix(cami, portadaF), 400) : api('portada', { c: 'musica', p: cami, m: 400 });
+    var nomCarpeta = cami ? cami.split('/').pop() : T('Música');
+    var sub = cami.indexOf('/') > 0 ? cami.split('/').slice(-2, -1)[0] : '';
+    M.pistes = [];
+    var hp = '';
+    for (i = 0; i < d.fitxers.length; i++) {
+      f = d.fitxers[i];
+      var e = ext(f.n), ok = dins(EXT_AUD, e), no = dins(EXT_AUD_NO, e);
+      if (!ok && !no) continue;
+      var np = nomPista(f.n), id = uneix(cami, f.n);
+      if (ok) M.pistes.push({ t: np.t, s: sub ? sub + ' · ' + nomCarpeta : nomCarpeta, u: fUrl('musica', id), art: art, k: 'musica', id: id });
+      hp += '<div class="el' + (ok ? '' : ' no') + '" data-id="' + esc(id) + '" onclick="' + (ok ? 'toca(' + (M.pistes.length - 1) + ')' : 'noCompat(\'' + e + '\')') + '">' +
+        '<div class="n">' + (np.n != null ? np.n : '') + '</div><div class="t">' + esc(np.t) + (ok ? '' : ' <span class="petit">(.' + e + ')</span>') + '</div></div>';
+    }
+    if (M.pistes.length) {
+      $('album').innerHTML = '<div class="album"><div class="im" style="background-image:' + bg(art) + '"></div><div>' +
+        '<div class="gris petit">' + esc(sub) + '</div><h1>' + esc(nomCarpeta) + '</h1>' +
+        '<button class="pri" onclick="toca(0)">' + svg(IC.play) + ' ' + T('Reproduir') + '</button> <button onclick="aleatori()">' + svg(IC.aleatori) + ' ' + T('Aleatori') + '</button></div></div>';
+    }
+    $('pistes').innerHTML = hp;
+    marca();
+    setTimeout(mandros, 30);
+    if (!h && !hp) $('gra').innerHTML = '<div class="gris" style="margin:8px">' + (d.noExisteix ? T('La carpeta de música no existeix. Revisa-la a Configuració.') : T('Aquesta carpeta és buida.')) + '</div>';
+  });
+}
+function noCompat(e) { avis(Tf('L\'iPad no pot reproduir fitxers .{1}. Converteix-los a MP3 o M4A.', e), 5000); }
+function toca(i) { if (Casa) Casa.toca(M.pistes.slice(), i); }
+function aleatori() { if (Casa) Casa.toca(barreja(M.pistes.slice()), 0); }
+function totAleatori() {
+  /* Fins a 300 cançons a l'atzar de tota la música (o del filtre actual) */
+  var v = M.pila.length ? M.pila[M.pila.length - 1].f : {}, f = { vista: 'cancons', limit: 100000 };
+  for (var k in v) if (v.hasOwnProperty(k) && k != 'vista' && k != 'limit') f[k] = v[k];
+  avis(T('Preparant la llista…'));
+  getJson(api('musica', f), function (d) {
+    var l = barreja(d.cancons || []).slice(0, 300), p = [];
+    for (var i = 0; i < l.length; i++) if (dins(EXT_AUD, ext(l[i].p))) p.push(pistaItem(l[i]));
+    if (!p.length) { avis(T('No hi ha cançons')); return; }
+    if (Casa) Casa.toca(p, 0);
+  }, errXarxa(T('carregar la música')));
+}
+function marca() {
+  var it = Casa && Casa.R.cua.length ? Casa.R.cua[Casa.R.pos] : null, id = it && it.k == 'musica' ? it.id : null;
+  var els = $('pistes').childNodes;
+  for (var i = 0; i < els.length; i++) {
+    if (!els[i].getAttribute) continue;
+    var cl = els[i].className.replace(/\s*sona/, '');
+    els[i].className = cl + (els[i].getAttribute('data-id') === id ? ' sona' : '');
+  }
+}
+window.casaEstat = marca;
+iniciaMandros();
+pintaPest();
+triaPest(M.pest);
+</script>
+</body>
+</html>

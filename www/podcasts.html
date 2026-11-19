@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<title>Pòdcasts</title>
+<script src="i18n.js"></script>
+<style>
+.ep .t{white-space:normal}
+.ep.sona b{color:#b16cff}
+.ep .desc{white-space:normal;font-size:13px;color:#8d95a1;margin-top:4px;line-height:1.35;max-height:2.7em;overflow:hidden}
+.ep .play{-webkit-flex:none;flex:none;width:46px;height:46px;border-radius:23px;background:rgba(255,255,255,.1);text-align:center;line-height:46px;margin-left:10px}
+.ep .play .ic{fill:#fff}
+.barreta{height:3px;background:rgba(255,255,255,.12);border-radius:2px;margin-top:6px;width:160px}
+.barreta div{height:3px;background:#b16cff;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="pag">
+  <div id="v-subs">
+    <div class="capc"><h1>Pòdcasts</h1></div>
+    <div class="gra" id="subs"></div>
+    <h2>Cercar pòdcasts</h2>
+    <div class="cerca"><input type="search" id="q" placeholder="Nom del pòdcast, o enganxa l'adreça RSS" onkeydown="if(event.keyCode==13)cerca()"><button class="pri" onclick="cerca()">Cercar</button></div>
+    <div class="xips" id="xips"></div>
+    <div class="llista" id="res"></div>
+  </div>
+  <div id="v-feed" class="amagat"></div>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('podcasts');
+var PO = { subs: [], res: [], feed: null, previa: null };
+var SUGG = ['Catalunya Ràdio', 'RAC1', 'Cadena SER', 'RTVE', 'Rádio Comercial', 'Observador', 'TSF'];
+(function () {
+  var h = '';
+  for (var i = 0; i < SUGG.length; i++) h += '<button onclick="$(\'q\').value=' + js(SUGG[i]).replace(/"/g, '&quot;') + ';cerca()">' + esc(SUGG[i]) + '</button>';
+  $('xips').innerHTML = h;
+})();
+function desa() { desaDades('podcasts', PO.subs); }
+function pintaSubs() {
+  var h = '';
+  for (var i = 0; i < PO.subs.length; i++) {
+    var s = PO.subs[i];
+    h += '<div class="it quad" onclick="obreSub(' + i + ')"><div class="im"' + (s.img ? ' data-bg="' + esc(imgx(s.img, 300)) + '"' : '') + '>' +
+      '<div class="lletra">' + svg(IC.podcasts) + '</div></div><div class="nm">' + esc(s.t) + '</div></div>';
+  }
+  $('subs').innerHTML = h || '<div class="gris" style="margin:8px">Encara no tens cap pòdcast. Cerca\'n un aquí sota.</div>';
+  setTimeout(mandros, 30);
+}
+function cerca() {
+  var q = retalla($('q').value);
+  if (!q) return;
+  $('q').blur();
+  if (/^https?:\/\//i.test(q)) { subscriu({ t: q, a: '', feed: q, img: '' }); return; }
+  $('res').innerHTML = '<div class="gris">Cercant…</div>';
+  getJson(viaX('https://itunes.apple.com/search?media=podcast&entity=podcast&limit=40&country=ES&term=' + enc(q)), function (d) {
+    PO.res = [];
+    var h = '', r = (d && d.results) || [];
+    for (var i = 0; i < r.length; i++) {
+      if (!r[i].feedUrl) continue;
+      PO.res.push({ t: r[i].collectionName, a: r[i].artistName, feed: r[i].feedUrl, img: r[i].artworkUrl600 || r[i].artworkUrl100 || '', mini: r[i].artworkUrl100 || '' });
+      var n = PO.res.length - 1, s = PO.res[n];
+      h += '<div class="el" onclick="previa(' + n + ')"><div class="mini"' + (s.mini ? ' data-bg="' + esc(imgx(s.mini, 96)) + '"' : '') + '></div>' +
+        '<div class="t">' + esc(s.t) + '<div class="sub">' + esc(s.a) + '</div></div>' +
+        '<button class="acc" onclick="event.stopPropagation();subscriu(PO.res[' + n + '])">' + svg(IC.mes) + ' Subscriure</button></div>';
+    }
+    $('res').innerHTML = h || '<div class="gris">Cap resultat.</div>';
+    setTimeout(mandros, 30);
+  }, errXarxa('cercar pòdcasts'));
+}
+function esSub(feed) { for (var i = 0; i < PO.subs.length; i++) if (PO.subs[i].feed == feed) return i; return -1; }
+function subscriu(s) {
+  if (esSub(s.feed) >= 0) { avis('Ja hi estàs subscrit'); return; }
+  PO.subs.push({ t: s.t, a: s.a, feed: s.feed, img: s.img });
+  desa(); pintaSubs();
+  avis('Subscrit a ' + s.t);
+  obreSub(PO.subs.length - 1);
+}
+function previa(n) { PO.previa = PO.res[n]; mostraFeed(PO.res[n], -1); }
+function obreSub(i) { mostraFeed(PO.subs[i], i); }
+function tanca() { $('v-feed').className = 'amagat'; $('v-subs').className = ''; PO.feed = null; }
+function txtTag(el, nom) {
+  var t = el.getElementsByTagName(nom)[0];
+  return t ? retalla(t.textContent || '') : '';
+}
+function segons(s) {
+  if (!s) return 0;
+  if (/^\d+$/.test(s)) return +s;
+  var p = s.split(':'), t = 0;
+  for (var i = 0; i < p.length; i++) t = t * 60 + (+p[i] || 0);
+  return t;
+}
+function mostraFeed(s, idx) {
+  $('v-subs').className = 'amagat';
+  var c = $('v-feed');
+  c.className = '';
+  $('pag').scrollTop = 0;
+  c.innerHTML = '<button onclick="tanca()">‹ Pòdcasts</button><div class="gris" style="margin-top:20px">Carregant episodis…</div>';
+  getText(viaX(s.feed), function (txt) {
+    var doc;
+    try { doc = new DOMParser().parseFromString(txt, 'text/xml'); } catch (e) { doc = null; }
+    if (!doc || doc.getElementsByTagName('parsererror').length || !doc.getElementsByTagName('channel').length) {
+      c.innerHTML = '<button onclick="tanca()">‹ Pòdcasts</button><p>Aquesta adreça no és un pòdcast vàlid (RSS).</p>'; return;
+    }
+    var ch = doc.getElementsByTagName('channel')[0];
+    var titol = txtTag(ch, 'title') || s.t, img = s.img;
+    if (!img) {
+      var ii = ch.getElementsByTagName('itunes:image')[0];
+      if (ii) img = ii.getAttribute('href');
+      else { var im = ch.getElementsByTagName('image')[0]; if (im) img = txtTag(im, 'url'); }
+    }
+    if (idx >= 0 && (s.t != titol || s.img != img)) { s.t = titol; s.img = img; desa(); pintaSubs(); }
+    var items = doc.getElementsByTagName('item'), eps = [];
+    for (var i = 0; i < items.length && eps.length < 150; i++) {
+      var en = items[i].getElementsByTagName('enclosure')[0];
+      if (!en || !en.getAttribute('url')) continue;
+      var dt = new Date(txtTag(items[i], 'pubDate'));
+      eps.push({ t: txtTag(items[i], 'title'), u: en.getAttribute('url'), d: isNaN(dt.getTime()) ? null : dt, dur: segons(txtTag(items[i], 'itunes:duration')),
+        desc: txtTag(items[i], 'description').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').substring(0, 260) });
+    }
+    PO.feed = { s: s, idx: idx, eps: eps, img: img, titol: titol };
+    pintaFeed();
+  }, function (st) { c.innerHTML = '<button onclick="tanca()">‹ Pòdcasts</button><p>No s\'ha pogut carregar el pòdcast (error ' + st + ').</p>'; });
+}
+function pintaFeed() {
+  var f = PO.feed;
+  if (!f) return;
+  var pos = ls('pod') || {}, ara = Casa && Casa.R.cua.length ? Casa.R.cua[Casa.R.pos] : null;
+  var h = '<button onclick="tanca()">‹ Pòdcasts</button>' +
+    '<div class="album" style="margin-top:18px"><div class="im" style="background-image:' + bg(imgx(f.img, 400)) + '">' + (f.img ? '' : svg(IC.podcasts)) + '</div><div>' +
+    '<h1>' + esc(f.titol) + '</h1><div class="gris">' + esc(f.s.a || '') + '</div><div style="margin-top:12px">' +
+    (f.idx >= 0 ? '<button onclick="baixa()">Donar-se de baixa</button>' : '<button class="pri" onclick="subscriu(PO.previa)">' + svg(IC.mes) + ' Subscriure</button>') +
+    '</div></div></div><div class="llista">';
+  for (var i = 0; i < f.eps.length; i++) {
+    var e = f.eps[i], p = pos[e.u], estat = '', pc = 0;
+    var sona = ara && ara.ep == e.u;
+    if (p && p.fet) estat = ' · ✓ escoltat';
+    else if (p && p.t > 5) { var tot = p.d || e.dur; estat = tot ? ' · queden ' + durada(tot - p.t) : ''; pc = tot ? 100 * p.t / tot : 0; }
+    h += '<div class="el ep' + (sona ? ' sona' : '') + '" onclick="toca(' + i + ')"><div class="t"><b>' + esc(e.t) + '</b>' +
+      '<div class="sub">' + (e.d ? dataCurta(e.d) : '') + (e.dur ? ' · ' + durada(e.dur) : '') + estat + '</div>' +
+      (pc ? '<div class="barreta"><div style="width:' + Math.round(pc) + '%"></div></div>' : '') +
+      '<div class="desc">' + esc(e.desc) + '</div></div><div class="play">' + svg(sona && !Casa.au.paused ? IC.pausa : IC.play) + '</div></div>';
+  }
+  $('v-feed').innerHTML = h + '</div>';
+}
+function baixa() {
+  if (!confirm('Vols donar-te de baixa de «' + PO.feed.titol + '»?')) return;
+  PO.subs.splice(PO.feed.idx, 1); desa(); pintaSubs(); tanca();
+}
+function toca(i) {
+  var f = PO.feed, e = f.eps[i], ara = Casa.R.cua.length ? Casa.R.cua[Casa.R.pos] : null;
+  if (ara && ara.ep == e.u) { Casa.play(); return; }
+  Casa.toca([{ t: e.t, s: f.titol, u: viaX(e.u), art: imgx(f.img, 400), k: 'podcast', ep: e.u, id: e.u }], 0);
+}
+window.casaEstat = pintaFeed;
+iniciaMandros();
+dades('podcasts', function (d) { PO.subs = d || []; pintaSubs(); });
+</script>
+</body>
+</html>

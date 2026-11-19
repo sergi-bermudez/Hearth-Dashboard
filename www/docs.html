@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Processador de textos</title>
+<style>
+*{box-sizing:border-box;-webkit-box-sizing:border-box;-webkit-tap-highlight-color:rgba(0,0,0,0)}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#e6e6e6;color:#1b1b1b;font-family:"Segoe UI",-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:14px;-webkit-text-size-adjust:100%}
+button,select,input{font-family:inherit;font-size:14px;color:#1b1b1b}
+.amagat{display:none !important}
+#app{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column}
+/* Barra de títol */
+#titol{height:32px;line-height:32px;background:#fff;border-bottom:1px solid #dcdcdc;padding:0 12px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-flex:none;flex:none;-webkit-user-select:none;user-select:none}
+#titol .ico{display:inline-block;width:18px;height:18px;vertical-align:-4px;margin-right:8px;background:#2b579a;border-radius:3px;color:#fff;font-size:12px;line-height:18px;text-align:center;font-weight:700}
+/* Pestanyes de la cinta */
+#pestanyes{background:#fff;-webkit-flex:none;flex:none;padding:0 4px;white-space:nowrap;-webkit-user-select:none;user-select:none}
+#pestanyes span{display:inline-block;padding:7px 16px;cursor:pointer;border-bottom:3px solid transparent;font-size:14px}
+#pestanyes span.on{border-bottom-color:#2b579a;color:#2b579a;font-weight:600}
+#pestanyes span.fitxer{background:#2b579a;color:#fff;border-radius:3px 3px 0 0;margin-right:4px}
+/* Cinta */
+#cinta{background:#f8f8f8;border-top:1px solid #e1e1e1;border-bottom:1px solid #d0d0d0;-webkit-flex:none;flex:none;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 4px 0;-webkit-user-select:none;user-select:none}
+.grup{display:inline-block;vertical-align:top;border-right:1px solid #e0e0e0;padding:0 8px;text-align:center}
+.grup .fil{white-space:nowrap;margin-bottom:4px;text-align:left}
+.grup .nom{font-size:11px;color:#666;padding:2px 0 4px}
+.b{display:inline-block;min-width:32px;height:32px;line-height:30px;padding:0 6px;border:1px solid transparent;border-radius:3px;background:none;cursor:pointer;text-align:center;vertical-align:middle;font-size:15px}
+.b:active,.b.prem{background:#cde3f7;border-color:#9ac3e6}
+.b.on{background:#cde3f7;border-color:#7eb4ea}
+.b.gran{height:68px;width:64px;line-height:1.2;font-size:12px;padding-top:6px;vertical-align:top}
+.b.gran .g{display:block;font-size:24px;margin-bottom:4px}
+select.s{height:32px;border:1px solid #c8c8c8;border-radius:3px;background:#fff;padding:0 4px;vertical-align:middle;-webkit-appearance:menulist}
+.colorb{display:inline-block;width:18px;height:4px;vertical-align:bottom;margin-top:-4px}
+/* Regle */
+#regle{height:24px;background:#f3f3f3;border-bottom:1px solid #d6d6d6;-webkit-flex:none;flex:none;overflow:hidden;position:relative}
+#regle .r{position:absolute;top:3px;height:18px;background:#fff;border:1px solid #cfcfcf;left:50%}
+#regle .r i{position:absolute;bottom:0;width:1px;background:#888;height:4px}
+#regle .r i.c{height:7px}
+#regle .r b{position:absolute;top:0;font-size:9px;font-weight:400;color:#555;width:16px;margin-left:-8px;text-align:center}
+#regle .r .marge{position:absolute;top:0;bottom:0;background:#dcdcdc}
+/* Pàgina */
+#area{-webkit-flex:1;flex:1;overflow:auto;-webkit-overflow-scrolling:touch;background:#e6e6e6;padding:22px 0 60px;position:relative}
+#full{margin:0 auto;width:794px}
+#paper{background:#fff;min-height:1123px;padding:94px 94px;outline:none;font-family:Arial,Helvetica,sans-serif;font-size:12pt;line-height:1.35;box-shadow:0 1px 4px rgba(0,0,0,.25);-webkit-user-select:text;user-select:text;word-wrap:break-word}
+#paper p{margin:0 0 8pt}
+#paper h1{font-size:20pt;margin:0 0 10pt;color:#2b579a}
+#paper h2{font-size:15pt;margin:12pt 0 8pt;color:#2b579a}
+#paper table{border-collapse:collapse;width:100%;margin:6pt 0}
+#paper td{border:1px solid #888;padding:4pt 6pt;min-width:40px;vertical-align:top}
+/* Imatges */
+#paper img{max-width:100%;height:auto;vertical-align:bottom}
+#paper img.sel{outline:3px solid #2b79d0;outline-offset:2px}
+#paper img.e{float:left;margin:2pt 12pt 6pt 0}
+#paper img.d{float:right;margin:2pt 0 6pt 12pt}
+#paper img.c{display:block;margin:6pt auto}
+#imgctl{position:absolute;z-index:25;background:#fff;border:1px solid #c8c8c8;border-radius:6px;box-shadow:0 3px 12px rgba(0,0,0,.25);padding:4px;white-space:nowrap;display:none}
+#imgctl .b{font-size:14px}
+#imgcarrega{position:absolute;left:50%;top:40%;width:240px;margin-left:-120px;background:rgba(0,0,0,.78);color:#fff;border-radius:10px;padding:14px;text-align:center;z-index:40;display:none}
+/* Barra d'estat */
+#estat{height:28px;line-height:28px;background:#f3f3f3;border-top:1px solid #d6d6d6;padding:0 10px;font-size:12px;color:#444;-webkit-flex:none;flex:none;display:-webkit-flex;display:flex;-webkit-user-select:none;user-select:none}
+#estat .esq{-webkit-flex:1;flex:1}
+#estat button{border:0;background:none;font-size:16px;width:28px;cursor:pointer}
+/* Menú Fitxer i diàlegs */
+#menu{position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;z-index:30;display:-webkit-flex;display:flex}
+#menu .cols{width:230px;background:#2b579a;color:#fff;padding-top:8px;-webkit-flex:none;flex:none}
+#menu .cols div{padding:13px 22px;font-size:16px;cursor:pointer}
+#menu .cols div:active{background:#1e4380}
+#menu .cols .torna{font-size:22px;padding:8px 22px}
+#menu .dreta{-webkit-flex:1;flex:1;padding:26px 30px;overflow:auto;-webkit-overflow-scrolling:touch}
+#menu h2{font-weight:300;font-size:28px;margin:0 0 16px;color:#2b579a}
+.fitx{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:10px 8px;border-bottom:1px solid #eee;cursor:pointer}
+.fitx:active,.fitx.sel{background:#e5f1fb}
+.fitx .ic{width:28px;height:34px;border:1px solid #9ab;background:#fff;margin-right:12px;position:relative;-webkit-flex:none;flex:none}
+.fitx .ic:after{content:"";position:absolute;left:5px;right:5px;top:8px;height:14px;border-top:2px solid #9ab;border-bottom:2px solid #9ab}
+.fitx .nm{-webkit-flex:1;flex:1}
+.fitx .dt{color:#777;font-size:12px}
+#dialeg{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);z-index:50;display:none}
+#dialeg .caixa{position:absolute;left:50%;top:60px;width:440px;margin-left:-220px;background:#fff;border:1px solid #888;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+#dialeg .cap{background:#fff;padding:10px 14px;border-bottom:1px solid #e3e3e3;font-weight:600}
+#dialeg .cos{padding:18px 16px;font-size:15px;line-height:1.4}
+#dialeg .peu{padding:10px 14px;text-align:right;background:#f3f3f3;border-top:1px solid #e3e3e3}
+.bd{min-width:96px;height:32px;margin-left:8px;border:1px solid #adadad;background:#e1e1e1;border-radius:2px;cursor:pointer}
+.bd.pri{border-color:#0078d7;background:#e5f1fb}
+.camp{width:100%;height:34px;border:1px solid #7a7a7a;padding:0 8px;font-size:15px;margin-top:6px;-webkit-appearance:none;border-radius:0}
+#avis{position:absolute;left:50%;bottom:44px;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:#333;color:#fff;padding:9px 18px;border-radius:4px;z-index:60;display:none;font-size:14px}
+@media (orientation:portrait){ #cinta{white-space:normal;overflow-x:hidden} .grup{margin-bottom:6px} #pestanyes span{padding:7px 12px} }
+@media print{
+  body *{visibility:hidden}
+  #paper,#paper *{visibility:visible}
+  #paper{position:absolute;left:0;top:0;box-shadow:none;padding:0;width:100%;zoom:1 !important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="titol"><span class="ico">A</span><span id="titol-t"></span></div>
+  <div id="pestanyes">
+    <span class="fitxer" onclick="obreMenu()">Fitxer</span>
+    <span id="p-inici" class="on" onclick="pestanya('inici')">Inici</span>
+    <span id="p-insereix" onclick="pestanya('insereix')">Insereix</span>
+    <span id="p-visualitza" onclick="pestanya('visualitza')">Visualitza</span>
+  </div>
+  <div id="cinta"></div>
+  <div id="regle"><div class="r" id="regle-r"></div></div>
+  <div id="area"><div id="full"><div id="paper" contenteditable="true" spellcheck="true"></div></div></div>
+  <div id="estat"><span class="esq" id="estat-t"></span><button onclick="zoom(-10)">−</button><span id="zoom-t">100%</span><button onclick="zoom(10)">+</button></div>
+</div>
+
+<div id="menu" class="amagat">
+  <div class="cols">
+    <div class="torna" onclick="tancaMenu()">‹</div>
+    <div onclick="fitxerNou()">Nou</div>
+    <div onclick="menuObre()">Obre</div>
+    <div onclick="desa()">Desa</div>
+    <div onclick="desaCom()">Desa com a</div>
+    <div onclick="tancaMenu();setTimeout(function(){window.print();},300)">Imprimeix</div>
+    <div onclick="tancaMenu()">Tanca el menú</div>
+  </div>
+  <div class="dreta" id="menu-dreta"></div>
+</div>
+
+<input type="file" id="fimg" accept="image/*" style="position:absolute;left:-9999px;top:0;width:1px;height:1px;opacity:0">
+<div id="imgctl"></div>
+<div id="imgcarrega">Preparant la imatge…</div>
+<div id="dialeg"><div class="caixa"><div class="cap" id="dl-cap"></div><div class="cos" id="dl-cos"></div><div class="peu" id="dl-peu"></div></div></div>
+<div id="avis"></div>
+
+<script src="i18n.js"></script>
+<script src="comu.js"></script>
+<script>
+dinsCasa('docs');
+var LLETRES = ['Arial', 'Courier New', 'Georgia', 'Helvetica', 'Times New Roman', 'Trebuchet MS', 'Verdana'];
+var MIDES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72];
+var COLORS = ['#000000', '#7f7f7f', '#c00000', '#ff0000', '#ffc000', '#00b050', '#0070c0', '#002060', '#7030a0'];
+var RESSALTATS = ['#ffff00', '#00ff00', '#00ffff', '#ff00ff', 'transparent'];
+var BIU = { ca: 'NCS', es: 'NKS', en: 'BIU', pt: 'NIS', fr: 'GIS' }[LANG] || 'BIU';
+var D = { nom: null, format: 'html', brut: false, sel: null, zoom: 100, llista: [], colorText: '#c00000', colorMarc: '#ffff00' };
+
+/* ---------- Cinta ---------- */
+function b(html, titol, fn, estat, cls) { return { h: html, t: titol, f: fn, e: estat, c: cls }; }
+var CINTA = {
+  inici: [
+    { nom: 'Desfés', fil: [[b('↶', 'Desfés (Ctrl+Z)', function () { cmd('undo'); }), b('↷', 'Refés (Ctrl+Y)', function () { cmd('redo'); })]] },
+    { nom: 'Tipus de lletra', fil: [
+      ['LLETRA', 'MIDA', b('A<small>▲</small>', 'Fes la lletra més gran', function () { midaPas(1); }), b('A<small>▼</small>', 'Fes la lletra més petita', function () { midaPas(-1); })],
+      [b('<b>' + BIU.charAt(0) + '</b>', 'Negreta (Ctrl+B)', function () { cmd('bold'); }, 'bold'), b('<i>' + BIU.charAt(1) + '</i>', 'Cursiva (Ctrl+I)', function () { cmd('italic'); }, 'italic'),
+       b('<u>' + BIU.charAt(2) + '</u>', 'Subratllat (Ctrl+U)', function () { cmd('underline'); }, 'underline'), b('<s>ab</s>', 'Ratllat', function () { cmd('strikeThrough'); }, 'strikeThrough'),
+       b('x<sub>2</sub>', 'Subíndex', function () { cmd('subscript'); }, 'subscript'), b('x<sup>2</sup>', 'Superíndex', function () { cmd('superscript'); }, 'superscript'),
+       b('<span style="font-weight:700">A</span><br><span class="colorb" id="cb-text"></span>', 'Color del text', function () { triaColor('text'); }),
+       b('<span style="font-weight:700">ab</span><br><span class="colorb" id="cb-marc"></span>', 'Color de ressaltat', function () { triaColor('marc'); })]
+    ] },
+    { nom: 'Paràgraf', fil: [
+      [b('☰<small>•</small>', 'Llista amb pics', function () { cmd('insertUnorderedList'); }, 'insertUnorderedList'), b('☰<small>1</small>', 'Llista numerada', function () { cmd('insertOrderedList'); }, 'insertOrderedList'),
+       b('⇤', 'Redueix el sagnat', function () { cmd('outdent'); }), b('⇥', 'Augmenta el sagnat', function () { cmd('indent'); })],
+      [b('≡<small>◂</small>', 'Alinea a l\'esquerra', function () { cmd('justifyLeft'); }, 'justifyLeft'), b('≡', 'Centra', function () { cmd('justifyCenter'); }, 'justifyCenter'),
+       b('<small>▸</small>≡', 'Alinea a la dreta', function () { cmd('justifyRight'); }, 'justifyRight'), b('☰', 'Justifica', function () { cmd('justifyFull'); }, 'justifyFull')]
+    ] },
+    { nom: 'Estils de text', fil: [
+      [b('Títol', 'Títol', function () { cmd('formatBlock', '<h1>'); }), b('Subtítol', 'Subtítol', function () { cmd('formatBlock', '<h2>'); })],
+      [b('Normal', 'Text normal', function () { cmd('formatBlock', '<p>'); }), b(T('Neteja'), 'Treu el format', function () { cmd('removeFormat'); })]
+    ] },
+    { nom: 'Fitxer', fil: [[b('<span class="g">💾</span>Desa', 'Desa (Ctrl+S)', function () { desa(); }, null, 'gran'), b('<span class="g">🖨</span>Imprimeix', 'Imprimeix', function () { window.print(); }, null, 'gran')]] }
+  ],
+  insereix: [
+    { nom: 'Insereix', fil: [[b('<span class="g">🖼</span>Imatge', 'Insereix una imatge o una foto de l\'iPad', function () { triaImatge(); }, null, 'gran'),
+      b('<span class="g">▦</span>Taula', 'Insereix una taula', function () { taula(); }, null, 'gran'),
+      b('<span class="g">―</span>Línia', 'Línia horitzontal', function () { cmd('insertHorizontalRule'); }, null, 'gran'),
+      b('<span class="g">📅</span>Data', 'Data i hora', function () { insereixData(); }, null, 'gran'),
+      b('<span class="g">☺</span>Símbol', 'Símbol', function () { simbols(); }, null, 'gran')]] }
+  ],
+  visualitza: [
+    { nom: 'Zoom', fil: [[b('<span class="g">＋</span>Apropa', 'Apropa', function () { zoom(10); }, null, 'gran'), b('<span class="g">－</span>Allunya', 'Allunya', function () { zoom(-10); }, null, 'gran'),
+      b('<span class="g">100</span>100%', 'Mida real', function () { zoom(0); }, null, 'gran')]] },
+    { nom: 'Mostra', fil: [[b('<span class="g">📏</span>Regle', 'Mostra o amaga el regle', function () { var r = $('regle'); r.className = r.className ? '' : 'amagat'; }, null, 'gran'),
+      b('<span class="g">▭</span>Barra', 'Mostra o amaga la barra d\'estat', function () { var e = $('estat'); e.className = e.className ? '' : 'amagat'; }, null, 'gran')]] }
+  ]
+};
+function boto(d) {
+  var el = document.createElement('button');
+  el.className = 'b' + (d.c ? ' ' + d.c : '');
+  el.innerHTML = d.h; el.title = d.t;
+  if (d.e) el.setAttribute('data-estat', d.e);
+  el.addEventListener('touchstart', function (e) { e.preventDefault(); el.className += ' prem'; }, false);
+  el.addEventListener('touchend', function (e) { e.preventDefault(); el.className = el.className.replace(' prem', ''); restaura(); d.f(); }, false);
+  el.addEventListener('mousedown', function (e) { e.preventDefault(); }, false);
+  el.addEventListener('click', function () { restaura(); d.f(); }, false);
+  return el;
+}
+function seleccio(tipus) {
+  var s = document.createElement('select');
+  s.className = 's';
+  var l = tipus == 'LLETRA' ? LLETRES : MIDES, h = '';
+  for (var i = 0; i < l.length; i++) h += '<option>' + l[i] + '</option>';
+  s.innerHTML = h;
+  s.id = tipus == 'LLETRA' ? 'sel-lletra' : 'sel-mida';
+  s.style.width = tipus == 'LLETRA' ? '150px' : '62px';
+  s.onchange = function () {
+    restaura();
+    if (tipus == 'LLETRA') cmd('fontName', s.value);
+    else posaMida(+s.value);
+    try { $('paper').focus(); } catch (e) { }
+  };
+  return s;
+}
+function pestanya(p) {
+  var ps = ['inici', 'insereix', 'visualitza'];
+  for (var i = 0; i < ps.length; i++) $('p-' + ps[i]).className = ps[i] == p ? 'on' : '';
+  var c = $('cinta'), g = CINTA[p];
+  c.innerHTML = '';
+  for (i = 0; i < g.length; i++) {
+    var gr = document.createElement('div');
+    gr.className = 'grup';
+    for (var f = 0; f < g[i].fil.length; f++) {
+      var fil = document.createElement('div');
+      fil.className = 'fil';
+      for (var k = 0; k < g[i].fil[f].length; k++) {
+        var it = g[i].fil[f][k];
+        fil.appendChild(typeof it == 'string' ? seleccio(it) : boto(it));
+        if (typeof it == 'string') fil.appendChild(document.createTextNode(' '));
+      }
+      gr.appendChild(fil);
+    }
+    var nm = document.createElement('div');
+    nm.className = 'nom'; nm.textContent = g[i].nom;
+    gr.appendChild(nm);
+    c.appendChild(gr);
+  }
+  pintaColors();
+  marcaEines();
+}
+function pintaColors() {
+  var t = $('cb-text'), m = $('cb-marc');
+  if (t) t.style.background = D.colorText;
+  if (m) m.style.background = D.colorMarc;
+}
+
+/* ---------- Edició ---------- */
+document.addEventListener('selectionchange', function () {
+  var s = window.getSelection();
+  if (!s.rangeCount) return;
+  var r = s.getRangeAt(0), n = r.commonAncestorContainer, p = $('paper');
+  while (n && n != p) n = n.parentNode;
+  if (n == p) { D.sel = r.cloneRange(); marcaEines(); }
+}, false);
+function restaura() {
+  if (!D.sel) return;
+  var s = window.getSelection();
+  s.removeAllRanges(); s.addRange(D.sel);
+}
+function cmd(c, v) {
+  try { document.execCommand('styleWithCSS', false, false); } catch (e) { }
+  try { document.execCommand(c, false, v == null ? null : v); } catch (e) { }
+  canvi(); marcaEines();
+}
+function posaMida(pt) {
+  cmd('fontSize', 7);
+  var fs = $('paper').getElementsByTagName('font');
+  for (var i = fs.length - 1; i >= 0; i--) {
+    if (fs[i].getAttribute('size') != '7') continue;
+    var sp = document.createElement('span');
+    sp.style.fontSize = pt + 'pt';
+    while (fs[i].firstChild) sp.appendChild(fs[i].firstChild);
+    fs[i].parentNode.replaceChild(sp, fs[i]);
+  }
+  canvi(); marcaEines();
+}
+function midaActual() {
+  var s = window.getSelection();
+  if (!s.rangeCount) return 12;
+  var n = s.getRangeAt(0).startContainer;
+  if (n.nodeType == 3) n = n.parentNode;
+  var px = parseFloat(window.getComputedStyle(n).fontSize) || 16;
+  return Math.round(px * 0.75);
+}
+function midaPas(d) {
+  var m = midaActual(), i;
+  if (d > 0) { for (i = 0; i < MIDES.length; i++) if (MIDES[i] > m) { posaMida(MIDES[i]); return; } }
+  else { for (i = MIDES.length - 1; i >= 0; i--) if (MIDES[i] < m) { posaMida(MIDES[i]); return; } }
+}
+function marcaEines() {
+  var bs = $('cinta').getElementsByTagName('button');
+  for (var i = 0; i < bs.length; i++) {
+    var e = bs[i].getAttribute('data-estat');
+    if (!e) continue;
+    var on = false;
+    try { on = document.queryCommandState(e); } catch (er) { }
+    bs[i].className = bs[i].className.replace(/\s*on\b/, '') + (on ? ' on' : '');
+  }
+  var sl = $('sel-lletra'), sm = $('sel-mida');
+  if (sl) {
+    var f = '';
+    try { f = (document.queryCommandValue('fontName') || '').replace(/['"]/g, '').split(',')[0]; } catch (er) { }
+    for (i = 0; i < LLETRES.length; i++) if (LLETRES[i].toLowerCase() == f.toLowerCase()) sl.value = LLETRES[i];
+  }
+  if (sm) {
+    var m = midaActual(), millor = MIDES[0];
+    for (i = 0; i < MIDES.length; i++) if (Math.abs(MIDES[i] - m) < Math.abs(millor - m)) millor = MIDES[i];
+    sm.value = millor;
+  }
+}
+function triaColor(quin) {
+  var l = quin == 'text' ? COLORS : RESSALTATS, h = '<div style="margin-bottom:10px">Tria un color:</div>';
+  for (var i = 0; i < l.length; i++)
+    h += '<button class="bd" style="min-width:0;width:44px;height:44px;margin:4px;background:' + (l[i] == 'transparent' ? '#fff' : l[i]) + '" onclick="aplicaColor(\'' + quin + '\',\'' + l[i] + '\')">' + (l[i] == 'transparent' ? '✕' : '') + '</button>';
+  dialeg(quin == 'text' ? 'Color del text' : 'Color de ressaltat', h, [['Cancel·la', tancaDialeg]]);
+}
+function aplicaColor(quin, c) {
+  tancaDialeg();
+  restaura();
+  if (quin == 'text') { D.colorText = c; cmd('foreColor', c); }
+  else {
+    D.colorMarc = c == 'transparent' ? '#ffff00' : c;
+    try { document.execCommand('styleWithCSS', false, true); } catch (e) { }
+    try { if (!document.execCommand('hiliteColor', false, c)) document.execCommand('backColor', false, c); } catch (e) { }
+    canvi();
+  }
+  pintaColors();
+}
+function taula() {
+  var h = '<table><tbody>';
+  for (var r = 0; r < 3; r++) { h += '<tr>'; for (var c = 0; c < 3; c++) h += '<td><br></td>'; h += '</tr>'; }
+  cmd('insertHTML', h + '</tbody></table><p><br></p>');
+}
+function insereixData() {
+  var d = new Date();
+  cmd('insertText', d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + dos(d.getMinutes()));
+}
+function simbols() {
+  var l = ['€', '©', '®', '™', '°', '±', '×', '÷', '½', '¼', '¾', '→', '←', '↑', '↓', '♥', '★', '✓', 'ç', 'Ç', 'l·l', 'ñ', '¿', '¡', 'à', 'è', 'é', 'í', 'ò', 'ó', 'ú', 'ü'];
+  var h = '';
+  for (var i = 0; i < l.length; i++) h += '<button class="bd" style="min-width:0;width:44px;height:44px;margin:3px;font-size:20px" onclick="tancaDialeg();restaura();cmd(\'insertText\',' + js(l[i]).replace(/"/g, '&quot;') + ')">' + esc(l[i]) + '</button>';
+  dialeg('Símbol', h, [['Tanca', tancaDialeg]]);
+}
+/* ---------- Imatges (des de la galeria o la càmera de l'iPad) ---------- */
+function triaImatge() {
+  var f = $('fimg');
+  f.value = '';
+  f.click();
+}
+$('fimg').addEventListener('change', function () {
+  var fitxer = this.files && this.files[0];
+  if (!fitxer) return;
+  if (!/^image\//.test(fitxer.type || 'image/')) { avisa('Aquest fitxer no és una imatge'); return; }
+  $('imgcarrega').style.display = 'block';
+  var lector = new FileReader();
+  lector.onload = function () {
+    var orient = GIRA_SOL ? 1 : orientacioExif(lector.result);
+    var url = (window.URL || window.webkitURL).createObjectURL(fitxer), im = new Image();
+    im.onload = function () {
+      var dataUrl;
+      try { dataUrl = redueix(im, orient, 1200); } catch (e) { dataUrl = null; }
+      (window.URL || window.webkitURL).revokeObjectURL(url);
+      $('imgcarrega').style.display = 'none';
+      if (!dataUrl) { avisa('No s\'ha pogut llegir la imatge'); return; }
+      restaura();
+      if (!D.sel) posaCursorAlFinal();
+      cmd('insertHTML', '<img src="' + dataUrl + '" class="c" style="width:60%">');
+      setTimeout(regle, 50);
+    };
+    im.onerror = function () { $('imgcarrega').style.display = 'none'; avisa('No s\'ha pogut obrir la imatge'); };
+    im.src = url;
+  };
+  lector.onerror = function () { $('imgcarrega').style.display = 'none'; avisa('No s\'ha pogut llegir la imatge'); };
+  lector.readAsArrayBuffer(fitxer.slice ? fitxer.slice(0, 131072) : fitxer);
+}, false);
+function posaCursorAlFinal() {
+  var p = $('paper'), r = document.createRange();
+  r.selectNodeContents(p); r.collapse(false);
+  var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  D.sel = r.cloneRange();
+}
+/* Les fotos de la càmera porten la rotació a l'EXIF. El Safari 9 no la té en compte; els navegadors moderns sí */
+var GIRA_SOL = false;
+(function () {
+  var p = new Image();
+  p.onload = function () { GIRA_SOL = p.width == 1 && p.height == 2; };
+  p.src = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAYAAAAAAAD/2wBDAFA3PEY8MlBGQUZaVVBfeMiCeG5uePWvuZHI////////////////////////////////////////////////////2wBDAVVaWnhpeOuCguv/////////////////////////////////////////////////////////////////////////wAARCAABAAIDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwC7RRRQB//Z';
+})();
+/* Llegeix l'orientació de l'EXIF d'una foto JPEG */
+function orientacioExif(buf) {
+  try {
+    var v = new DataView(buf);
+    if (v.getUint16(0) != 0xFFD8) return 1;
+    var o = 2, n = v.byteLength;
+    while (o < n - 4) {
+      var m = v.getUint16(o), mida = v.getUint16(o + 2);
+      if (m == 0xFFE1) {
+        if (v.getUint32(o + 4) != 0x45786966) return 1;
+        var t = o + 10, le = v.getUint16(t) == 0x4949, ifd = t + v.getUint32(t + 4, le), q = v.getUint16(ifd, le);
+        for (var i = 0; i < q; i++) {
+          var e = ifd + 2 + i * 12;
+          if (v.getUint16(e, le) == 0x0112) return v.getUint16(e + 8, le);
+        }
+        return 1;
+      }
+      if ((m & 0xFF00) != 0xFF00) break;
+      o += 2 + mida;
+    }
+  } catch (er) { }
+  return 1;
+}
+function redueix(im, orient, max) {
+  var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height, k = Math.min(1, max / Math.max(w, h));
+  var dw = Math.round(w * k), dh = Math.round(h * k), gira = orient >= 5 && orient <= 8;
+  var c = document.createElement('canvas'), x = c.getContext('2d');
+  c.width = gira ? dh : dw; c.height = gira ? dw : dh;
+  switch (orient) {
+    case 2: x.transform(-1, 0, 0, 1, dw, 0); break;
+    case 3: x.transform(-1, 0, 0, -1, dw, dh); break;
+    case 4: x.transform(1, 0, 0, -1, 0, dh); break;
+    case 5: x.transform(0, 1, 1, 0, 0, 0); break;
+    case 6: x.transform(0, 1, -1, 0, dh, 0); break;
+    case 7: x.transform(0, -1, -1, 0, dh, dw); break;
+    case 8: x.transform(0, -1, 1, 0, 0, dw); break;
+  }
+  x.fillStyle = '#fff'; x.fillRect(0, 0, dw, dh);
+  x.drawImage(im, 0, 0, dw, dh);
+  return c.toDataURL('image/jpeg', 0.8);
+}
+/* Toca una imatge per fer-la més gran o més petita, alinear-la o treure-la */
+var IM = { el: null };
+$('paper').addEventListener('click', function (e) {
+  if (e.target && e.target.tagName == 'IMG') seleccionaImatge(e.target); else treuSelImatge();
+}, false);
+function seleccionaImatge(im) {
+  treuSelImatge();
+  IM.el = im;
+  im.className = (im.className || '').replace(/\s*sel/g, '') + ' sel';
+  var c = $('imgctl'), bt = [['−', 'Més petita', function () { midaImatge(-10); }], ['+', 'Més gran', function () { midaImatge(10); }],
+    ['◧', 'A l\'esquerra amb text al costat', function () { alineaImatge('e'); }], ['▣', 'Centrada', function () { alineaImatge('c'); }],
+    ['◨', 'A la dreta amb text al costat', function () { alineaImatge('d'); }], ['🗑', 'Treu la imatge', function () { var el = IM.el; treuSelImatge(); if (el && el.parentNode) { el.parentNode.removeChild(el); canvi(); } }]];
+  c.innerHTML = '';
+  for (var i = 0; i < bt.length; i++) c.appendChild(boto(b(bt[i][0], bt[i][1], bt[i][2])));
+  c.style.display = 'block';
+  colocaCtlImatge();
+}
+function colocaCtlImatge() {
+  if (!IM.el) return;
+  var r = IM.el.getBoundingClientRect(), c = $('imgctl'), W = document.documentElement.clientWidth;
+  var t = r.top - c.offsetHeight - 8;
+  if (t < 70) t = Math.min(r.bottom + 8, document.documentElement.clientHeight - c.offsetHeight - 40);
+  c.style.top = Math.max(70, t) + 'px';
+  c.style.left = Math.max(6, Math.min(W - c.offsetWidth - 6, r.left + r.width / 2 - c.offsetWidth / 2)) + 'px';
+}
+function treuSelImatge() {
+  if (IM.el) IM.el.className = IM.el.className.replace(/\s*sel/g, '');
+  IM.el = null;
+  $('imgctl').style.display = 'none';
+}
+function midaImatge(d) {
+  var el = IM.el;
+  if (!el) return;
+  var pc = parseInt(el.style.width, 10) || 60;
+  el.style.width = Math.max(10, Math.min(100, pc + d)) + '%';
+  canvi(); setTimeout(colocaCtlImatge, 30);
+}
+function alineaImatge(a) {
+  var el = IM.el;
+  if (!el) return;
+  el.className = a + ' sel';
+  canvi(); setTimeout(colocaCtlImatge, 30);
+}
+$('area').addEventListener('scroll', function () { if (IM.el) colocaCtlImatge(); }, false);
+
+function canvi() {
+  if (!D.brut) { D.brut = true; pintaTitol(); }
+  comptador();
+  clearTimeout(D.esbT);
+  D.esbT = setTimeout(desaEsborrany, 3000);
+}
+$('paper').addEventListener('input', canvi, false);
+$('paper').addEventListener('keydown', function (e) {
+  if ((e.ctrlKey || e.metaKey) && (e.keyCode == 83)) { e.preventDefault(); desa(); }
+}, false);
+function comptador() {
+  var t = retalla($('paper').innerText || '');
+  $('estat-t').textContent = T('Paraules') + ': ' + (t ? t.split(/\s+/).length : 0) + '    ' + T('Caràcters') + ': ' + t.replace(/\s/g, '').length + (D.brut ? '    · ' + T('Canvis sense desar') : '');
+}
+function pintaTitol() {
+  var n = D.nom ? senseExt(D.nom) : 'Document';
+  $('titol-t').textContent = (D.brut ? '*' : '') + n + ' - ' + T('Processador de textos');
+}
+/* Ajusta la pàgina a l'amplada de la pantalla (en vertical la pàgina A4 no hi cap) */
+function zoomAjustat() { return Math.max(50, Math.min(100, Math.floor(($('area').clientWidth - 24) / 794 * 100))); }
+function ajustaZoom() { if (!D.zoomMa) zoom(null); }
+window.addEventListener('resize', function () { clearTimeout(D.rz); D.rz = setTimeout(ajustaZoom, 150); });
+function zoom(d) {
+  if (d === null) D.zoom = zoomAjustat();
+  else { D.zoomMa = d !== 0; D.zoom = d === 0 ? zoomAjustat() : Math.max(50, Math.min(200, D.zoom + d)); }
+  $('full').style.zoom = D.zoom / 100;
+  $('regle-r').style.zoom = D.zoom / 100;
+  $('zoom-t').textContent = D.zoom + '%';
+  regle();
+}
+function regle() {
+  var r = $('regle-r'), w = $('full').offsetWidth, cm = w / 21, h = '';
+  r.style.width = w + 'px';
+  r.style.marginLeft = (-w / 2) + 'px';
+  var marge = parseFloat(window.getComputedStyle($('paper')).paddingLeft) || 94;
+  h += '<div class="marge" style="left:0;width:' + marge + 'px"></div><div class="marge" style="right:0;width:' + marge + 'px"></div>';
+  for (var i = 1; i < 42; i++) {
+    var x = i * cm / 2;
+    if (i % 2 === 0) h += '<b style="left:' + x + 'px">' + (Math.round((x - marge) / cm) || '') + '</b>';
+    else h += '<i style="left:' + x + 'px"></i>';
+  }
+  r.innerHTML = h;
+}
+window.addEventListener('resize', regle, false);
+
+/* ---------- Diàlegs ---------- */
+function dialeg(titol, cos, botons) {
+  $('dl-cap').textContent = titol;
+  $('dl-cos').innerHTML = cos;
+  var p = $('dl-peu');
+  p.innerHTML = '';
+  for (var i = 0; i < botons.length; i++) {
+    var bt = document.createElement('button');
+    bt.className = 'bd' + (i === 0 ? ' pri' : '');
+    bt.textContent = botons[i][0];
+    bt.onclick = botons[i][1];
+    p.appendChild(bt);
+  }
+  $('dialeg').style.display = 'block';
+}
+function tancaDialeg() { $('dialeg').style.display = 'none'; }
+function avisa(t) {
+  var a = $('avis');
+  a.textContent = t; a.style.display = 'block';
+  clearTimeout(avisa.t);
+  avisa.t = setTimeout(function () { a.style.display = 'none'; }, 2500);
+}
+/* Pregunta si cal desar abans de fer "despres" */
+function siCalDesar(despres) {
+  if (!D.brut) { despres(); return; }
+  dialeg(T('Processador de textos'), T('Vols desar els canvis a «') + esc(D.nom ? senseExt(D.nom) : T('Document')) + '»?', [
+    ['Desa', function () { tancaDialeg(); desa(despres); }],
+    ['No desis', function () { tancaDialeg(); D.brut = false; despres(); }],
+    ['Cancel·la', tancaDialeg]
+  ]);
+}
+
+/* ---------- Fitxer ---------- */
+function carregaLlista(ok) {
+  llistaCarpeta('documents', '', function (d) {
+    D.llista = [];
+    for (var i = 0; i < d.fitxers.length; i++) if (dins(['html', 'htm', 'txt', 'doc'], ext(d.fitxers[i].n))) D.llista.push(d.fitxers[i]);
+    D.llista.sort(function (a, b) { return b.t - a.t; });
+    if (ok) ok(d);
+  });
+}
+function obreMenu() {
+  $('menu').className = '';
+  menuRecents();
+}
+function tancaMenu() { $('menu').className = 'amagat'; }
+function llistaFitxers(seleccionable) {
+  var h = '';
+  for (var i = 0; i < D.llista.length; i++) {
+    var f = D.llista[i];
+    if (ext(f.n) == 'doc') continue;
+    h += '<div class="fitx" onclick="' + (seleccionable ? 'triaFitxer(this,' + js(f.n) + ')' : 'tancaMenu();obreDoc(' + js(f.n) + ')') + '"><div class="ic"></div><div class="nm">' + esc(senseExt(f.n)) +
+      '<div class="dt">' + (ext(f.n) == 'txt' ? 'Text · ' : '') + 'Modificat ' + haFet(f.t) + '</div></div>' +
+      (seleccionable ? '' : '<button class="bd" style="min-width:0" onclick="event.stopPropagation();esborra(' + js(f.n) + ')">Esborra</button>') + '</div>';
+  }
+  return h || '<div style="color:#777">Encara no hi ha cap document desat.</div>';
+}
+function menuRecents() {
+  $('menu-dreta').innerHTML = '<h2>Documents recents</h2><div style="color:#777">Carregant…</div>';
+  carregaLlista(function (d) {
+    $('menu-dreta').innerHTML = '<h2>Documents recents</h2>' + (d.noExisteix ? '<p>La carpeta de documents no existeix. Revisa-la a Configuració.</p>' : llistaFitxers(false));
+  });
+}
+function menuObre() { menuRecents(); }
+function fitxerNou() {
+  tancaMenu();
+  siCalDesar(function () {
+    D.nom = null; D.format = 'html'; D.brut = false;
+    $('paper').innerHTML = '<p><br></p>';
+    pintaTitol(); comptador(); esborraEsborrany();
+    try { $('paper').focus(); } catch (e) { }
+  });
+}
+function obreDoc(n) {
+  siCalDesar(function () {
+    getText(fUrl('documents', n) + '?t=' + Date.now(), function (t) {
+      D.nom = n; D.format = ext(n) == 'txt' ? 'txt' : 'html'; D.brut = false;
+      if (D.format == 'txt') $('paper').innerHTML = esc(t).replace(/\r?\n/g, '<br>');
+      else { var m = t.match(/<body[^>]*>([\s\S]*)<\/body>/i); $('paper').innerHTML = m ? m[1] : t; }
+      $('area').scrollTop = 0;
+      pintaTitol(); comptador(); esborraEsborrany();
+    }, errXarxa('obrir el document'));
+  });
+}
+function esborra(n) {
+  dialeg('Esborra', 'Vols esborrar «' + esc(senseExt(n)) + '»?<br><small>Anirà a la paperera del PC.</small>', [
+    ['Esborra', function () { tancaDialeg(); post(api('esborrar', { c: 'documents', p: n }), '', function () { menuRecents(); }, errXarxa('esborrar')); }],
+    ['Cancel·la', tancaDialeg]
+  ]);
+}
+function contingut(format) {
+  treuSelImatge();
+  var t = D.nom ? senseExt(D.nom) : 'Document';
+  if (format == 'txt') return $('paper').innerText;
+  if (format == 'doc') return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+    '<head><meta charset="utf-8"><title>' + esc(t) + '</title><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->' +
+    '<style>body{font-family:Arial,sans-serif;font-size:12pt}table{border-collapse:collapse}td{border:1px solid #888;padding:4pt}</style></head><body>' + $('paper').innerHTML + '</body></html>';
+  return '<!DOCTYPE html>\n<html lang="ca">\n<head>\n<meta charset="utf-8">\n<title>' + esc(t) + '</title>\n' +
+    '<style>body{font-family:Arial,sans-serif;font-size:12pt;line-height:1.35;max-width:21cm;margin:2.5cm auto}h1,h2{color:#2b579a}' +
+    'table{border-collapse:collapse;width:100%}td{border:1px solid #888;padding:4pt 6pt}img{max-width:100%;height:auto}img.e{float:left;margin:2pt 12pt 6pt 0}img.d{float:right;margin:2pt 0 6pt 12pt}img.c{display:block;margin:6pt auto}</style>\n</head>\n<body>' + $('paper').innerHTML + '</body>\n</html>\n';
+}
+function desa(despres) {
+  if (!D.nom) { desaCom(despres); return; }
+  post(api('desar', { c: 'documents', p: D.nom }), contingut(D.format), function () {
+    D.brut = false; pintaTitol(); comptador(); esborraEsborrany();
+    tancaMenu();
+    avisa('Desat');
+    if (typeof despres == 'function') despres();
+  }, errXarxa('desar'));
+}
+var DC = { tria: null };
+function triaFitxer(el, n) {
+  var els = document.getElementsByClassName('fitx');
+  for (var i = 0; i < els.length; i++) els[i].className = 'fitx';
+  el.className = 'fitx sel';
+  $('dc-nom').value = senseExt(n);
+}
+function desaCom(despres) {
+  tancaMenu();
+  carregaLlista(function () {
+    dialeg('Desa com a', 'Nom del fitxer:<input class="camp" id="dc-nom" value="' + esc(D.nom ? senseExt(D.nom) : 'Document') + '">' +
+      '<div style="margin-top:12px">Tipus:<select class="camp" id="dc-tipus"><option value="html">Document de text enriquit (.html)</option><option value="doc">Document de Word (.doc)</option><option value="txt">Text sense format (.txt)</option></select></div>' +
+      '<div style="margin-top:12px;max-height:180px;overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid #ddd">' + llistaFitxers(true) + '</div>', [
+      ['Desa', function () {
+        var nom = retalla($('dc-nom').value.replace(/[\\\/:*?"<>|]/g, ''));
+        var tipus = $('dc-tipus').value;
+        if (!nom) { avisa('Escriu un nom'); return; }
+        var n = nom + '.' + tipus, existeix = false;
+        for (var i = 0; i < D.llista.length; i++) if (D.llista[i].n.toLowerCase() == n.toLowerCase()) existeix = true;
+        function fes() {
+          post(api('desar', { c: 'documents', p: n }), contingut(tipus), function () {
+            tancaDialeg();
+            if (tipus != 'doc') { D.nom = n; D.format = tipus; D.brut = false; pintaTitol(); comptador(); esborraEsborrany(); avisa('Desat'); }
+            else avisa('Desat com a document de Word a la carpeta Documents del PC');
+            if (typeof despres == 'function') despres();
+          }, errXarxa('desar'));
+        }
+        if (existeix && n != D.nom) {
+          if (confirm('«' + nom + '» ja existeix. Vols substituir-lo?')) fes();
+        } else fes();
+      }],
+      ['Cancel·la', tancaDialeg]
+    ]);
+    $('dc-tipus').value = D.format == 'txt' ? 'txt' : 'html';
+  });
+}
+
+/* ---------- Esborrany (per no perdre res si es tanca l'app) ---------- */
+function desaEsborrany() { if (IM.el) treuSelImatge(); if (D.brut) ls('esborrany', { nom: D.nom, format: D.format, html: $('paper').innerHTML, ts: Date.now() }); }
+function esborraEsborrany() { ls('esborrany', null); }
+window.casaAmaga = desaEsborrany;
+window.casaTanca = desaEsborrany;
+window.addEventListener('beforeunload', desaEsborrany);
+
+/* ---------- Arrencada ---------- */
+(function () {
+  pestanya('inici');
+  var e = ls('esborrany');
+  if (e && e.html) {
+    D.nom = e.nom; D.format = e.format || 'html';
+    $('paper').innerHTML = e.html;
+    D.brut = true;
+    setTimeout(function () { dialeg('Document recuperat', 'He recuperat el document que no s\'havia desat (' + esc(e.nom ? senseExt(e.nom) : 'Document') + ').<br>Recorda desar-lo amb <b>Fitxer ▸ Desa</b>.', [['D\'acord', tancaDialeg]]); }, 300);
+  } else $('paper').innerHTML = '<p><br></p>';
+  pintaTitol(); comptador();
+  setTimeout(function () { ajustaZoom(); regle(); }, 50);
+  carregaLlista();
+})();
+</script>
+</body>
+</html>

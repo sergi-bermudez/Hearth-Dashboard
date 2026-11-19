@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<link rel="icon" href="favicon.png">
+<title>Configuració · Hearth</title>
+<script src="i18n.js"></script>
+<style>
+#pag{max-width:900px;margin:0 auto}
+.sec{background:rgba(255,255,255,.05);border-radius:18px;padding:20px 22px;margin-bottom:20px}
+.sec h2{margin:0 0 4px}
+.sec .desc{color:#8d95a1;font-size:14px;margin-bottom:14px}
+.fila{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-bottom:12px}
+.fila label{width:150px;-webkit-flex:none;flex:none;color:#c3c9d2}
+.fila .ok{width:28px;text-align:center;-webkit-flex:none;flex:none;font-size:18px}
+.fila button{margin-left:8px;-webkit-flex:none;flex:none}
+.peu{text-align:right;margin-top:6px}
+.canal{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.canal .col{width:16px;height:16px;border-radius:8px;margin-right:12px;-webkit-flex:none;flex:none}
+.canal.off .nm{opacity:.4;text-decoration:line-through}
+.canal button{padding:6px 10px;margin-left:6px;font-size:14px}
+.canal .nm{-webkit-flex:1;flex:1;min-width:0}
+.canal .nm small{display:block;color:#8d95a1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.check{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin:10px 0;cursor:pointer}
+.check input{width:24px;height:24px;margin-right:12px}
+.sel{-webkit-flex:1;flex:1;padding:10px;border-radius:12px;background:rgba(255,255,255,.07);color:#fff;border:1px solid rgba(255,255,255,.12);font-size:16px}
+#zona{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:85;display:none}
+#zona .cap{padding:14px 18px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
+#zona .cap div{-webkit-flex:1;flex:1}
+#zona .cap button{margin-left:8px}
+#zona-marc{position:absolute;top:70px;left:16px;right:16px;bottom:16px}
+#zona-img{position:absolute;display:block}
+#zona-rect{position:absolute;border:3px solid #2fd36b;background:rgba(47,211,107,.15);display:none;pointer-events:none}
+.album-ch{display:inline-block;margin:0 8px 8px 0;padding:8px 14px;border-radius:20px;background:rgba(255,255,255,.08);cursor:pointer}
+.album-ch.on{background:#3d7cf0;color:#fff}
+#explorador{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:80;display:none}
+#explorador .card{position:absolute;top:30px;left:50%;width:640px;margin-left:-320px;bottom:30px;background:#1a1f27;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column}
+#ex-llista{-webkit-flex:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:10px 0}
+#ex-ruta{font-size:14px;color:#8d95a1;word-break:break-all}
+.estils{display:-webkit-flex;display:flex;margin-bottom:14px}
+.estil{-webkit-flex:1;flex:1;margin-right:10px;border-radius:14px;height:96px;position:relative;cursor:pointer;border:3px solid transparent;overflow:hidden;background:#333 center/cover}
+.estil:last-child{margin-right:0}
+.estil.on{border-color:#7fb0ff}
+.estil span{position:absolute;left:8px;bottom:6px;font-size:14px;font-weight:600;text-shadow:0 1px 4px #000}
+.estil i{position:absolute;left:8px;top:8px;width:46px;height:20px;border-radius:5px;background:rgba(255,255,255,.85)}
+.colors span{display:inline-block;width:26px;height:26px;border-radius:13px;margin:0 6px 0 0;cursor:pointer;border:3px solid transparent;vertical-align:middle}
+.colors span.on{border-color:#fff}
+.ip{font-size:24px;font-weight:600;color:#7fb0ff;margin:6px 0}
+@media (max-width:800px){ #explorador .card{width:auto;left:16px;right:16px;margin-left:0} .fila label{width:110px} }
+</style>
+</head>
+<body>
+<div id="pag">
+  <div class="capc"><h1>Configuració</h1></div>
+
+  <div class="sec" id="s-acces" style="display:none">
+    <h2>Contrasenya</h2>
+    <div class="desc">Aquest servidor té contrasenya per canviar la configuració.</div>
+    <div class="fila"><input type="password" id="clau-entra" placeholder="Contrasenya"><button class="pri" onclick="entra()">Entrar</button></div>
+  </div>
+
+  <div id="tot" style="display:none">
+  <div class="sec" id="s-carpetes">
+    <h2>Carpetes del PC</h2>
+    <div class="desc">On són les pel·lícules, la música, les fotos i els documents. Pots escriure la ruta o triar-la amb «Explorar».</div>
+    <div id="carpetes"></div>
+    <div class="peu"><button class="pri" onclick="desaCarpetes()">Desar les carpetes</button></div>
+  </div>
+
+  <div class="sec" id="s-llengua">
+    <h2>Idioma i país</h2>
+    <div class="desc">L'idioma de Hearth en aquest dispositiu, i el país per a les ràdios i les televisions.</div>
+    <div class="fila"><label>Idioma</label><select id="cf-llengua" class="sel"></select></div>
+    <div class="fila"><label>País</label><select id="cf-pais" class="sel"></select></div>
+    <div class="peu"><button class="pri" onclick="desaLlengua()">Desar</button></div>
+  </div>
+
+  <div class="sec" id="s-funcions">
+    <h2>Funcions opcionals</h2>
+    <div class="desc">Aquestes funcions fan servir les webs de Spotify i WhatsApp des de l'Edge del PC, d'una manera que les seves condicions d'ús potser no permeten. Per això estan desactivades: activa-les només si ho acceptes.</div>
+    <label class="check"><input type="checkbox" id="fn-spotify" onchange="desaFuncions()">Spotify (sona al PC i el so arriba a l'iPad)</label>
+    <label class="check"><input type="checkbox" id="fn-whatsapp" onchange="desaFuncions()">WhatsApp (llegir i respondre missatges)</label>
+  </div>
+
+  <div class="sec" id="s-inici">
+    <h2>Pantalla d'inici</h2>
+    <div class="desc">L'estil, el temps, la salutació i el passi de fotos.</div>
+    <div class="estils" id="estils"></div>
+    <div class="fila"><label>Nom (salutació)</label><input type="text" id="aj-nom" placeholder="p. ex. família"></div>
+    <div class="fila"><label>Ciutat del temps</label><input type="text" id="aj-ciutat"><button onclick="cercaCiutat()">Cercar</button></div>
+    <div class="llista" id="ciutats" style="margin:-4px 0 12px 150px"></div>
+    <div class="fila"><label>Fons: segons</label><input type="number" id="aj-fons" min="8" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto del fons</span></div>
+    <div class="fila"><label>Marc: segons</label><input type="number" id="aj-seg" min="5" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto</span></div>
+    <div class="fila"><label>Marc automàtic</label><input type="number" id="aj-min" min="0" max="240" style="width:120px"><span class="gris petit" style="margin-left:12px">minuts sense tocar la pantalla (0 = mai)</span></div>
+    <div class="fila"><label>Targeta de la dreta</label><select id="aj-targeta" class="sel"></select></div>
+    <div class="peu"><button class="pri" onclick="desaInici()">Desar</button></div>
+  </div>
+
+  <div class="sec" id="s-agenda">
+    <h2>Agenda</h2>
+    <div class="desc">Els esdeveniments d'avui i de demà al dashboard. Els calendaris de Google es llegeixen amb la sessió de Google de l'Edge del PC (la mateixa de Google Fotos).</div>
+    <label class="check"><input type="checkbox" id="ag-google" onchange="agDesa()">Fes servir els meus calendaris de Google</label>
+    <div id="ag-cals" class="gris">Carregant…</div>
+    <h3 style="margin:18px 0 6px">Altres calendaris (enllaços)</h3>
+    <div class="desc">Enganxa un enllaç de Google Calendar (públic o «adreça secreta en format iCal») o de qualsevol calendari iCal.</div>
+    <div id="ag-enllacos"></div>
+    <div class="fila"><input type="text" id="ag-nom" placeholder="Nom" style="width:160px;-webkit-flex:none;flex:none;margin-right:8px"><input type="text" id="ag-url" placeholder="https://calendar.google.com/..."><button onclick="agAfegeix()">Afegir</button></div>
+    <div class="peu"><button onclick="agCarrega(true)">Actualitzar</button></div>
+  </div>
+
+  <div class="sec" id="s-tv">
+    <h2>Canals de TV</h2>
+    <div class="desc">Amaga, ordena o afegeix canals. Un canal propi necessita una adreça .m3u8 (HLS).</div>
+    <div id="canals"></div>
+    <div class="fila" style="margin-top:14px"><input type="text" id="nc-nom" placeholder="Nom del canal" style="width:200px;-webkit-flex:none;flex:none;margin-right:8px"><input type="url" id="nc-url" placeholder="https://…/master.m3u8"><button onclick="afegeixCanal()">Afegir</button></div>
+    <div class="peu"><button onclick="restauraCanals()">Restaurar els de 3Cat</button> <button class="pri" onclick="desaCanals()">Desar els canals</button></div>
+  </div>
+
+  <div class="sec" id="s-spotify">
+    <h2>Spotify</h2>
+    <div class="desc">El Spotify sona en un Edge amagat al PC i el so arriba a l'iPad. Funciona amb el compte gratuït.</div>
+    <div id="sp-llista" class="llista" style="margin-bottom:14px"></div>
+    <div style="margin-bottom:16px">
+      <button class="pri" onclick="spAdmin('mostra','S\'ha obert una finestra de Spotify al PC. Inicia sessió i després prem «Amagar la finestra».')">Iniciar sessió al PC</button>
+      <button onclick="spAdmin('amaga','Finestra amagada')">Amagar la finestra</button>
+      <button onclick="spAdmin('reinicia','Spotify reiniciat')">Reiniciar</button>
+    </div>
+    <div class="fila"><label>Captura del so</label><select id="sp-disp" style="-webkit-flex:1;flex:1;padding:10px;border-radius:12px;background:rgba(255,255,255,.07);color:#fff;border:1px solid rgba(255,255,255,.12)"></select></div>
+    <div class="fila"><label>Sortida de l'Edge</label><input type="text" id="sp-sortida" placeholder="CABLE Input"></div>
+    <label class="check"><input type="checkbox" id="sp-pc">Que soni pels altaveus del PC en lloc de l'iPad</label>
+    <label class="check"><input type="checkbox" id="sp-actiu">Engegar el Spotify (amagat) quan s'engegui el servidor</label>
+    <div class="peu"><button class="pri" onclick="spDesa()">Desar</button></div>
+    <div class="desc" style="margin-top:16px;line-height:1.6"><b>Instal·lació (un sol cop, al PC):</b><br>
+    1. Instal·la el <b>VB-Cable</b> (gratuït) de vb-audio.com/Cable i reinicia el PC.<br>
+    2. Baixa <b>ffmpeg</b> («ffmpeg-release-essentials.zip» de gyan.dev) i copia <b>ffmpeg.exe</b> (és a la carpeta <i>bin</i>) a la carpeta del servidor.<br>
+    3. Prem «Iniciar sessió al PC», entra al teu compte de Spotify i després «Amagar la finestra».<br>
+    El servidor envia el so de l'Edge del Spotify al cable virtual; la resta del PC continua sonant normal.</div>
+  </div>
+
+  <div class="sec" id="s-media">
+    <h2>Caràtules i fitxes</h2>
+    <div class="desc">Les pel·lícules i la música busquen caràtules a internet quan no en tenen. Les pel·lícules fan servir iTunes (sense clau). Amb una clau gratuïta de TMDB tindràs sinopsis en català i nota; amb una d'OMDb, la nota d'IMDb i de Rotten Tomatoes.</div>
+    <label class="check"><input type="checkbox" id="md-internet">Buscar caràtules i fitxes a internet</label>
+    <div class="fila"><label>Clau TMDB</label><input type="text" id="md-tmdb" placeholder="opcional · themoviedb.org ▸ Configuració ▸ API"></div>
+    <div class="fila"><label>Clau OMDb</label><input type="text" id="md-omdb" placeholder="opcional · omdbapi.com/apikey.aspx"></div>
+    <div class="peu"><button class="pri" onclick="mdDesa()">Desar</button></div>
+  </div>
+
+  <div class="sec" id="s-infantil">
+    <h2>Mode infantil</h2>
+    <div class="desc">Amb el mode infantil, l'iPad només mostra les apps que triïs. Per sortir-ne cal el PIN (toca el cadenat).</div>
+    <div class="fila"><label>PIN (4 xifres)</label><input type="password" id="inf-pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" style="width:140px"></div>
+    <div id="inf-apps"></div>
+    <div class="peu"><button onclick="infDesa(false)">Desar</button> <button class="pri" onclick="infDesa(true)">Activa el mode infantil</button></div>
+  </div>
+
+  <div class="sec" id="s-whatsapp">
+    <h2>WhatsApp</h2>
+    <div class="desc">Els missatges es llegeixen i s'envien amb el WhatsApp Web de l'Edge del PC. Es vincula un sol cop des de l'app Missatges (escanejant el codi QR amb el telèfon).</div>
+    <div class="peu"><button onclick="obreApp('missatges')">Obre Missatges</button> <button onclick="post(api('admin/wa/atura'),'',function(){avis(T('WhatsApp aturat'))},errXarxa('aturar'))">Atura el WhatsApp</button></div>
+  </div>
+
+  <div class="sec" id="s-youtube">
+    <h2>YouTube</h2>
+    <div class="desc">YouTube funciona amb el programa gratuït yt-dlp al PC (sense anuncis de la web). Per veure vídeos en HD també cal ffmpeg.</div>
+    <div class="llista" id="yt-info"><div class="gris">…</div></div>
+    <div class="peu"><button onclick="ytInstal()">Descarregar o actualitzar yt-dlp</button></div>
+  </div>
+
+  <div class="sec" id="s-webs">
+    <h2>Webs</h2>
+    <div class="desc">Webs del PC que es veuen a l'iPad com una imatge que s'actualitza (o seguida, com un vídeo). Es pot triar només una part de la pàgina.</div>
+    <div style="margin-bottom:12px"><button onclick="afegeixGoogleHome()">+ Google Home</button> <span class="gris petit">Llums, endolls i càmeres de Google Home, amb la sessió de Google del PC.</span></div>
+    <div id="webs-llista" class="llista" style="margin-bottom:14px"></div>
+    <div class="fila"><label>Nom</label><input type="text" id="wb-nom" placeholder="p. ex. Radar de pluja"></div>
+    <div class="fila"><label>Adreça</label><input type="url" id="wb-url" placeholder="https://…"></div>
+    <div class="fila"><label>Mode</label><select id="wb-mode" class="sel"><option value="imatge">Imatge que s'actualitza</option><option value="directe">En directe (com un vídeo, gasta més)</option></select></div>
+    <div class="fila"><label>Cada (segons)</label><input type="number" id="wb-int" value="10" min="2" max="3600" style="width:120px"></div>
+    <div class="fila"><label>Finestra</label><input type="number" id="wb-w" value="1280" style="width:110px"><span style="margin:0 8px">×</span><input type="number" id="wb-h" value="800" style="width:110px"><span class="gris petit" style="margin-left:10px">píxels</span></div>
+    <div class="fila"><label>Zona</label><span id="wb-zona" class="gris" style="-webkit-flex:1;flex:1">Tota la pàgina</span><button onclick="obreZona()">Triar la zona…</button><button onclick="WB.clip=null;pintaZona()">Tota</button></div>
+    <div class="peu"><button onclick="netejaWeb()">Nova</button> <button class="pri" onclick="desaWeb()">Desar la web</button></div>
+  </div>
+
+  <div class="sec" id="s-gfotos">
+    <h2>Google Fotos</h2>
+    <div class="desc">Copia cada nit les teves fotos recents i els àlbums que triïs a la carpeta «Fotos/Google Fotos» del PC. Així surten a l'app Fotos, al marc i als records.</div>
+    <div id="gf-estat" class="gris" style="margin-bottom:12px"></div>
+    <div style="margin-bottom:16px">
+      <button class="pri" onclick="gfAdmin('login','S\'ha obert Google Fotos al PC. Inicia sessió i després prem «Fet».')">Iniciar sessió al PC</button>
+      <button onclick="gfAdmin('amaga','Fet')">Fet</button>
+      <button onclick="gfAdmin('sincronitza','Sincronitzant…');gfPoll()">Sincronitza ara</button>
+    </div>
+    <div class="fila"><label>Fotos recents</label><input type="number" id="gf-rec" min="0" max="5000" style="width:120px"><span class="gris petit" style="margin-left:12px">les últimes (0 = cap)</span></div>
+    <div class="fila"><label>Àlbums</label><button onclick="gfAlbums()">Carregar els meus àlbums</button></div>
+    <div id="gf-albums" style="margin:0 0 12px 150px"></div>
+    <div class="fila"><label>Cada nit a les</label><input type="text" id="gf-hora" style="width:120px" placeholder="03:30"></div>
+    <label class="check"><input type="checkbox" id="gf-actiu">Sincronitzar automàticament cada nit</label>
+    <div class="peu"><button class="pri" onclick="gfDesa()">Desar</button></div>
+  </div>
+
+  <div class="sec" id="s-sistema">
+    <h2>Servidor</h2>
+    <div class="desc">Adreça per obrir a l'iPad (Safari ▸ Compartir ▸ Afegir a la pantalla d'inici):</div>
+    <div id="ips"></div>
+    <div id="estat" class="gris" style="margin:14px 0"></div>
+    <button onclick="reindexa()">Tornar a indexar les fotos</button>
+    <button onclick="esborraMinis()">Esborrar les miniatures</button>
+    <h2>Contrasenya de configuració</h2>
+    <div class="desc" id="clau-desc"></div>
+    <div class="fila"><input type="password" id="clau-nova" placeholder="Contrasenya nova (buida = sense contrasenya)"><button onclick="canviaClau()">Canviar</button></div>
+  </div>
+  </div>
+</div>
+
+<div id="zona">
+  <div class="cap"><div>Toca la cantonada de dalt a l'esquerra i després la de baix a la dreta de la part que vols veure.</div><button onclick="tancaZona()">Cancel·lar</button><button class="pri" onclick="acceptaZona()">D'acord</button></div>
+  <div id="zona-marc"><div class="gris" id="zona-estat" style="padding:20px">Obrint la web al PC…</div><img id="zona-img" alt=""><div id="zona-rect"></div></div>
+</div>
+<div id="explorador">
+  <div class="card">
+    <h2 style="margin:0 0 6px">Tria una carpeta</h2>
+    <div id="ex-ruta"></div>
+    <div class="llista" id="ex-llista"></div>
+    <div style="text-align:right"><button onclick="tancaExplorador()">Cancel·lar</button> <button class="pri" id="ex-tria" onclick="triaCarpeta()">Tria aquesta carpeta</button></div>
+  </div>
+</div>
+<script src="comu.js"></script>
+<script src="qr.js"></script>
+<script>
+var NOMS = { pelis: 'Pel·lícules', musica: 'Música', fotos: 'Fotos', documents: 'Documents' };
+var C = { config: null, aj: null, canals: [], ex: { c: null, ruta: '' }, ciutat: null };
+
+function carrega() {
+  getJson(api('admin/config'), function (d) {
+    C.config = d;
+    $('s-acces').style.display = 'none';
+    $('tot').style.display = 'block';
+    pintaCarpetes(); pintaSistema(); spInfo();
+    if (location.hash.length > 1) casaObre(location.hash.substring(1));
+  }, function (st) {
+    if (st == 401) { $('s-acces').style.display = 'block'; $('tot').style.display = 'none'; }
+    else errXarxa('carregar la configuració')(st);
+  });
+  dades('ajustos', function (d) {
+    C.aj = d || { ciutat: 'Barcelona', lat: 41.3874, lon: 2.1686, marcSeg: 15, marcMin: 0, nom: '', lleuger: false };
+    $('aj-nom').value = C.aj.nom || '';
+    $('aj-ciutat').value = C.aj.ciutat || '';
+    $('aj-seg').value = C.aj.marcSeg || 15;
+    $('aj-min').value = C.aj.marcMin || 0;
+    $('aj-fons').value = C.aj.fonsSeg || 20;
+    $('fn-spotify').checked = !!C.aj.spotify; $('fn-whatsapp').checked = !!C.aj.whatsapp;
+    pintaEstils();
+    pintaTargeta();
+  });
+  dades('webs', function (d) { WB.llista = d || []; pintaWebs(); pintaTargeta(); });
+  gfEstat();
+  mdCarrega();
+  agCarrega();
+  ytInfo();
+  infCarrega();
+  pintaLlengua();
+  canals(function (l) { C.canals = l; pintaCanals(); });
+}
+function entra() { ls('clau', $('clau-entra').value); carrega(); }
+
+/* Carpetes */
+function pintaCarpetes() {
+  var h = '', cs = C.config.carpetes;
+  for (var i = 0; i < cs.length; i++) {
+    var c = cs[i];
+    h += '<div class="fila"><label>' + esc(NOMS[c.c] || c.c) + '</label><span class="ok" title="' + (c.existeix ? 'Existeix' : 'No existeix') + '">' + (c.existeix ? '✅' : '⚠️') + '</span>' +
+      '<input type="text" id="cp-' + esc(c.c) + '" value="' + esc(c.ruta) + '"><button onclick="obreExplorador(\'' + esc(c.c) + '\')">Explorar…</button></div>';
+  }
+  $('carpetes').innerHTML = h;
+}
+function desaCarpetes() {
+  var cs = C.config.carpetes, n = {};
+  for (var i = 0; i < cs.length; i++) n[cs[i].c] = retalla($('cp-' + cs[i].c).value);
+  postJson(api('admin/config'), { carpetes: n }, function (d) {
+    if (d) { C.config = d; pintaCarpetes(); }
+    avis('Carpetes desades');
+    if (Casa) Casa.fotosRecarrega();
+  }, errXarxa('desar'));
+}
+function obreExplorador(c) {
+  C.ex.c = c;
+  $('explorador').style.display = 'block';
+  var actual = retalla($('cp-' + c).value);
+  explora(actual);
+}
+function explora(r) {
+  $('ex-llista').innerHTML = '<div class="gris">Carregant…</div>';
+  getJson(api('admin/explora', { r: r || '' }), function (d) {
+    C.ex.ruta = d.ruta;
+    $('ex-ruta').textContent = d.ruta || 'Equip';
+    $('ex-tria').style.display = d.ruta ? '' : 'none';
+    var h = '';
+    if (d.ruta) h += '<div class="el" onclick="explora(' + js(d.pare || '') + ')"><div class="mini">' + svg(IC.ant) + '</div><div class="t">' + (d.pare ? 'Carpeta superior' : 'Unitats i carpetes principals') + '</div></div>';
+    for (var i = 0; i < d.carpetes.length; i++) {
+      var c = d.carpetes[i];
+      h += '<div class="el" onclick="explora(' + js(c.r) + ')"><div class="mini">' + svg(c.tipus == 'unitat' ? IC.disc : IC.carpeta) + '</div><div class="t">' + esc(c.n) + '</div></div>';
+    }
+    if (d.ruta && !d.carpetes.length) h += '<div class="gris" style="padding:12px">No hi ha subcarpetes.</div>';
+    $('ex-llista').innerHTML = h;
+  }, function (st) { if (st == 404 && r) explora(''); else errXarxa('obrir la carpeta')(st); });
+}
+function triaCarpeta() { $('cp-' + C.ex.c).value = C.ex.ruta; tancaExplorador(); avis('Recorda a prémer «Desar les carpetes»'); }
+function tancaExplorador() { $('explorador').style.display = 'none'; }
+
+/* Pantalla d'inici */
+function cercaCiutat() {
+  var q = retalla($('aj-ciutat').value);
+  if (!q) return;
+  $('ciutats').innerHTML = '<div class="gris">Cercant…</div>';
+  getJson(viaX('https://geocoding-api.open-meteo.com/v1/search?count=8&language=ca&format=json&name=' + enc(q)), function (d) {
+    var r = (d && d.results) || [], h = '';
+    C.ciutats = r;
+    for (var i = 0; i < r.length; i++) h += '<div class="el" onclick="triaCiutat(' + i + ')"><div class="t">' + esc(r[i].name) + ' <span class="gris petit">' + esc([r[i].admin1, r[i].country].join(', ')) + '</span></div></div>';
+    $('ciutats').innerHTML = h || '<div class="gris">No l\'he trobada.</div>';
+  }, errXarxa('cercar la ciutat'));
+}
+function triaCiutat(i) {
+  var c = C.ciutats[i];
+  C.ciutat = { ciutat: c.name, lat: c.latitude, lon: c.longitude };
+  $('aj-ciutat').value = c.name;
+  $('ciutats').innerHTML = '<div class="gris">✓ ' + esc(c.name) + '. Prem «Desar».</div>';
+}
+function desaInici() {
+  var a = C.aj;
+  if (C.ciutat) { a.ciutat = C.ciutat.ciutat; a.lat = C.ciutat.lat; a.lon = C.ciutat.lon; }
+  a.nom = retalla($('aj-nom').value);
+  a.marcSeg = Math.max(5, parseInt($('aj-seg').value, 10) || 15);
+  a.marcMin = Math.max(0, parseInt($('aj-min').value, 10) || 0);
+  a.fonsSeg = Math.max(8, parseInt($('aj-fons').value, 10) || 20);
+  a.estil = a.estil || 'fotos';
+  a.targeta = $('aj-targeta').value;
+  desaDades('ajustos', a, function () { avis('Desat'); if (Casa) Casa.recarrega(); });
+}
+
+
+/* Idioma, país i estil */
+var ESTILS = [['fotos', 'Fotos', 'linear-gradient(135deg,#6a8f5a,#2c4a6b)'], ['vidre', 'Vidre', 'linear-gradient(135deg,#4a5a8a,#7a4a7a)'], ['fosc', 'Fosc', '#000']];
+function pintaLlengua() {
+  var h = '', i;
+  for (i = 0; i < LLENGUES.length; i++) h += '<option value="' + LLENGUES[i][0] + '"' + (LLENGUES[i][0] == LANG ? ' selected' : '') + '>' + esc(LLENGUES[i][1]) + '</option>';
+  $('cf-llengua').innerHTML = h;
+  var l = paisosOrdenats(); h = '';
+  for (i = 0; i < l.length; i++) h += '<option value="' + l[i][0] + '"' + (l[i][0] == PAIS ? ' selected' : '') + '>' + esc(T(l[i][1])) + '</option>';
+  $('cf-pais').innerHTML = h;
+}
+function desaLlengua() {
+  canviaLlengua($('cf-llengua').value);
+  canviaPais($('cf-pais').value);
+  avis(T('Desat. Hearth es tornarà a obrir.'));
+  setTimeout(function () { (window.parent || window).location.reload(); }, 900);
+}
+function pintaEstils() {
+  var h = '', e = (C.aj && C.aj.estil) || 'fotos';
+  for (var i = 0; i < ESTILS.length; i++)
+    h += '<div class="estil' + (ESTILS[i][0] == e ? ' on' : '') + '" style="background:' + ESTILS[i][2] + '" onclick="C.aj.estil=\'' + ESTILS[i][0] + '\';pintaEstils()"><i></i><span>' + esc(T(ESTILS[i][1])) + '</span></div>';
+  $('estils').innerHTML = h;
+}
+
+/* Agenda */
+var AGC = { aj: { google: true, cals: {}, enllacos: [] }, gcals: [] };
+var COLORS_AG = ['#4f8cff', '#ff6b6b', '#3fd18b', '#ffab3d', '#b16cff', '#22c4c4', '#ff5fa2', '#c0ca33', '#8d6e63', '#90a4ae'];
+function colorsHtml(actual, accio) {
+  var h = '<span class="colors">';
+  for (var i = 0; i < COLORS_AG.length; i++) h += '<span class="' + (COLORS_AG[i] == actual ? 'on' : '') + '" style="background:' + COLORS_AG[i] + '" onclick="' + accio + '(\'' + COLORS_AG[i] + '\')"></span>';
+  return h + '</span>';
+}
+function agCarrega(refresca) {
+  dades('agenda', function (d) {
+    if (d && d.length !== undefined) d = { google: true, cals: {}, enllacos: d };
+    AGC.aj = d || { google: true, cals: {}, enllacos: [] };
+    if (!AGC.aj.cals) AGC.aj.cals = {};
+    if (!AGC.aj.enllacos) AGC.aj.enllacos = [];
+    $('ag-google').checked = AGC.aj.google !== false;
+    agPintaEnllacos();
+    if (AGC.aj.google === false) { $('ag-cals').innerHTML = ''; return; }
+    $('ag-cals').innerHTML = '<div class="gris">' + T('Llegint els calendaris de Google…') + '</div>';
+    getJson(api('agenda/calendaris', refresca ? { refresca: 1 } : {}), function (r) {
+      AGC.gcals = r.calendaris || [];
+      agPintaGoogle(r.error);
+    }, function () { $('ag-cals').innerHTML = '<div class="gris">' + T('No puc consultar els calendaris.') + '</div>'; });
+  });
+}
+function agPintaGoogle(err) {
+  var h = '';
+  for (var i = 0; i < AGC.gcals.length; i++) {
+    var c = AGC.gcals[i];
+    h += '<div class="canal' + (c.mostra ? '' : ' off') + '"><span class="col" style="background:' + esc(c.color) + '"></span><div class="nm">' + esc(c.nom) + '</div>' +
+      colorsHtml(c.color, 'agColorG.bind(null,' + i + ')') + '<button onclick="agMostra(' + i + ')">' + (c.mostra ? T('Amaga') : T('Mostra')) + '</button></div>';
+  }
+  if (!h) h = '<div class="gris">' + (err ? esc(err) + '<br><button style="margin-top:8px" onclick="gfAdmin(\'login\',T(\'S\\\'ha obert Google a la pantalla del PC. Inicia sessió i torna aquí.\'))">' + T('Inicia sessió a Google') + '</button>' : T('No he trobat cap calendari.')) + '</div>';
+  $('ag-cals').innerHTML = h;
+}
+function agColorG(i, col) { AGC.gcals[i].color = col; agGuardaG(i); }
+function agMostra(i) { AGC.gcals[i].mostra = !AGC.gcals[i].mostra; agGuardaG(i); }
+function agGuardaG(i) { var c = AGC.gcals[i]; AGC.aj.cals[c.id] = { mostra: c.mostra, color: c.color }; agPintaGoogle(); agDesa(); }
+function agPintaEnllacos() {
+  var h = '', l = AGC.aj.enllacos;
+  for (var i = 0; i < l.length; i++)
+    h += '<div class="canal"><span class="col" style="background:' + esc(l[i].color || '#888') + '"></span><div class="nm">' + esc(l[i].nom || T('Calendari')) + '<small>' + esc(l[i].url) + '</small></div>' +
+      colorsHtml(l[i].color, 'agColorE.bind(null,' + i + ')') + '<button onclick="agTreu(' + i + ')">' + T('Treu') + '</button></div>';
+  $('ag-enllacos').innerHTML = h;
+}
+function agColorE(i, col) { AGC.aj.enllacos[i].color = col; agPintaEnllacos(); agDesa(); }
+function agTreu(i) { AGC.aj.enllacos.splice(i, 1); agPintaEnllacos(); agDesa(); }
+function agAfegeix() {
+  var u = retalla($('ag-url').value), n = retalla($('ag-nom').value);
+  if (!/^(https?|webcal):\/\//i.test(u)) { avis(T('Enganxa un enllaç que comenci per https://')); return; }
+  AGC.aj.enllacos.push({ nom: n, url: u, color: COLORS_AG[(AGC.aj.enllacos.length + 3) % COLORS_AG.length] });
+  $('ag-url').value = ''; $('ag-nom').value = '';
+  agPintaEnllacos(); agDesa();
+}
+function agDesa() {
+  var g = $('ag-google').checked, canvi = (AGC.aj.google !== false) != g;
+  AGC.aj.google = g;
+  desaDades('agenda', AGC.aj, function () { avis(T('Desat')); if (Casa && Casa.agendaCanviada) Casa.agendaCanviada(); if (canvi) agCarrega(); });
+}
+
+
+/* YouTube */
+function ytInfo() {
+  getJson(api('youtube/info'), function (d) {
+    var l = '';
+    l += '<div class="el"><div class="mini" style="width:36px;height:36px;line-height:36px;font-size:18px;background:none">' + (d.ytdlp ? '✅' : '⚠️') + '</div><div class="t">yt-dlp<div class="sub">' + (d.ytdlp ? T('Instal·lat') : T('Falta: prem el botó de sota')) + '</div></div></div>';
+    l += '<div class="el"><div class="mini" style="width:36px;height:36px;line-height:36px;font-size:18px;background:none">' + (d.ffmpeg ? '✅' : 'ℹ️') + '</div><div class="t">ffmpeg<div class="sub">' + (d.ffmpeg ? T('Trobat (es pot mirar en HD)') : T('Sense ffmpeg només es pot mirar a 360p')) + '</div></div></div>';
+    $('yt-info').innerHTML = l;
+  }, function () { $('yt-info').innerHTML = '<div class="gris">' + T('No puc consultar l\'estat.') + '</div>'; });
+}
+function ytInstal() {
+  avis(T('Descarregant yt-dlp…'), 30000);
+  post(api('admin/youtube/instal-la'), '', function () { avis(T('Fet')); ytInfo(); }, function (st, txt) { var m = ''; try { m = JSON.parse(txt).error; } catch (e) { } avis(T('No s\'ha pogut:') + ' ' + (m || st), 6000); });
+}
+function afegeixGoogleHome() {
+  for (var i = 0; i < WB.llista.length; i++) if (/home\.google\.com/.test(WB.llista[i].url)) { avis(T('Google Home ja hi és')); return; }
+  WB.llista.push({ id: 'ghome', nom: 'Google Home', url: 'https://home.google.com/', mode: 'directe', interval: 3, w: 1280, h: 860, clip: null });
+  desaDades('webs', WB.llista, function () {
+    avis(T('Afegit. Si et demana iniciar sessió, fes-ho a Google Fotos ▸ Inicia sessió (és el mateix compte).'), 7000);
+    pintaWebs(); pintaTargeta(); if (Casa) Casa.websCanviades(WB.llista);
+  });
+}
+
+
+/* Mode infantil */
+var INFC = { d: { actiu: false, pin: '', apps: ['docs', 'radio', 'musica'] } };
+var APPS_INF = [['musica', 'Música'], ['spotify', 'Spotify'], ['radio', 'Ràdio'], ['podcasts', 'Pòdcasts'], ['pelis', 'Pel·lícules'], ['tv', 'TV'], ['youtube', 'YouTube'], ['fotos', 'Fotos'], ['missatges', 'Missatges'], ['docs', 'Documents'], ['webs', 'Webs']];
+function infCarrega() {
+  dades('infantil', function (d) {
+    if (d) INFC.d = d;
+    $('inf-pin').value = INFC.d.pin || '';
+    var h = '';
+    for (var i = 0; i < APPS_INF.length; i++) h += '<label class="check"><input type="checkbox" value="' + APPS_INF[i][0] + '"' + (INFC.d.apps.indexOf(APPS_INF[i][0]) >= 0 ? ' checked' : '') + '>' + esc(T(APPS_INF[i][1])) + '</label>';
+    $('inf-apps').innerHTML = h;
+  });
+}
+function infDesa(activa) {
+  var pin = retalla($('inf-pin').value);
+  if (!/^\d{4,6}$/.test(pin)) { avis(T('El PIN ha de tenir de 4 a 6 xifres')); return; }
+  var l = $('inf-apps').getElementsByTagName('input'), apps = [];
+  for (var i = 0; i < l.length; i++) if (l[i].checked) apps.push(l[i].value);
+  if (activa && !apps.length) { avis(T('Tria almenys una app')); return; }
+  INFC.d = { actiu: !!activa, pin: pin, apps: apps };
+  desaDades('infantil', INFC.d, function () {
+    avis(activa ? T('Mode infantil activat') : T('Desat'));
+    if (Casa && Casa.infantilCanviat) { Casa.infantilCanviat(); if (activa) Casa.inici(); }
+  });
+}
+function obreApp(a) { if (Casa) Casa.obre(a); }
+
+function desaFuncions() {
+  C.aj.spotify = $('fn-spotify').checked;
+  C.aj.whatsapp = $('fn-whatsapp').checked;
+  desaDades('ajustos', C.aj, function () { avis(T('Desat')); if (Casa) Casa.recarrega(); });
+}
+/* Canals */
+function pintaCanals() {
+  var h = '';
+  for (var i = 0; i < C.canals.length; i++) {
+    var c = C.canals[i];
+    h += '<div class="canal' + (c.amagat ? ' off' : '') + '"><span class="col" style="background:' + esc(c.color || '#888') + '"></span>' +
+      '<div class="nm">' + esc(c.nom) + '<small>' + esc(c.urls[0] || '') + (c.urls.length > 1 ? ' (+' + (c.urls.length - 1) + ')' : '') + '</small></div>' +
+      '<button onclick="mouCanal(' + i + ',-1)">↑</button><button onclick="mouCanal(' + i + ',1)">↓</button>' +
+      '<button onclick="amagaCanal(' + i + ')">' + (c.amagat ? 'Mostrar' : 'Amagar') + '</button>' +
+      '<button onclick="treuCanal(' + i + ')">' + svg(IC.paperera) + '</button></div>';
+  }
+  $('canals').innerHTML = h || '<div class="gris">Cap canal.</div>';
+}
+function mouCanal(i, d) {
+  var j = i + d;
+  if (j < 0 || j >= C.canals.length) return;
+  var t = C.canals[i]; C.canals[i] = C.canals[j]; C.canals[j] = t;
+  pintaCanals();
+}
+function amagaCanal(i) { C.canals[i].amagat = !C.canals[i].amagat; pintaCanals(); }
+function treuCanal(i) { if (confirm('Treure ' + C.canals[i].nom + '?')) { C.canals.splice(i, 1); pintaCanals(); } }
+function afegeixCanal() {
+  var nom = retalla($('nc-nom').value), u = retalla($('nc-url').value);
+  if (!nom || !/^https?:\/\//.test(u)) { avis('Cal un nom i una adreça que comenci per http'); return; }
+  var cols = ['#e8542b', '#2a9fb8', '#7a3fd0', '#14a35a', '#d6213a', '#1f6fd1'];
+  C.canals.push({ id: 'propi' + Date.now(), nom: nom, urls: [u], color: cols[C.canals.length % cols.length], propi: true });
+  $('nc-nom').value = ''; $('nc-url').value = '';
+  pintaCanals();
+}
+function restauraCanals() {
+  if (!confirm('Tornar als canals de 3Cat per defecte? Es perdran els canals propis.')) return;
+  C.canals = JSON.parse(JSON.stringify(CANALS_DEF));
+  pintaCanals();
+}
+function desaCanals() {
+  desaDades('canals', C.canals, function () { avis('Canals desats'); if (Casa) Casa.canalsCanviats(C.canals); });
+}
+
+/* Sistema */
+/* Caràtules */
+function mdCarrega() {
+  dades('media', function (d) {
+    C.md = d || {};
+    $('md-internet').checked = C.md.internet !== false && C.md.internet !== 'false';
+    $('md-tmdb').value = C.md.tmdb || '';
+    $('md-omdb').value = C.md.omdb || '';
+  });
+}
+function mdDesa() {
+  var a = C.md || {};
+  a.internet = $('md-internet').checked;
+  a.tmdb = retalla($('md-tmdb').value);
+  a.omdb = retalla($('md-omdb').value);
+  desaDades('media', a, function () { avis('Desat. Les fitxes noves faran servir aquests ajustos.'); });
+}
+
+/* Webs */
+var WB = { llista: [], edita: null, clip: null, punts: [] };
+function pintaTargeta() {
+  var sel = $('aj-targeta'), act = (C.aj && C.aj.targeta) || 'fotos', h = '<option value="fotos">Foto del record</option>';
+  for (var i = 0; i < WB.llista.length; i++) h += '<option value="' + esc(WB.llista[i].id) + '"' + (WB.llista[i].id == act ? ' selected' : '') + '>Web: ' + esc(WB.llista[i].nom) + '</option>';
+  sel.innerHTML = h;
+  sel.value = act;
+}
+function pintaWebs() {
+  var h = '';
+  for (var i = 0; i < WB.llista.length; i++) {
+    var w = WB.llista[i];
+    h += '<div class="el"><div class="t">' + esc(w.nom) + '<div class="sub">' + esc(w.url) + ' · ' + (w.mode == 'directe' ? 'en directe' : 'cada ' + w.interval + ' s') + (w.clip ? ' · una part' : '') + '</div></div>' +
+      '<button class="acc" onclick="editaWeb(' + i + ')">Editar</button><button class="acc" onclick="post(api(\'web/mostra\',{id:WB.llista[' + i + '].id}),\'\',function(){avis(\'Finestra oberta al PC: inicia sessió si cal\',5000)},errXarxa(\'obrir\'))">Obrir al PC</button>' +
+      '<button class="acc" onclick="post(api(\'web/amaga\',{id:WB.llista[' + i + '].id}),\'\',null,null)">Amagar</button>' +
+      '<button class="acc" onclick="treuWeb(' + i + ')">' + svg(IC.paperera) + '</button></div>';
+  }
+  $('webs-llista').innerHTML = h || '<div class="gris">Encara no n\'hi ha cap.</div>';
+}
+function netejaWeb() {
+  WB.edita = null; WB.clip = null;
+  $('wb-nom').value = ''; $('wb-url').value = ''; $('wb-mode').value = 'imatge'; $('wb-int').value = 10; $('wb-w').value = 1280; $('wb-h').value = 800;
+  pintaZona();
+}
+function editaWeb(i) {
+  var w = WB.llista[i];
+  WB.edita = i; WB.clip = w.clip || null;
+  $('wb-nom').value = w.nom; $('wb-url').value = w.url; $('wb-mode').value = w.mode || 'imatge'; $('wb-int').value = w.interval || 10;
+  $('wb-w').value = w.w || 1280; $('wb-h').value = w.h || 800;
+  pintaZona();
+  $('pag').scrollTop = $('s-webs').offsetTop + 120;
+}
+function pintaZona() {
+  var c = WB.clip;
+  $('wb-zona').textContent = c ? 'Una part: ' + Math.round(c.w) + '×' + Math.round(c.h) + ' a partir de (' + Math.round(c.x) + ', ' + Math.round(c.y) + ')' : 'Tota la pàgina';
+}
+function webForm() {
+  var nom = retalla($('wb-nom').value), u = retalla($('wb-url').value);
+  if (!nom || !/^https?:\/\//.test(u)) { avis('Cal un nom i una adreça que comenci per http'); return null; }
+  return { id: WB.edita != null ? WB.llista[WB.edita].id : 'w' + Date.now(), nom: nom, url: u, mode: $('wb-mode').value,
+    interval: Math.max(2, parseInt($('wb-int').value, 10) || 10), w: parseInt($('wb-w').value, 10) || 1280, h: parseInt($('wb-h').value, 10) || 800, clip: WB.clip };
+}
+function desaWeb(despres) {
+  var w = webForm();
+  if (!w) return;
+  if (WB.edita != null) WB.llista[WB.edita] = w; else { WB.llista.push(w); WB.edita = WB.llista.length - 1; }
+  desaDades('webs', WB.llista, function () { avis('Web desada'); pintaWebs(); pintaTargeta(); if (Casa) Casa.websCanviades(WB.llista); if (despres) despres(w); });
+}
+function treuWeb(i) {
+  if (!confirm('Treure «' + WB.llista[i].nom + '»?')) return;
+  post(api('web/tanca', { id: WB.llista[i].id }), '', null, null);
+  WB.llista.splice(i, 1);
+  desaDades('webs', WB.llista, function () { pintaWebs(); pintaTargeta(); if (Casa) Casa.websCanviades(WB.llista); });
+  netejaWeb();
+}
+function obreZona() {
+  desaWeb(function (w) {
+    $('zona').style.display = 'block';
+    $('zona-estat').style.display = 'block';
+    $('zona-img').style.display = 'none';
+    $('zona-rect').style.display = 'none';
+    WB.punts = [];
+    var u = api('web/imatge', { id: w.id, completa: 1, t: Date.now() }), im = $('zona-img');
+    im.onload = function () {
+      $('zona-estat').style.display = 'none';
+      im.style.display = 'block';
+      var m = $('zona-marc'), r = Math.min(m.clientWidth / im.naturalWidth, m.clientHeight / im.naturalHeight);
+      im.style.width = Math.round(im.naturalWidth * r) + 'px'; im.style.height = Math.round(im.naturalHeight * r) + 'px';
+      im.style.left = '0'; im.style.top = '0';
+    };
+    im.onerror = function () { $('zona-estat').textContent = 'No s\'ha pogut obrir la web al PC.'; };
+    im.src = u;
+  });
+}
+$('zona-img').addEventListener('click', function (e) {
+  var r = this.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+  if (WB.punts.length >= 2) WB.punts = [];
+  WB.punts.push([x, y]);
+  var q = $('zona-rect');
+  if (WB.punts.length == 2) {
+    var a = WB.punts[0], b = WB.punts[1];
+    var x0 = Math.min(a[0], b[0]), y0 = Math.min(a[1], b[1]), x1 = Math.max(a[0], b[0]), y1 = Math.max(a[1], b[1]);
+    q.style.left = (x0 * r.width) + 'px'; q.style.top = (y0 * r.height) + 'px';
+    q.style.width = ((x1 - x0) * r.width) + 'px'; q.style.height = ((y1 - y0) * r.height) + 'px';
+    q.style.display = 'block';
+  } else {
+    q.style.left = (x * r.width - 4) + 'px'; q.style.top = (y * r.height - 4) + 'px'; q.style.width = '8px'; q.style.height = '8px'; q.style.display = 'block';
+  }
+}, false);
+function acceptaZona() {
+  if (WB.punts.length == 2) {
+    var a = WB.punts[0], b = WB.punts[1], im = $('zona-img'), W = im.naturalWidth, H = im.naturalHeight;
+    WB.clip = { x: Math.min(a[0], b[0]) * W, y: Math.min(a[1], b[1]) * H, w: Math.abs(a[0] - b[0]) * W, h: Math.abs(a[1] - b[1]) * H };
+    pintaZona();
+    desaWeb();
+  }
+  tancaZona();
+}
+function tancaZona() { $('zona').style.display = 'none'; }
+
+/* Google Fotos */
+var GF = { aj: {}, albums: null, t: null };
+function gfEstat() {
+  getJson(api('admin/gfotos/estat'), function (d) {
+    GF.aj = d.ajustos || {};
+    $('gf-estat').textContent = (d.enMarxa ? '⏳ ' : '') + (d.estat || 'Encara no s\'ha sincronitzat') + (d.darrera ? ' · Darrera: ' + d.darrera : '');
+    if (!GF.carregat) {
+      GF.carregat = true;
+      $('gf-rec').value = GF.aj.recents != null ? GF.aj.recents : 300;
+      $('gf-hora').value = GF.aj.hora || '03:30';
+      $('gf-actiu').checked = GF.aj.actiu === true || GF.aj.actiu === 'true';
+      pintaAlbums();
+    }
+    if (d.enMarxa) { clearTimeout(GF.t); GF.t = setTimeout(gfEstat, 3000); }
+  }, function () { $('gf-estat').textContent = 'No puc consultar l\'estat.'; });
+}
+function gfPoll() { clearTimeout(GF.t); GF.t = setTimeout(gfEstat, 1500); }
+function gfAdmin(o, m) {
+  avis('Un moment…', 15000);
+  post(api('admin/gfotos/' + o), '', function () { avis(m, 6000); gfPoll(); }, function (st, txt) { var e = ''; try { e = JSON.parse(txt).error; } catch (x) { } avis('No s\'ha pogut: ' + (e || st), 6000); });
+}
+function pintaAlbums() {
+  var triats = GF.aj.albums || [], l = GF.albums || triats, h = '';
+  for (var i = 0; i < l.length; i++) {
+    var on = false;
+    for (var j = 0; j < triats.length; j++) if (triats[j].url == l[i].url) on = true;
+    h += '<span class="album-ch' + (on ? ' on' : '') + '" data-i="' + i + '" onclick="this.className=this.className.indexOf(\'on\')>0?\'album-ch\':\'album-ch on\'">' + esc(l[i].nom) + '</span>';
+  }
+  $('gf-albums').innerHTML = h || '<span class="gris">Cap àlbum triat.</span>';
+  GF.mostrats = l;
+}
+function gfAlbums() {
+  $('gf-albums').innerHTML = '<span class="gris">Llegint els àlbums de Google Fotos (pot trigar uns segons)…</span>';
+  getJson(api('admin/gfotos/albums'), function (l) { GF.albums = l; pintaAlbums(); }, function (st, txt) {
+    var e = ''; try { e = JSON.parse(txt).error; } catch (x) { }
+    $('gf-albums').innerHTML = '<span class="gris">No s\'han pogut llegir: ' + esc(e || st) + '</span>';
+  });
+}
+function gfDesa() {
+  var a = GF.aj, els = $('gf-albums').getElementsByTagName('span'), triats = [];
+  for (var i = 0; i < els.length; i++) if (els[i].className.indexOf('on') > 0) triats.push(GF.mostrats[+els[i].getAttribute('data-i')]);
+  a.albums = triats;
+  a.recents = Math.max(0, parseInt($('gf-rec').value, 10) || 0);
+  a.hora = /^\d{1,2}:\d\d$/.test(retalla($('gf-hora').value)) ? retalla($('gf-hora').value) : '03:30';
+  a.actiu = $('gf-actiu').checked;
+  desaDades('gfotos', a, function () { avis('Desat'); });
+}
+
+/* Spotify */
+function spInfo() {
+  getJson(api('admin/spotify/info'), function (d) {
+    C.sp = d;
+    var a = d.ajustos || {}, l = '';
+    function fila(ok, t, sub) { l += '<div class="el"><div class="mini" style="width:36px;height:36px;line-height:36px;font-size:18px;background:none">' + (ok ? '✅' : '⚠️') + '</div><div class="t">' + t + (sub ? '<div class="sub">' + esc(sub) + '</div>' : '') + '</div></div>'; }
+    fila(d.edge, 'Microsoft Edge', d.edge ? (d.edgeEnMarxa ? 'En marxa' : 'Aturat (s\'engegarà quan calgui)') : 'No l\'he trobat en aquest PC');
+    fila(d.ffmpeg, 'ffmpeg', d.ffmpeg ? d.ffmpegRuta : 'Falta ffmpeg.exe a la carpeta del servidor');
+    var cable = false;
+    for (var i = 0; i < d.dispositius.length; i++) if (/cable/i.test(d.dispositius[i])) cable = true;
+    fila(cable, 'Cable d\'àudio virtual', cable ? 'Trobat' : (d.ffmpeg ? 'No el trobo: instal·la el VB-Cable' : 'Es comprova quan hi hagi ffmpeg'));
+    fila(d.token, 'Sessió de Spotify', d.token ? 'Connectat' : 'Inicia sessió (o obre l\'app Spotify un moment)');
+    if (d.error) l += '<div class="gris petit" style="padding:8px 6px">Darrer error: ' + esc(d.error) + '</div>';
+    $('sp-llista').innerHTML = l;
+    var sel = $('sp-disp'), h = '', actual = a.dispositiu || 'CABLE Output (VB-Audio Virtual Cable)';
+    var opcions = d.dispositius.slice();
+    if (opcions.indexOf(actual) < 0) opcions.unshift(actual);
+    for (i = 0; i < opcions.length; i++) h += '<option' + (opcions[i] == actual ? ' selected' : '') + '>' + esc(opcions[i]) + '</option>';
+    sel.innerHTML = h;
+    $('sp-sortida').value = a.sortida || 'CABLE Input';
+    $('sp-pc').checked = a.sonaAlPC === true || a.sonaAlPC === 'true';
+    $('sp-actiu').checked = a.actiu === undefined || a.actiu === true || a.actiu === 'true';
+  }, function () { $('sp-llista').innerHTML = '<div class="gris">No puc consultar l\'estat del Spotify.</div>'; });
+}
+function spAdmin(o, missatge) {
+  avis('Un moment…', 15000);
+  post(api('admin/spotify/' + o), '', function () { avis(missatge, 6000); setTimeout(spInfo, 1500); }, function (st, txt) {
+    var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
+    avis('No s\'ha pogut: ' + (m || st), 6000);
+  });
+}
+function spDesa() {
+  var a = (C.sp && C.sp.ajustos) || {};
+  a.dispositiu = $('sp-disp').value;
+  a.sortida = retalla($('sp-sortida').value) || 'CABLE Input';
+  a.sonaAlPC = $('sp-pc').checked;
+  a.actiu = $('sp-actiu').checked;
+  desaDades('spotify', a, function () {
+    avis('Desat');
+    if (C.sp && C.sp.edgeEnMarxa) post(api('admin/spotify/sortida'), '', null, null);
+  });
+}
+
+function pintaSistema() {
+  var d = C.config, h = '';
+  var nom = 'http://' + (d.nomXarxa || 'hearth.local') + ':' + d.port + '/';
+  h += '<div style="float:right;margin:0 0 10px 16px">' + QR.svg(nom, 150) + '</div><div class="ip">' + esc(nom) + '</div><div class="gris petit">' + T('Adreça fixa: funciona encara que canviï la IP del PC.') + '</div>';
+  for (var i = 0; i < d.ips.length; i++) h += '<div class="ip" style="font-size:18px;color:#c3c9d2">http://' + esc(d.ips[i]) + ':' + d.port + '/</div>';
+  $('ips').innerHTML = h + '<div style="clear:both"></div>';
+  $('clau-desc').textContent = d.clau ? 'Ara hi ha contrasenya: cal per canviar la configuració des d\'un altre dispositiu (des del mateix PC no cal).' :
+    'Ara no hi ha contrasenya: qualsevol dispositiu de casa pot canviar la configuració.';
+  getJson(api('admin/estat'), function (e) {
+    $('estat').textContent = (e.fotos >= 0 ? e.fotos + ' fotos indexades · ' : 'Indexant fotos… · ') + e.miniatures + ' miniatures (' + mida(e.miniaturesMida) + ') · en marxa des de fa ' +
+      (e.minuts < 60 ? e.minuts + ' min' : Math.floor(e.minuts / 60) + ' h');
+  });
+}
+function reindexa() { post(api('admin/reindexa'), '', function () { avis('Indexant fotos…'); setTimeout(function () { if (Casa) Casa.fotosRecarrega(); pintaSistema(); }, 4000); }, errXarxa('indexar')); }
+function esborraMinis() {
+  if (!confirm('Esborrar totes les miniatures? Es tornaran a crear quan calgui.')) return;
+  post(api('admin/esborra-miniatures'), '', function () { avis('Miniatures esborrades'); pintaSistema(); }, errXarxa('esborrar'));
+}
+function canviaClau() {
+  var n = $('clau-nova').value;
+  postJson(api('admin/config'), { clau: n }, function (d) { ls('clau', n); $('clau-nova').value = ''; if (d) { C.config = d; pintaSistema(); } avis(n ? 'Contrasenya canviada' : 'Contrasenya treta'); }, errXarxa('canviar la contrasenya'));
+}
+window.casaObre = function (a) {
+  a = decodeURIComponent(a);
+  var s = $('s-' + a);
+  if (s) setTimeout(function () { $('pag').scrollTop = s.offsetTop - 10; }, 100);
+};
+carrega();
+</script>
+</body>
+</html>

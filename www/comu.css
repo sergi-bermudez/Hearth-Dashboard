@@ -1,0 +1,62 @@
+*{box-sizing:border-box;-webkit-box-sizing:border-box;-webkit-tap-highlight-color:rgba(0,0,0,0)}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0e1116;color:#eef0f3;font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:17px;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font-family:inherit;font-size:17px;color:inherit}
+button{background:rgba(255,255,255,.09);border:0;border-radius:12px;padding:10px 16px;cursor:pointer;-webkit-appearance:none;vertical-align:middle}
+button:active,.toc:active{opacity:.6}
+button.pri{background:#3d7cf0;color:#fff}
+button.perill{background:#7a2b2b}
+button .ic{width:20px;height:20px;margin:-3px 4px 0 -2px}
+input[type=text],input[type=number],input[type=search],input[type=password],input[type=url]{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 13px;width:100%;-webkit-appearance:none;outline:none}
+h1{font-size:34px;margin:0;font-weight:700;letter-spacing:-.5px}
+h2{font-size:21px;margin:26px 0 12px;font-weight:600}
+a{color:#7fb0ff}
+.amagat{display:none !important}
+.gris{color:#8d95a1}
+.petit{font-size:14px}
+.flex1{-webkit-flex:1;flex:1;min-width:0}
+.ic{width:24px;height:24px;fill:currentColor;vertical-align:middle}
+#pag{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:24px 26px 40px}
+.capc{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-bottom:18px}
+.capc h1{-webkit-flex:1;flex:1}
+.capc button{margin-left:8px}
+.card{background:rgba(255,255,255,.05);border-radius:18px;padding:18px}
+#avis{position:fixed;left:50%;top:24px;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:#2b313b;padding:12px 20px;border-radius:14px;z-index:100;box-shadow:0 6px 24px rgba(0,0,0,.5);display:none;max-width:90%}
+
+/* Graelles de portades */
+.gra{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:0 -8px}
+.it{width:calc(20% - 16px);margin:8px;cursor:pointer}
+.it .im{padding-top:150%;border-radius:12px;background:#1d2229 center/cover no-repeat;position:relative;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.it.quad .im{padding-top:100%}
+.it.ampla .im{padding-top:56.25%}
+.it .im .lletra{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;font-size:40px;color:#5d6673;padding:10px;text-align:center}
+.it .im .lletra .ic{width:44px;height:44px}
+.it .im .lletra small{display:block;font-size:15px;color:#b4bbc5;margin-top:8px;line-height:1.25}
+.it .nm{font-size:14px;margin-top:7px;line-height:1.25;max-height:2.5em;overflow:hidden}
+.it .prog{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(0,0,0,.5)}
+.it .prog div{height:4px;background:#e04848}
+.etiq{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.72);font-size:11px;padding:3px 7px;border-radius:6px;color:#fff}
+.cami{margin-bottom:14px;font-size:15px;color:#8d95a1}
+.cami span{color:#7fb0ff;cursor:pointer}
+
+/* Llistes */
+.llista .el{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:12px 6px;border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer}
+.llista .el .n{width:36px;color:#8d95a1;font-size:14px;-webkit-flex:none;flex:none}
+.llista .el .t{-webkit-flex:1;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.llista .el.sona .t{color:#7fb0ff;font-weight:600}
+.llista .el.no{opacity:.4}
+.llista .el .mini{width:56px;height:56px;border-radius:10px;background:#1d2229 center/cover no-repeat;margin-right:14px;-webkit-flex:none;flex:none;text-align:center;line-height:56px;color:#5d6673}
+.llista .el .acc{-webkit-flex:none;flex:none;margin-left:8px}
+.llista .el .sub{font-size:13px;color:#8d95a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.cerca{display:-webkit-flex;display:flex;margin-bottom:14px}
+.cerca input{-webkit-flex:1;flex:1;margin-right:8px}
+.xips button{margin:0 6px 8px 0;border-radius:20px;padding:8px 16px;font-size:15px}
+.album{display:-webkit-flex;display:flex;-webkit-align-items:flex-end;align-items:flex-end;margin-bottom:16px}
+.album .im{width:170px;height:170px;border-radius:14px;background:#1d2229 center/cover no-repeat;margin-right:22px;-webkit-flex:none;flex:none;text-align:center;line-height:170px;color:#5d6673;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.album .im .ic{width:70px;height:70px}
+.album h1{margin:2px 0 14px}
+
+@media (max-width:800px){
+  .it{width:calc(25% - 16px)}
+  .album .im{width:130px;height:130px;line-height:130px}
+  #pag{padding:22px 20px 40px}
+}

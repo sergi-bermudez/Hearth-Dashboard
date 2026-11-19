@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<script src="i18n.js"></script>
+<title>TV</title>
+<style>
+.pest{margin-bottom:16px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pest button{margin-right:8px;border-radius:22px;padding:9px 18px}
+.pest button.on{background:#fff;color:#111}
+.canals{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:0 -7px}
+.canal{width:calc(20% - 14px);margin:7px;cursor:pointer;position:relative}
+.canal .lg{padding-top:62%;border-radius:14px;background:#eef1f5 center/62% no-repeat;position:relative;overflow:hidden}
+.canal .lg.color{background-size:cover}
+.canal .lg .lletra{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;text-align:center;padding:8px}
+.canal .lg.gris .lletra{color:#59616d}
+.canal .nm{font-size:13px;margin-top:6px;line-height:1.25;max-height:2.5em;overflow:hidden}
+.canal .nm small{color:#8d95a1}
+.canal .est{position:absolute;top:4px;right:4px;width:34px;height:34px;padding:5px;border-radius:17px;background:rgba(0,0,0,.45);z-index:2}
+.canal .est .ic{width:22px;height:22px;fill:#ffc93c}
+.canal.on .lg{box-shadow:0 0 0 3px #e0283b}
+.filtre{display:-webkit-flex;display:flex;margin-bottom:12px}
+.filtre input,.filtre select{-webkit-flex:1;flex:1;margin-right:8px}
+.filtre select{padding:10px;border-radius:12px;background:rgba(255,255,255,.07);color:#fff;border:1px solid rgba(255,255,255,.12);font-size:16px}
+@media (max-width:800px){ .canal{width:calc(25% - 14px)} }
+</style>
+</head>
+<body>
+<div id="pag">
+  <div class="capc"><h1>Televisió</h1></div>
+  <div class="pest" id="pest"></div>
+  <div class="filtre" id="filtre">
+    <select id="pais" class="amagat" onchange="carregaPais(this.value)"></select>
+    <input type="search" id="q" placeholder="Filtra pel nom del canal" oninput="clearTimeout(TA.f);TA.f=setTimeout(pinta,250)">
+  </div>
+  <div class="canals" id="canals"></div>
+  <p class="gris petit" id="nota" style="margin-top:20px"></p>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('tv');
+var IPTV = 'https://iptv-org.github.io/iptv/';
+function codiIptv(cc) { cc = cc.toLowerCase(); return cc == 'gb' ? 'uk' : cc; }
+var LLI = LLENGUA_INFO[LANG] || LLENGUA_INFO.en;
+var PEST = [
+  { id: 'fav', nom: '★ ' + T('Els meus') },
+  { id: 'pais', nom: nomPais(PAIS), u: 'countries/' + codiIptv(PAIS) + '.m3u' },
+  { id: 'llengua', nom: T('En el meu idioma'), u: 'languages/' + LLI.iso3 + '.m3u' },
+  { id: 'news', nom: T('Notícies'), u: 'categories/news.m3u' },
+  { id: 'kids', nom: T('Infantil'), u: 'categories/kids.m3u' },
+  { id: 'mon', nom: T('Altres països') }
+];
+var TA = { pest: 'fav', fav: [], llista: [], cache: {}, f: null };
+
+function pintaPest() {
+  var h = '';
+  for (var i = 0; i < PEST.length; i++) h += '<button class="' + (PEST[i].id == TA.pest ? 'on' : '') + '" onclick="triaPest(\'' + PEST[i].id + '\')">' + esc(PEST[i].nom) + '</button>';
+  $('pest').innerHTML = h;
+  $('pais').className = TA.pest == 'mon' ? '' : 'amagat';
+}
+function triaPest(id) {
+  TA.pest = id;
+  pintaPest();
+  $('pag').scrollTop = 0;
+  if (id == 'fav') { TA.llista = TA.fav; pinta(); return; }
+  if (id == 'mon') { carregaPais($('pais').value); return; }
+  for (var i = 0; i < PEST.length; i++) if (PEST[i].id == id) carrega(PEST[i].u);
+}
+function carregaPais(cc) { ls('tv.pais', cc); carrega('countries/' + cc + '.m3u'); }
+function carrega(cami) {
+  if (TA.cache[cami]) { TA.llista = TA.cache[cami]; pinta(); return; }
+  $('canals').innerHTML = '<div class="gris" style="margin:7px">' + T('Carregant canals…') + '</div>';
+  getText(viaX(IPTV + cami), function (txt) {
+    var l = llegeixM3u(txt);
+    TA.cache[cami] = l;
+    if (TA.pest != 'fav') { TA.llista = l; pinta(); }
+  }, function (st) { $('canals').innerHTML = ''; errXarxa(T('carregar els canals'))(st); });
+}
+function llegeixM3u(txt) {
+  var linies = txt.split(/\r?\n/), l = [], info = null, vistos = {};
+  for (var i = 0; i < linies.length; i++) {
+    var s = retalla(linies[i]);
+    if (s.indexOf('#EXTINF') === 0) {
+      var coma = s.lastIndexOf('",');
+      var nom = coma >= 0 ? s.substring(coma + 2) : s.substring(s.indexOf(',') + 1);
+      var logo = (s.match(/tvg-logo="([^"]*)"/) || [])[1] || '';
+      var id = (s.match(/tvg-id="([^"]*)"/) || [])[1] || '';
+      info = { nom: nom, logo: logo, id: id };
+    } else if (s && s.charAt(0) != '#' && info) {
+      var geo = /\[Geo-blocked\]/i.test(info.nom), n247 = /\[Not 24\/7\]/i.test(info.nom);
+      var net = retalla(info.nom.replace(/\[[^\]]*\]/g, '').replace(/\(\d{3,4}[pi]\)/g, ''));
+      var clau = pla(net);
+      if (vistos[clau] !== undefined) { l[vistos[clau]].urls.push(s); }
+      else {
+        vistos[clau] = l.length;
+        l.push({ id: 'iptv-' + (info.id || clau), nom: net, urls: [s], logo: info.logo, geo: geo, no247: n247, propi: true });
+      }
+      info = null;
+    }
+  }
+  l.sort(function (a, b) { return natural(a.nom, b.nom); });
+  return l;
+}
+function esFav(c) { for (var i = 0; i < TA.fav.length; i++) if (TA.fav[i].id == c.id) return i; return -1; }
+function pinta() {
+  var q = pla(retalla($('q').value)), h = '', ara = Casa ? Casa.tvActual() : null, n = 0;
+  TA.vistos = [];
+  for (var i = 0; i < TA.llista.length && n < 300; i++) {
+    var c = TA.llista[i];
+    if (q && pla(c.nom).indexOf(q) < 0) continue;
+    if (TA.pest == 'fav' && c.amagat) continue;
+    TA.vistos.push(c);
+    var k = TA.vistos.length - 1, f = esFav(c) >= 0;
+    var lg = c.logo ? '<div class="lg gris" data-bg="' + esc(imgx(c.logo, 200)) + '"><div class="lletra">' + esc(c.nom) + '</div></div>'
+      : '<div class="lg color" style="background-color:' + esc(c.color || '#3a434f') + '"><div class="lletra">' + esc(c.nom) + '</div></div>';
+    h += '<div class="canal' + (ara && ara.id == c.id ? ' on' : '') + '" onclick="mira(' + k + ')">' + lg +
+      '<span class="est" onclick="event.stopPropagation();estrella(' + k + ')">' + svg(f ? IC.estrella : IC.estrellaBuida) + '</span>' +
+      '<div class="nm">' + esc(c.nom) + (c.geo ? ' <small>(' + T('restringit') + ')</small>' : '') + (c.no247 ? ' <small>(' + T('no sempre') + ')</small>' : '') + '</div></div>';
+    n++;
+  }
+  $('canals').innerHTML = h || '<div class="gris" style="margin:7px">' + (TA.pest == 'fav' ? T('Encara no tens canals. Mira les altres pestanyes i toca l\'estrella.') : T('Cap canal.')) + '</div>';
+  $('nota').textContent = TA.pest == 'fav' ? '' : T('Canals gratuïts de la llista pública iptv-org. Alguns poden no funcionar o estar restringits per país.') + (n >= 300 ? ' ' + T('Es mostren els 300 primers: fes servir el filtre.') : '');
+  setTimeout(mandros, 30);
+}
+function mira(k) { if (Casa) Casa.tv(TA.vistos[k], true); }
+function estrella(k) {
+  var c = TA.vistos[k], i = esFav(c);
+  if (i >= 0) TA.fav.splice(i, 1);
+  else { TA.fav.push({ id: c.id, nom: c.nom, urls: c.urls, logo: c.logo || '', color: c.color || '', propi: !!c.propi }); avis(T('Afegit als teus canals')); }
+  desaDades('canals', TA.fav);
+  if (Casa) Casa.canalsCanviats(TA.fav);
+  pinta();
+}
+window.casaEstat = pinta;
+(function () {
+  var h = '';
+  var l = paisosOrdenats();
+  for (var i = 0; i < l.length; i++) h += '<option value="' + codiIptv(l[i][0]) + '">' + esc(T(l[i][1])) + '</option>';
+  $('pais').innerHTML = h;
+  $('pais').value = ls('tv.pais') || 'fr';
+})();
+iniciaMandros();
+pintaPest();
+canals(function (l) { TA.fav = l; if (TA.pest == 'fav') { TA.llista = l; pinta(); } });
+</script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<title>Pel·lícules</title>
+<script src="i18n.js"></script>
+<style>
+.it .im .lletra small{font-size:14px}
+.fx-avis{background:rgba(255,171,61,.12);border-left:3px solid #ffab3d;padding:8px 12px;border-radius:6px;color:#e6d2b0;font-size:14px;margin:12px 0}
+.fx-fitxer{color:#6f7782;font-size:13px;margin-top:4px;word-break:break-all}
+#fitxa{position:absolute;top:0;left:0;right:0;bottom:0;background:#0e1116;z-index:40;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#fx-fons{position:absolute;top:0;left:0;right:0;height:430px;background:#14181e center top/cover no-repeat}
+#fx-fons:after{content:"";position:absolute;left:0;right:0;bottom:0;height:100%;background:-webkit-linear-gradient(top,rgba(14,17,22,.35),#0e1116);background:linear-gradient(to bottom,rgba(14,17,22,.35),#0e1116)}
+#fx-cos{position:relative;padding:24px 28px 60px;display:-webkit-flex;display:flex}
+#fx-poster{width:230px;height:345px;border-radius:12px;background:#1d2229 center/cover no-repeat;-webkit-flex:none;flex:none;margin-right:28px;margin-top:60px}
+#fx-info{-webkit-flex:1;flex:1;padding-top:120px}
+#fx-info h1{font-size:34px;margin-bottom:6px}
+.fx-dades{color:#b4bbc5;margin-bottom:14px}
+.fx-dades span{margin-right:14px}
+.nota{display:inline-block;background:rgba(255,255,255,.1);border-radius:8px;padding:4px 10px;margin-right:8px;font-weight:600;font-size:15px}
+.fx-sin{line-height:1.5;color:#d6dae0;margin:16px 0 22px;max-width:640px}
+.fx-bt button{margin:0 8px 8px 0;padding:12px 20px}
+@media (max-width:800px){ #fx-poster{width:170px;height:255px} #fx-info{padding-top:90px} #fx-info h1{font-size:26px} }
+</style>
+</head>
+<body>
+<div id="pag">
+  <div class="capc"><h1>Pel·lícules</h1></div>
+  <div id="veient"></div>
+  <div class="cami" id="cami"></div>
+  <div class="gra" id="gra"></div>
+</div>
+<div id="fitxa">
+  <div id="fx-fons"></div>
+  <div style="position:absolute;top:16px;left:16px;z-index:3"><button onclick="tancaFitxa()">‹ Tornar</button></div>
+  <div id="fx-cos"><div id="fx-poster"></div><div id="fx-info"></div></div>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('pelis');
+var P = { cami: '', els: [], tots: {} };
+function netejaTitol(n) {
+  var t = n.replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[._]+/g, ' ');
+  var m = /^(.+?)[\s(\[]+((19|20)\d\d)\b/.exec(t);
+  if (m && m[1].length > 1) t = m[1];
+  t = t.replace(/\b(2160p|1080p|720p|480p|4k|uhd|x264|x265|h ?264|h ?265|hevc|bluray|blu-ray|brrip|bdrip|webrip|web-dl|web|dvdrip|hdrip|hdtv|aac|ac3|dts|remux|multi|dual|castellano|catala|vose)\b.*$/i, '');
+  t = t.replace(/[\[(].*$/, '').replace(/\s+/g, ' ');
+  return retalla(t) || n;
+}
+function caratula(p, m) { return api('caratula', { p: p, m: m || 400 }); }
+function veientLlista() {
+  var v = ls('veient') || {}, r = [];
+  for (var k in v) if (v.hasOwnProperty(k)) r.push(v[k]);
+  r.sort(function (a, b) { return b.ts - a.ts; });
+  return r;
+}
+function obreCarpeta(cami) {
+  P.cami = cami;
+  $('cami').innerHTML = camiHtml(T('Biblioteca'), cami, 'obreCarpeta');
+  $('gra').innerHTML = '<div class="gris" style="margin:8px">' + T('Carregant…') + '</div>';
+  $('pag').scrollTop = 0;
+  pintaVeient();
+  getJson(api('pelis', { p: cami }), function (d) {
+    P.els = d.elements || [];
+    var h = '', i, e, veient = ls('veient') || {};
+    P.els.sort(function (a, b) { return a.tipus != b.tipus ? (a.tipus == 'carpeta' ? -1 : 1) : natural(netejaTitol(a.n), netejaTitol(b.n)); });
+    for (i = 0; i < P.els.length; i++) {
+      e = P.els[i];
+      P.tots[e.p] = e;
+      if (e.tipus == 'carpeta') {
+        h += '<div class="it" onclick="obreCarpeta(' + js(e.p) + ')"><div class="im"><div class="lletra">' + svg(IC.carpeta) + '<small>' + esc(e.n) + '</small></div></div><div class="nm">' + esc(e.n) + '</div></div>';
+        continue;
+      }
+      var v = veient[e.p], vl = dins(EXT_VLC, e.ext);
+      h += '<div class="it" onclick="fitxa(' + js(e.p) + ')"><div class="im" data-bg="' + esc(caratula(e.p)) + '">' +
+        '<div class="lletra">' + svg(IC.pelis) + '<small>' + esc(netejaTitol(e.n)) + '</small></div>' +
+        (vl ? '<span class="etiq">VLC</span>' : '') +
+        (v && v.d ? '<div class="prog"><div style="width:' + Math.round(100 * v.t / v.d) + '%"></div></div>' : '') +
+        '</div><div class="nm">' + esc(netejaTitol(e.n)) + '</div></div>';
+    }
+    if (!h) h = '<div class="gris" style="margin:8px">' + T('Aquí no hi ha cap pel·lícula.') + '</div>';
+    $('gra').innerHTML = h;
+    setTimeout(mandros, 30);
+  }, function (st) {
+    $('gra').innerHTML = '<div class="gris" style="margin:8px">' + (st == 404 ? T('La carpeta de pel·lícules no existeix. Revisa-la a Configuració.') : T('No s\'ha pogut carregar la biblioteca.')) + '</div>';
+  });
+}
+function pintaVeient() {
+  var v = veientLlista(), h = '';
+  if (P.cami || !v.length) { $('veient').innerHTML = ''; return; }
+  for (var i = 0; i < Math.min(v.length, 5); i++)
+    h += '<div class="it" onclick="fitxa(' + js(v[i].p) + ')"><div class="im" data-bg="' + esc(caratula(v[i].p)) + '"><div class="lletra">' + svg(IC.play) + '<small>' + esc(v[i].n) + '</small></div>' +
+      '<div class="prog"><div style="width:' + Math.round(100 * v[i].t / v[i].d) + '%"></div></div></div><div class="nm">' + esc(v[i].n) + '<br><span class="gris">' + Tf('Queden {1}', durada(v[i].d - v[i].t)) + '</span></div></div>';
+  $('veient').innerHTML = '<h2 style="margin-top:0">' + T('Continuar veient') + '</h2><div class="gra">' + h + '</div><h2>' + T('Biblioteca') + '</h2>';
+}
+
+/* ---------- Fitxa (com al Plex) ---------- */
+var FX = { p: null, d: {} };
+function element(p, ok) {
+  if (P.tots[p]) { ok(P.tots[p]); return; }
+  /* Ve de «Continuar veient»: busca-la a la seva carpeta */
+  var dir = p.indexOf('/') >= 0 ? p.substring(0, p.lastIndexOf('/')) : '';
+  getJson(api('pelis', { p: dir }), function (d) {
+    var l = d.elements || [];
+    for (var i = 0; i < l.length; i++) P.tots[l[i].p] = l[i];
+    ok(P.tots[p] || null);
+  }, function () { ok(null); });
+}
+function fitxa(p) {
+  FX.p = p; FX.d = {};
+  var v = (ls('veient') || {})[p];
+  $('fitxa').style.display = 'block';
+  $('fitxa').scrollTop = 0;
+  $('fx-fons').style.backgroundImage = 'none';
+  $('fx-poster').style.backgroundImage = bg(caratula(p, 460));
+  pintaFitxa({ titol: netejaTitol(p.split('/').pop()) }, v);
+  element(p, function (e) { if (FX.p == p) { FX.e = e; pintaFitxa(FX.d.titol ? FX.d : { titol: netejaTitol(p.split('/').pop()) }, v); } });
+  getJson(api('peli', { p: p }), function (d) {
+    if (FX.p != p) return;
+    FX.d = d;
+    pintaFitxa(d, v);
+    if (d.fons) { var u = api('caratula', { p: p, fons: 1, m: 1280 }), im = new Image(); im.onload = function () { if (FX.p == p) $('fx-fons').style.backgroundImage = bg(u); }; im.src = u; }
+  }, function () { });
+}
+function pintaFitxa(d, v) {
+  var e = FX.e && FX.e.p == FX.p ? FX.e : null, vlc = e && dins(EXT_VLC, e.ext), h = '<h1>' + esc(d.titol || '') + '</h1><div class="fx-dades">';
+  if (d.any) h += '<span>' + esc(d.any) + '</span>';
+  if (d.minuts) h += '<span>' + esc(d.minuts) + ' min</span>';
+  if (d.genere) h += '<span>' + esc(d.genere) + '</span>';
+  if (d.edat) h += '<span>' + esc(d.edat) + '</span>';
+  h += '</div><div>';
+  if (d.nota) h += '<span class="nota">★ ' + esc(d.nota) + '/10</span>';
+  if (d.imdb) h += '<span class="nota">IMDb ' + esc(d.imdb) + '</span>';
+  if (d.rotten) h += '<span class="nota">🍅 ' + esc(d.rotten) + '</span>';
+  h += '</div>';
+  if (d.director) h += '<div class="gris" style="margin-top:12px">' + T('Direcció:') + ' ' + esc(d.director) + '</div>';
+  if (d.avis) h += '<div class="fx-avis">' + esc(d.avis) + '</div>';
+  h += '<div class="fx-sin">' + esc(d.sinopsi || '') + '</div><div class="fx-bt">';
+  if (!e) h += '<span class="gris">' + T('Buscant el fitxer…') + '</span>';
+  else if (vlc) h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + T('Obrir a VLC') + '</button>';
+  else if (v && v.d) h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + Tf('Continuar ({1})', durada(v.t)) + '</button><button onclick="reprodueix(true)">' + T('Des del principi') + '</button>';
+  else h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + T('Reproduir') + '</button>';
+  h += '</div>';
+  if (e) h += '<div class="fx-fitxer">' + esc(e.v) + ' · ' + mida(e.mida) + (d.fontNom ? ' · ' + esc(d.fontNom) : '') + '</div>';
+  $('fx-info').innerHTML = h;
+}
+function reprodueix(desDelPrincipi) {
+  var e = FX.e;
+  if (!e) return;
+  var url = fUrl('pelis', e.v);
+  if (dins(EXT_VLC, e.ext)) {
+    if (confirm(Tf('El Safari de l\'iPad no pot reproduir fitxers .{1}.\nVols obrir-lo amb l\'app VLC?', e.ext))) location.href = 'vlc-x-callback://x-callback-url/stream?url=' + enc(absolut(url));
+    return;
+  }
+  var subs = [];
+  for (var i = 0; i < (e.subs || []).length; i++) {
+    var s = e.subs[i];
+    subs.push({ u: ext(s.p) == 'vtt' ? fUrl('pelis', s.p) : api('vtt', { c: 'pelis', p: s.p }), label: s.label, lang: s.lang || LANG });
+  }
+  if (desDelPrincipi) { var st = ls('veient') || {}; delete st[e.p]; ls('veient', st); }
+  if (Casa) Casa.video({ id: e.p, nom: FX.d.titol || netejaTitol(e.n), s: FX.d.any || T('Pel·lícula'), u: url, poster: caratula(e.p, 300), subs: subs, k: 'peli', desa: 'veient', desDelPrincipi: !!desDelPrincipi });
+}
+function tancaFitxa() { FX.p = null; $('fitxa').style.display = 'none'; pintaVeient(); }
+window.casaObre = function (arg) { arg = decodeURIComponent(arg); if (arg.indexOf('v:') === 0) fitxa(arg.substring(2)); };
+window.casaMostra = function () { if (!P.cami) pintaVeient(); };
+iniciaMandros();
+obreCarpeta('');
+if (location.hash.length > 1) casaObre(location.hash.substring(1));
+</script>
+</body>
+</html>

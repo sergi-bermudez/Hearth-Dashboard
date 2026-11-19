@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<title>Webs</title>
+<script src="i18n.js"></script>
+<style>
+.webs{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:0 -9px}
+.web{width:calc(50% - 18px);margin:9px;cursor:pointer}
+.web .im{padding-top:62%;border-radius:14px;background:#1a1f26 center/contain no-repeat;position:relative;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.web .im .ic{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;fill:#3a434f}
+.web .nm{margin-top:8px;font-weight:600}
+.web .nm small{color:#8d95a1;font-weight:400;margin-left:6px}
+#vista{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;z-index:20;display:none}
+#vista .cap{position:absolute;top:0;left:0;right:0;height:56px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:0 10px;background:#111;z-index:2}
+#vista .cap .t{-webkit-flex:1;flex:1;margin:0 12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#vista .cap button{margin-left:6px}
+#marc{position:absolute;top:56px;left:0;right:0;bottom:0}
+#img{position:absolute;display:block;-webkit-user-select:none;user-select:none}
+#punt{position:absolute;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:20px;border:3px solid #7fb0ff;display:none;pointer-events:none}
+#estat{position:absolute;left:0;right:0;top:50%;text-align:center;color:#8d95a1}
+@media (max-width:800px){ .web{width:calc(100% - 18px)} }
+</style>
+</head>
+<body>
+<div id="pag">
+  <div class="capc"><h1>Webs</h1><button onclick="if(Casa)Casa.obre('config','webs')">Afegir o editar</button></div>
+  <div class="webs" id="webs"><div class="gris">Carregant…</div></div>
+  <p class="gris petit" style="margin-top:20px">Les webs s'obren en un navegador amagat al PC i aquí en veus la imatge. Toca la imatge per fer-hi un clic.</p>
+</div>
+<div id="vista">
+  <div class="cap"><button onclick="tanca()">‹ Webs</button><div class="t" id="v-t"></div>
+    <button onclick="roda(-500)" id="b-amunt">▲</button><button onclick="roda(500)">▼</button><button onclick="recarrega()">⟳</button></div>
+  <div id="marc"><div id="estat">Carregant…</div><img id="img" alt=""><div id="punt"></div></div>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('webs');
+var W = { defs: [], obert: null, t: null, cards: {}, actiu: true };
+function url(w, completa) { return api('web/imatge', { id: w.id, min: w.mode == 'directe' ? 300 : Math.max(2, w.interval || 10) * 1000, t: Date.now() }); }
+function pinta() {
+  var h = '';
+  for (var i = 0; i < W.defs.length; i++) {
+    var w = W.defs[i];
+    h += '<div class="web" onclick="obre(' + i + ')"><div class="im" id="card-' + esc(w.id) + '">' + svg(IC.web) + '</div><div class="nm">' + esc(w.nom) +
+      '<small>' + (w.mode == 'directe' ? 'en directe' : 'cada ' + (w.interval || 10) + ' s') + '</small></div></div>';
+  }
+  $('webs').innerHTML = h || '<div class="gris" style="margin:9px">Encara no hi ha cap web. Toca «Afegir o editar».</div>';
+  refrescaCards(0);
+}
+function refrescaCards(i) {
+  clearTimeout(W.t);
+  if (!W.actiu || W.obert || !W.defs.length) return;
+  var w = W.defs[i % W.defs.length], el = $('card-' + w.id), u = url(w), im = new Image();
+  im.onload = function () { if (el) { el.style.backgroundImage = bg(u); el.innerHTML = ''; } W.t = setTimeout(function () { refrescaCards(i + 1); }, 1500); };
+  im.onerror = function () { W.t = setTimeout(function () { refrescaCards(i + 1); }, 4000); };
+  im.src = u;
+}
+function obre(i) {
+  var w = W.defs[i];
+  W.obert = w;
+  clearTimeout(W.t);
+  $('v-t').textContent = w.nom;
+  $('vista').style.display = 'block';
+  $('estat').style.display = 'block';
+  $('img').style.display = 'none';
+  carrega();
+}
+function encaixa() {
+  var im = $('img'), m = $('marc');
+  if (!im.naturalWidth) return;
+  var r = Math.min(m.clientWidth / im.naturalWidth, m.clientHeight / im.naturalHeight);
+  var w = Math.round(im.naturalWidth * r), h = Math.round(im.naturalHeight * r);
+  im.style.width = w + 'px'; im.style.height = h + 'px';
+  im.style.left = Math.round((m.clientWidth - w) / 2) + 'px'; im.style.top = Math.round((m.clientHeight - h) / 2) + 'px';
+}
+function carrega() {
+  var w = W.obert;
+  if (!w) return;
+  var nou = new Image(), u = url(w);
+  nou.onload = function () {
+    if (W.obert != w) return;
+    var im = $('img');
+    im.src = u;
+    im.style.display = 'block';
+    $('estat').style.display = 'none';
+    setTimeout(encaixa, 0);
+    W.t = setTimeout(carrega, w.mode == 'directe' ? 350 : Math.max(2, w.interval || 10) * 1000);
+  };
+  nou.onerror = function () {
+    $('estat').textContent = 'No s\'ha pogut obrir aquesta web al PC. Torno a provar…';
+    $('estat').style.display = 'block';
+    W.t = setTimeout(carrega, 5000);
+  };
+  nou.src = u;
+}
+$('img').addEventListener('click', function (e) {
+  var r = this.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+  var p = $('punt');
+  p.style.left = (e.clientX - $('marc').getBoundingClientRect().left) + 'px';
+  p.style.top = (e.clientY - $('marc').getBoundingClientRect().top) + 'px';
+  p.style.display = 'block';
+  setTimeout(function () { p.style.display = 'none'; }, 600);
+  post(api('web/clic', { id: W.obert.id, x: fx.toFixed(4), y: fy.toFixed(4) }), '', function () { clearTimeout(W.t); setTimeout(carrega, 700); }, errXarxa('fer el clic'));
+}, false);
+function roda(d) { post(api('web/roda', { id: W.obert.id, d: d }), '', function () { clearTimeout(W.t); setTimeout(carrega, 500); }, errXarxa('moure la web')); }
+function recarrega() { post(api('web/recarrega', { id: W.obert.id }), '', function () { clearTimeout(W.t); setTimeout(carrega, 2500); }, errXarxa('recarregar')); }
+function tanca() { W.obert = null; clearTimeout(W.t); $('vista').style.display = 'none'; refrescaCards(0); }
+window.addEventListener('resize', function () { setTimeout(encaixa, 50); });
+window.casaMostra = function () { W.actiu = true; if (W.obert) carrega(); else refrescaCards(0); };
+window.casaAmaga = function () { W.actiu = false; clearTimeout(W.t); };
+window.casaTanca = window.casaAmaga;
+window.casaObre = function (a) {
+  a = decodeURIComponent(a);
+  for (var i = 0; i < W.defs.length; i++) if (W.defs[i].id == a) obre(i);
+  W.pendent = a;
+};
+dades('webs', function (d) {
+  W.defs = d || [];
+  pinta();
+  var h = W.pendent || (location.hash.length > 1 ? decodeURIComponent(location.hash.substring(1)) : '');
+  if (h) for (var i = 0; i < W.defs.length; i++) if (W.defs[i].id == h) obre(i);
+});
+</script>
+</body>
+</html>

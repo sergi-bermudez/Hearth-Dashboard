@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<title>Ràdio</title>
+<script src="i18n.js"></script>
+<style>
+.pest{margin-bottom:14px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pest button{margin-right:8px;border-radius:22px;padding:9px 18px}
+.pest button.on{background:#fff;color:#111}
+.filtre{margin-bottom:14px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.filtre select{font-size:16px;padding:8px 10px;border-radius:12px;background:#222831;color:#fff;border:1px solid #3a424d;margin-right:8px;-webkit-appearance:menulist}
+.filtre .xip{margin-bottom:0}
+.filtre .xip.on{background:#fff;color:#111}
+.est .mini{background-size:contain !important;background-color:#fff !important}
+.est .mini .ic{fill:#5d6673}
+.est.sona .t{color:#ffab3d}
+.est .eq{display:none;color:#ffab3d;font-size:13px;margin-left:6px}
+.est.sona .eq{display:inline}
+.fav .ic{fill:#ffab3d}
+</style>
+</head>
+<body>
+<div id="pag">
+  <div class="capc"><h1>Ràdio</h1></div>
+  <div class="pest" id="pest"></div>
+  <div class="filtre amagat" id="filtre"></div>
+  <div class="cerca amagat" id="cerca-bloc"><input type="search" id="q" placeholder="Nom de l'emissora, ciutat o estil…" onkeydown="if(event.keyCode==13)cerca()"><button class="pri" onclick="cerca()">Cercar</button></div>
+  <div class="llista" id="llista"></div>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('radio');
+var GENERES = [['pop', 'Pop'], ['rock', 'Rock'], ['news', 'Notícies'], ['talk', 'Tertúlia'], ['sports', 'Esports'], ['jazz', 'Jazz'], ['classical', 'Clàssica'],
+  ['dance', 'Dance'], ['80s', 'Anys 80'], ['90s', 'Anys 90'], ['oldies', 'Clàssics'], ['chillout', 'Chill'], ['country', 'Country'], ['latin', 'Llatina'],
+  ['hip hop', 'Hip-hop'], ['reggae', 'Reggae'], ['kids', 'Infantil'], ['fado', 'Fado'], ['flamenco', 'Flamenc']];
+var LL = LLENGUA_INFO[LANG] || LLENGUA_INFO.en;
+var R = { pest: 'fav', fav: [], res: [], cache: {}, pais: ls('radio.pais') || PAIS, genere: 'pop' };
+function pestanyes() {
+  return [
+    { id: 'fav', nom: '★ ' + T('Les meves') },
+    { id: 'pais', nom: nomPais(PAIS) },
+    { id: 'llengua', nom: T('En el meu idioma') },
+    { id: 'mon', nom: T('Altres països') },
+    { id: 'generes', nom: T('Estils') },
+    { id: 'cerca', nom: T('Cercar') }
+  ];
+}
+function pintaPest() {
+  var h = '', P = pestanyes();
+  for (var i = 0; i < P.length; i++) h += '<button class="' + (P[i].id == R.pest ? 'on' : '') + '" onclick="triaPest(\'' + P[i].id + '\')">' + esc(P[i].nom) + '</button>';
+  $('pest').innerHTML = h;
+  $('cerca-bloc').className = R.pest == 'cerca' ? 'cerca' : 'cerca amagat';
+  var f = '';
+  if (R.pest == 'mon') {
+    var l = paisosOrdenats();
+    f = '<select onchange="R.pais=this.value;ls(\'radio.pais\',this.value);triaPest(\'mon\')">';
+    for (i = 0; i < l.length; i++) f += '<option value="' + l[i][0] + '"' + (l[i][0] == R.pais ? ' selected' : '') + '>' + esc(T(l[i][1])) + '</option>';
+    f += '</select>';
+  } else if (R.pest == 'generes') {
+    for (i = 0; i < GENERES.length; i++) f += '<span class="xip' + (GENERES[i][0] == R.genere ? ' on' : '') + '" onclick="R.genere=' + js(GENERES[i][0]).replace(/"/g, '&quot;') + ';triaPest(\'generes\')">' + esc(T(GENERES[i][1])) + '</span>';
+  }
+  $('filtre').innerHTML = f;
+  $('filtre').className = f ? 'filtre' : 'filtre amagat';
+}
+function triaPest(id) {
+  R.pest = id;
+  pintaPest();
+  $('pag').scrollTop = 0;
+  if (id == 'fav') { pintaLlista(R.fav, true); return; }
+  if (id == 'cerca') { pintaLlista(R.cache.cerca || [], false, T('Escriu el nom d\'una emissora, una ciutat o un estil.')); return; }
+  var q = id == 'pais' ? { countrycode: PAIS } : id == 'llengua' ? { language: LL.radio } : id == 'mon' ? { countrycode: R.pais } : { tag: R.genere };
+  var clau = id + ':' + (q.countrycode || q.language || q.tag);
+  if (R.cache[clau]) { pintaLlista(R.cache[clau]); return; }
+  consulta(q, function (l) { R.cache[clau] = l; if (R.pest == id) pintaLlista(l); });
+}
+function cerca() {
+  var q = retalla($('q').value);
+  if (!q) return;
+  $('q').blur();
+  consulta({ name: q, limit: 80 }, function (l) {
+    if (!l.length) { consulta({ tag: q.toLowerCase(), limit: 80 }, function (l2) { R.cache.cerca = l2; if (R.pest == 'cerca') pintaLlista(l2, false, T('Cap resultat.')); }); return; }
+    R.cache.cerca = l; if (R.pest == 'cerca') pintaLlista(l, false, T('Cap resultat.'));
+  });
+}
+function consulta(q, ok) {
+  $('llista').innerHTML = '<div class="gris">' + T('Carregant emissores…') + '</div>';
+  getJson(api('radios', q), ok, function (st) { $('llista').innerHTML = ''; errXarxa(T('carregar les emissores'))(st); });
+}
+function pintaLlista(l, esFav, buit) {
+  R.res = l;
+  var h = '', actual = Casa && Casa.R.cua.length ? Casa.R.cua[Casa.R.pos].id : null;
+  for (var i = 0; i < l.length; i++) {
+    var s = l[i], f = esFav || esFavorita(s) !== false;
+    h += '<div class="el est' + (s.u == actual ? ' sona' : '') + '" onclick="toca(' + i + ')">' +
+      '<div class="mini"' + (s.img ? ' data-bg="' + esc(imgx(s.img, 96)) + '"' : '') + '><span class="lletra">' + svg(IC.radio) + '</span></div>' +
+      '<div class="t">' + esc(s.t) + '<span class="eq">● ' + T('sonant') + '</span><div class="sub">' + esc(s.s || '') + (s.codec ? ' · ' + esc(s.codec) + (s.br && s.br != '0' ? ' ' + esc(s.br) + 'k' : '') : '') + '</div></div>' +
+      '<button class="acc fav" onclick="event.stopPropagation();canviaFav(' + i + ')">' + svg(f ? IC.estrella : IC.estrellaBuida) + '</button></div>';
+  }
+  if (!h) h = '<div class="gris" style="padding:10px 4px">' + (esFav ? T('Encara no tens emissores preferides. Busca\'n alguna i toca l\'estrella per guardar-la aquí.') : (buit || T('Cap emissora.'))) + '</div>';
+  $('llista').innerHTML = h;
+  setTimeout(mandros, 30);
+}
+function esFavorita(s) { for (var i = 0; i < R.fav.length; i++) if (R.fav[i].u == s.u) return i; return false; }
+function canviaFav(i) {
+  var s = R.res[i], p = esFavorita(s);
+  if (p === false) { R.fav.push({ t: s.t, s: s.s, u: s.u, img: s.img }); avis(T('Afegida a les teves emissores')); }
+  else R.fav.splice(p, 1);
+  desaDades('radios', R.fav);
+  if (Casa) Casa.radiosCanviades(R.fav);
+  pintaLlista(R.pest == 'fav' ? R.fav : R.res, R.pest == 'fav');
+}
+function toca(i) {
+  var s = R.res[i];
+  if (Casa) Casa.toca([Casa.radioItem(s)], 0);
+}
+window.casaEstat = function () { pintaLlista(R.res, R.pest == 'fav'); };
+iniciaMandros();
+dades('radios', function (d) {
+  R.fav = d || [];
+  pintaPest();
+  triaPest(R.fav.length ? 'fav' : 'pais');
+});
+</script>
+</body>
+</html>

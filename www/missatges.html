@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<title>Missatges</title>
+<script src="i18n.js"></script>
+<style>
+#wa{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex}
+#esq{width:340px;-webkit-flex:none;flex:none;border-right:1px solid rgba(255,255,255,.08);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#dre{-webkit-flex:1;flex:1;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;min-width:0;background:#0b1014}
+#esq h1{margin:18px 16px 10px}
+.xat{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)}
+.xat.on{background:rgba(255,255,255,.08)}
+.xat .av{width:48px;height:48px;border-radius:24px;background:#2a3540 center/cover;-webkit-flex:none;flex:none;margin-right:12px;text-align:center;line-height:48px;font-weight:700;font-size:20px;color:#9fb0bf}
+.xat .tx{-webkit-flex:1;flex:1;min-width:0}
+.xat .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xat .ds{color:#8d95a1;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.xat .nl{background:#25d366;color:#000;border-radius:12px;min-width:24px;height:24px;line-height:24px;text-align:center;font-size:13px;font-weight:700;padding:0 6px;margin-left:8px}
+.xat .hr{color:#8d95a1;font-size:12px;margin-left:8px;-webkit-flex:none;flex:none}
+#cap{height:60px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:0 14px;border-bottom:1px solid rgba(255,255,255,.08);background:#12181d;-webkit-flex:none;flex:none}
+#cap b{-webkit-flex:1;flex:1;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cap button{margin-right:10px}
+#msgs{-webkit-flex:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px}
+.m{max-width:72%;margin:0 0 8px;padding:8px 12px;border-radius:14px;line-height:1.35;font-size:16px;word-wrap:break-word;clear:both}
+.m.entra{background:#1f2c34;float:left;border-top-left-radius:4px}
+.m.surt{background:#005c4b;float:right;border-top-right-radius:4px}
+.m.sistema{background:none;color:#8d95a1;font-size:13px;text-align:center;float:none;max-width:none;margin:10px auto}
+.m .qui{color:#53bdeb;font-size:13px;font-weight:600;display:block}
+.m .hr{color:rgba(255,255,255,.55);font-size:11px;margin-left:8px;float:right;margin-top:6px}
+.m .md{color:#9fb0bf;font-style:italic}
+.fi{clear:both}
+#peu{display:-webkit-flex;display:flex;padding:10px 12px;background:#12181d;-webkit-flex:none;flex:none}
+#peu textarea{-webkit-flex:1;flex:1;resize:none;height:46px;border-radius:23px;border:0;padding:12px 18px;font-size:17px;background:#2a3540;color:#fff;font-family:inherit;-webkit-appearance:none}
+#peu button{margin-left:10px;width:46px;height:46px;border-radius:23px;padding:0;background:#25d366;color:#000}
+#peu button .ic{width:24px;height:24px}
+#buit{-webkit-flex:1;flex:1;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;color:#8d95a1;text-align:center;padding:30px}
+#login{position:absolute;top:0;left:0;right:0;bottom:0;background:#0e1116;display:none;text-align:center;padding:40px 30px;overflow:auto}
+#login img{width:264px;height:264px;background:#fff;border-radius:12px;padding:12px;margin:18px auto;display:block}
+@media (orientation:portrait){
+  #esq{width:auto;-webkit-flex:1;flex:1;border:0}
+  #dre{display:none}
+  body.obert #esq{display:none}
+  body.obert #dre{display:-webkit-flex;display:flex}
+}
+@media (orientation:landscape){ #cap .torna{display:none} }
+</style>
+</head>
+<body>
+<div id="wa">
+  <div id="esq"><h1>Missatges</h1><div id="xats"><div class="gris" style="padding:16px">Connectant amb WhatsApp…</div></div></div>
+  <div id="dre">
+    <div id="buit">Tria un xat de la llista.</div>
+    <div id="cap" style="display:none"><button class="torna" onclick="tancaXat()">‹</button><b id="cap-nom"></b></div>
+    <div id="msgs" style="display:none"></div>
+    <div id="peu" style="display:none"><textarea id="text" placeholder="Escriu un missatge" onkeydown="if(event.keyCode==13&&!event.shiftKey){event.preventDefault();envia();}"></textarea><button onclick="envia()" id="b-env"></button></div>
+  </div>
+</div>
+<div id="login">
+  <h1>Connecta el WhatsApp</h1>
+  <div class="gris">Al telèfon: WhatsApp ▸ Configuració ▸ Dispositius vinculats ▸ Vincula un dispositiu, i escaneja aquest codi.</div>
+  <img id="qr" alt="">
+  <div class="gris petit" id="login-estat"></div>
+  <p><button onclick="post(api('admin/wa/mostra'),'',function(){avis(T('S\'ha obert el WhatsApp a la pantalla del PC.'))})">Mostra-ho a la pantalla del PC</button></p>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('missatges');
+$('b-env').innerHTML = svg('M2.01 21L23 12 2.01 3 2 10l15 2-15 2z');
+var W = { xat: '', t: null, tx: null, llista: [], darrer: '' };
+
+function ini(n) { return (n || '?').replace(/[^A-Za-zÀ-ú0-9]/g, '').charAt(0).toUpperCase() || '?'; }
+function estat() {
+  getJson(api('admin/wa/estat'), function (d) {
+    if (d && d.sessio) { $('login').style.display = 'none'; carregaXats(); return; }
+    $('login').style.display = 'block';
+    $('login-estat').textContent = d && d.carregant ? T('Carregant WhatsApp Web…') : '';
+    getJson(api('admin/wa/qr'), function (u) { if (u) $('qr').src = u; }, function () { });
+    clearTimeout(W.t); W.t = setTimeout(estat, 5000);
+  }, function (st, txt) {
+    var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
+    $('xats').innerHTML = '<div class="ajuda" style="margin:16px">' + (st == 401 ? T('Cal la contrasenya del servidor (Configuració).') : T('No puc connectar amb WhatsApp.') + ' ' + esc(m || '')) + '</div>';
+    clearTimeout(W.t); W.t = setTimeout(estat, 10000);
+  });
+}
+function carregaXats() {
+  getJson(api('admin/wa/xats'), function (l) {
+    W.llista = l || [];
+    var h = '';
+    for (var i = 0; i < W.llista.length; i++) {
+      var x = W.llista[i];
+      h += '<div class="xat' + (x.nom == W.xat ? ' on' : '') + '" onclick="obreXat(' + i + ')"><div class="av"' + (x.img && /^https/.test(x.img) ? ' style="background-image:' + bg(imgx(x.img, 96)) + '"' : '') + '>' + (x.img && /^https/.test(x.img) ? '' : esc(ini(x.nom))) + '</div>' +
+        '<div class="tx"><div class="nm">' + esc(x.nom) + '</div><div class="ds">' + esc(x.darrer || '') + '</div></div>' +
+        (x.noLlegits ? '<span class="nl">' + x.noLlegits + '</span>' : '<span class="hr">' + esc(x.hora || '') + '</span>') + '</div>';
+    }
+    $('xats').innerHTML = h || '<div class="gris" style="padding:16px">' + T('Encara no hi ha xats (o s\'estan carregant).') + '</div>';
+    clearTimeout(W.t); W.t = setTimeout(carregaXats, 8000);
+  }, function () { clearTimeout(W.t); W.t = setTimeout(estat, 8000); });
+}
+function obreXat(i) {
+  var x = W.llista[i];
+  W.xat = x.nom; W.darrer = '';
+  document.body.className = 'obert';
+  $('buit').style.display = 'none';
+  $('cap').style.display = ''; $('msgs').style.display = ''; $('peu').style.display = '';
+  $('cap-nom').textContent = x.nom;
+  $('msgs').innerHTML = '<div class="gris">' + T('Carregant…') + '</div>';
+  carregaXats();
+  carregaMsgs();
+}
+function tancaXat() { W.xat = ''; document.body.className = ''; clearTimeout(W.tx); }
+function carregaMsgs() {
+  clearTimeout(W.tx);
+  if (!W.xat) return;
+  var xat = W.xat;
+  getJson(api('admin/wa/missatges', { xat: xat }), function (d) {
+    if (W.xat != xat) return;
+    if (d.error) { $('msgs').innerHTML = '<div class="gris">' + esc(d.error) + '</div>'; return; }
+    var h = '', l = d.missatges || [];
+    for (var i = 0; i < l.length; i++) {
+      var m = l[i];
+      if (m.tipus == 'sistema') { h += '<div class="m sistema">' + esc(m.text) + '</div>'; continue; }
+      h += '<div class="m ' + m.tipus + '">' + (m.tipus == 'entra' && m.qui && m.qui != xat ? '<span class="qui">' + esc(m.qui) + '</span>' : '') +
+        (m.media ? '<span class="md">[' + esc(T(m.media)) + ']</span> ' : '') + esc(m.text).replace(/\n/g, '<br>') + (m.hora ? '<span class="hr">' + esc(m.hora) + '</span>' : '') + '</div>';
+    }
+    h += '<div class="fi"></div>';
+    if (h != W.darrer) {
+      var mm = $('msgs'), alFinal = mm.scrollTop + mm.clientHeight > mm.scrollHeight - 80 || !W.darrer;
+      mm.innerHTML = h; W.darrer = h;
+      if (alFinal) mm.scrollTop = mm.scrollHeight;
+    }
+    W.tx = setTimeout(carregaMsgs, 4000);
+  }, function () { W.tx = setTimeout(carregaMsgs, 6000); });
+}
+function envia() {
+  var t = $('text').value;
+  if (!retalla(t) || !W.xat) return;
+  $('text').value = '';
+  peticio('POST', api('admin/wa/envia', { xat: W.xat }), t, function (txt) {
+    var d = {}; try { d = JSON.parse(txt); } catch (e) { }
+    if (d.ok === false) { avis(d.error || T('No s\'ha pogut enviar'), 4000); $('text').value = t; return; }
+    setTimeout(carregaMsgs, 600);
+  }, function () { avis(T('No s\'ha pogut enviar'), 4000); $('text').value = t; });
+}
+window.casaObre = function (a) {
+  a = decodeURIComponent(a);
+  for (var i = 0; i < W.llista.length; i++) if (W.llista[i].nom == a) { obreXat(i); return; }
+  W.pendent = a;
+};
+window.casaAmaga = function () { clearTimeout(W.t); clearTimeout(W.tx); };
+window.casaMostra = function () { estat(); if (W.xat) carregaMsgs(); };
+estat();
+</script>
+</body>
+</html>
