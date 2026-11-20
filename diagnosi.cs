@@ -113,7 +113,10 @@ public static class Diagnosi
         {
             Spotify.Sortida();   // ho torna a aplicar ara, per veure el resultat
             string so = Spotify.UltimaSortida;
-            Afegeix(l, "Serveis", "Sortida de l'Edge", so.Contains("\"ok\":true") ? ok : err, so != "" ? so : "No s'ha pogut aplicar");
+            int nv = Pcm.NivellSpotify();
+            if (so.Contains("\"ok\":true")) Afegeix(l, "Serveis", "Sortida de l'Edge", ok, "Hearth envia l'Edge a \u00abCABLE Input\u00bb");
+            else if (nv > 0) Afegeix(l, "Serveis", "Sortida de l'Edge", ok, "L'Edge ja sona pel cable (triat al mesclador de volum de Windows)");
+            else Afegeix(l, "Serveis", "Sortida de l'Edge", avis, "Hearth no pot triar la sortida des de l'Edge. Al mesclador de volum de Windows, posa Microsoft Edge \u25b8 Dispositiu de sortida \u25b8 CABLE Input. (" + so + ")");
         }
         int niv = Pcm.NivellSpotify();
         if (niv >= 0) Afegeix(l, "Serveis", "So de l'Spotify", niv > 0 ? ok : avis, niv > 0 ? "Arriba so del cable (" + niv + "%)" : "Arriba silenci: l'Spotify no sona pel cable, est\u00e0 en pausa");
