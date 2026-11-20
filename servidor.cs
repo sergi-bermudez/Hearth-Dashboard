@@ -182,6 +182,8 @@ public static class CasaServidor
             if (qi >= 0) { cami = raw.Substring(0, qi); qs = raw.Substring(qi + 1); }
             Dictionary<string, string> q = Consulta(qs);
             cami = Uri.UnescapeDataString(cami);
+            // El Chromecast necessita CORS per reproduir HLS; mai per a l'administracio
+            if (!cami.StartsWith("/api/admin")) { try { res.AddHeader("Access-Control-Allow-Origin", "*"); } catch { } }
             if (cami.StartsWith("/api/"))
             {
                 if (!cami.StartsWith("/api/mini") && !cami.StartsWith("/api/x"))
@@ -336,6 +338,7 @@ public static class CasaServidor
         if (nom.StartsWith("spotify/")) { if (!FuncioActiva("spotify")) { Error(res, 403, "Spotify est\u00e0 desactivat (Configuraci\u00f3 \u25b8 Funcions opcionals)"); return; } Spotify.Api(nom.Substring(8), q, ctx); return; }
         if (nom.StartsWith("web/")) { Webs.Api(nom.Substring(4), q, ctx); return; }
         if (nom == "radios") { Radios.Api(q, ctx); return; }
+        if (nom.StartsWith("cast/")) { Cast.Api(nom, q, ctx, Port); return; }
         if (nom.StartsWith("radio/")) { RadioHls.Api(nom.Substring(6), q, ctx); return; }
         if (nom.StartsWith("tuya/")) { Tuya.Api(nom.Substring(5), q, ctx); return; }
         if (nom == "agenda") { Agenda.Api(q, ctx); return; }

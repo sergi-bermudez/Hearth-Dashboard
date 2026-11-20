@@ -11,7 +11,11 @@
 .pest{margin-bottom:12px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .pest button{margin-right:8px;border-radius:22px;padding:9px 18px}
 .pest button.on{background:#fff;color:#111}
+.xips{margin:0 0 14px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.xips .xip{display:inline-block;margin:0 8px 8px 0;padding:8px 15px;border-radius:18px;background:rgba(255,255,255,.08);cursor:pointer;font-size:15px}
+.xips .xip small{color:#8d95a1;margin-left:4px;font-size:13px}
 .xips .xip.on{background:#fff;color:#111}
+.xips .xip.on small{color:#555}
 .nota-idx{color:#8d95a1;font-size:14px;margin:-4px 0 10px}
 .it .any{color:#8d95a1;font-size:13px}
 .it .im .nou{position:absolute;left:6px;top:6px;background:#ffab3d;color:#111;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:700}
@@ -65,7 +69,15 @@ function netejaTitol(n) {
 }
 function titol(e) { return e.titol || netejaTitol(e.n); }
 function caratula(e, m) { return api('caratula', { p: e.p || e, m: m || 400, cau: 1, v: e.trobada ? 1 : 0 }); }
-function generes(e) { return e.genere ? String(e.genere).split(/\s*[,\/|]\s*/) : []; }
+/* Els gèneres arriben en anglès (o en castellà); es posen en català i després es tradueixen a l'idioma triat */
+var GEN_CA = { action: 'Acció', adventure: 'Aventura', animation: 'Animació', anime: 'Animació', biography: 'Biografia', comedy: 'Comèdia', crime: 'Crim', documentary: 'Documental', drama: 'Drama', family: 'Família', kids: 'Infantil', 'kids & family': 'Família', fantasy: 'Fantasia', history: 'Història', horror: 'Terror', music: 'Música', musical: 'Música', 'music & musicals': 'Música', mystery: 'Misteri', romance: 'Romàntica', 'science fiction': 'Ciència-ficció', 'sci-fi': 'Ciència-ficció', 'sci-fi & fantasy': 'Ciència-ficció', short: 'Curtmetratge', sport: 'Esport', sports: 'Esport', thriller: 'Thriller', suspense: 'Thriller', war: 'Bèl·lica', western: 'Western', 'tv movie': 'Telefilm', independent: 'Independent', 'acción': 'Acció', aventura: 'Aventura', 'animación': 'Animació', 'comedia': 'Comèdia', 'crimen': 'Crim', documental: 'Documental', familia: 'Família', 'fantasía': 'Fantasia', historia: 'Història', terror: 'Terror', 'música': 'Música', misterio: 'Misteri', 'ciencia ficción': 'Ciència-ficció', 'bélica': 'Bèl·lica', 'película de tv': 'Telefilm' };
+function nomGenere(g) { var k = String(g).toLowerCase().replace(/^\s+|\s+$/g, ''); return T(GEN_CA[k] || (g.charAt(0).toUpperCase() + g.substring(1))); }
+function generes(e) {
+  if (!e.genere) return [];
+  var l = String(e.genere).split(/\s*[,\/|]\s*/), r = [];
+  for (var i = 0; i < l.length; i++) { if (!l[i]) continue; var n = nomGenere(l[i]); if (r.indexOf(n) < 0) r.push(n); }
+  return r;
+}
 function pintaPest() {
   var h = '';
   for (var i = 0; i < PEST.length; i++) h += '<button class="' + (PEST[i][0] == P.pest ? 'on' : '') + '" onclick="triaPest(\'' + PEST[i][0] + '\')">' + esc(T(PEST[i][1])) + '</button>';
@@ -179,7 +191,7 @@ function pintaFitxa(d, v) {
   var e = FX.e && FX.e.p == FX.p ? FX.e : null, vlc = e && dins(EXT_VLC, e.ext), h = '<h1>' + esc(d.titol || '') + '</h1><div class="fx-dades">';
   if (d.any) h += '<span>' + esc(d.any) + '</span>';
   if (d.minuts) h += '<span>' + esc(d.minuts) + ' min</span>'; else if (e && e.d) h += '<span>' + durada(e.d) + '</span>';
-  if (d.genere) h += '<span>' + esc(d.genere) + '</span>';
+  if (d.genere) h += '<span>' + esc(generes(d).join(', ')) + '</span>';
   if (d.edat) h += '<span>' + esc(d.edat) + '</span>';
   h += '</div><div>';
   if (d.nota) h += '<span class="nota">★ ' + esc(d.nota) + '/10</span>';
