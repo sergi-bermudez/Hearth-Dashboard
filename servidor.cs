@@ -403,7 +403,7 @@ public static class CasaServidor
                         cs.Add(e);
                     }
                     r["carpetes"] = cs; r["port"] = Port; r["clau"] = !string.IsNullOrEmpty(Clau);
-                    r["local"] = ctx.Request.IsLocal; r["ips"] = Ips(); r["versio"] = "3.4"; r["nomXarxa"] = Mdns.Nom + ".local";
+                    r["local"] = ctx.Request.IsLocal; r["ips"] = Ips(); r["versio"] = "3.4.2"; r["nomXarxa"] = Mdns.Nom + ".local";
                     Json(res, r);
                     return;
                 }

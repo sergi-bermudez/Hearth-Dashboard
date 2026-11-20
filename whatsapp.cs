@@ -45,7 +45,7 @@ public static class WhatsApp
     static string Crida(string expr, int ms)
     {
         Cdp c = Assegura();
-        string js = "(async () => { if (!window.__wa) { " + Pont() + "\n } return JSON.stringify(await window.__wa." + expr + "); })()";
+        string js = "(async () => { if (!window.__wa || window.__wa.v !== 4) { " + Pont() + "\n } return JSON.stringify(await window.__wa." + expr + "); })()";
         try
         {
             object v = Edge.Avalua(c, js, ms);
@@ -60,18 +60,44 @@ public static class WhatsApp
 
     static string Js(string s) { return new JavaScriptSerializer().Serialize(s ?? ""); }
 
-    // Obre un xat amb un clic de ratoli real (WhatsApp ignora sovint els clics fets amb JavaScript)
+    // Obre un xat amb un clic de ratoli real (WhatsApp ignora sovint els clics fets amb JavaScript).
+    // Si no s'obre, el busca al cercador i prem Avall + Retorn amb el teclat "de veritat".
+    static void Clic(Cdp c, double x, double y)
+    {
+        c.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseMoved", "x", x, "y", y), 3000);
+        c.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mousePressed", "x", x, "y", y, "button", "left", "buttons", 1, "clickCount", 1), 3000);
+        c.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseReleased", "x", x, "y", y, "button", "left", "buttons", 0, "clickCount", 1), 3000);
+    }
+    static void Tecla(Cdp c, string key, int codi)
+    {
+        c.Envia("Input.dispatchKeyEvent", CasaServidor.Dic("type", "rawKeyDown", "key", key, "code", key, "windowsVirtualKeyCode", codi, "nativeVirtualKeyCode", codi), 3000);
+        c.Envia("Input.dispatchKeyEvent", CasaServidor.Dic("type", "keyUp", "key", key, "code", key, "windowsVirtualKeyCode", codi, "nativeVirtualKeyCode", codi), 3000);
+    }
+    static bool Obert(string nom) { try { return Crida("esActual(" + Js(nom) + ")", 4000) == "true"; } catch { return false; } }
+
     static void ObreXat(string nom)
     {
+        if (string.IsNullOrEmpty(nom)) return;
+        Cdp c = Assegura();
+        try { c.Envia("Page.bringToFront", null, 3000); } catch { }
         string r = Crida("rect(" + Js(nom) + ")", 10000);
         Dictionary<string, object> d = new JavaScriptSerializer().DeserializeObject(r) as Dictionary<string, object>;
-        if (d == null || d.ContainsKey("ja") || !d.ContainsKey("x")) return;
-        double x = Convert.ToDouble(d["x"]), y = Convert.ToDouble(d["y"]);
-        Cdp c = Assegura();
-        c.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseMoved", "x", x, "y", y), 3000);
-        c.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mousePressed", "x", x, "y", y, "button", "left", "clickCount", 1), 3000);
-        c.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseReleased", "x", x, "y", y, "button", "left", "clickCount", 1), 3000);
-        Thread.Sleep(900);
+        if (d != null && d.ContainsKey("ja")) return;
+        if (d != null && d.ContainsKey("x"))
+        {
+            Clic(c, Convert.ToDouble(d["x"]), Convert.ToDouble(d["y"]));
+            for (int i = 0; i < 8; i++) { Thread.Sleep(250); if (Obert(nom)) return; }
+        }
+        // Pla B: cercador + teclat
+        try
+        {
+            Crida("cerca(" + Js(nom) + ")", 8000);
+            Tecla(c, "ArrowDown", 40); Thread.Sleep(200);
+            Tecla(c, "Enter", 13);
+            for (int i = 0; i < 8; i++) { Thread.Sleep(250); if (Obert(nom)) return; }
+        }
+        catch { }
+        try { Console.WriteLine("  WhatsApp: no s'ha obert el xat. " + Crida("diag(" + Js(nom) + ")", 4000)); } catch { }
     }
 
     public static void AlArrencar()
@@ -101,6 +127,7 @@ public static class WhatsApp
             {
                 case "estat": Activa(true); CasaServidor.Text(res, Crida("estat()", 8000), ct); return;
                 case "qr": CasaServidor.Text(res, Crida("qr()", 8000), ct); return;
+                case "diagnosi": CasaServidor.Text(res, Crida("diag(" + Js(CasaServidor.Q(q, "xat")) + ")", 8000), ct); return;
                 case "xats": CasaServidor.Text(res, Crida("xats()", 8000), ct); return;
                 case "missatges":
                     try { ObreXat(CasaServidor.Q(q, "xat")); } catch { }
