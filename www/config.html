@@ -51,6 +51,9 @@
 .passos li{margin-bottom:6px}
 .ip{font-size:24px;font-weight:600;color:#7fb0ff;margin:6px 0}
 @media (max-width:800px){ #explorador .card{width:auto;left:16px;right:16px;margin-left:0} .fila label{width:110px} }
+.disp{background:rgba(255,255,255,.05);border-radius:12px;padding:10px 14px;margin:6px 0 14px}
+.dp-el{padding:3px 0}
+.dp-el a{color:#7fb0ff;cursor:pointer;margin-left:6px}
 </style>
 </head>
 <body>
@@ -89,6 +92,12 @@
   <div class="sec" id="s-inici">
     <h2>Pantalla d'inici</h2>
     <div class="desc">L'estil, el temps, la salutació i el passi de fotos.</div>
+    <div class="disp">
+      <div class="fila"><label>Aquest dispositiu</label><input type="text" id="dp-nom" style="width:220px"><button onclick="dpDesaNom()">Canviar el nom</button></div>
+      <label class="check"><input type="checkbox" id="dp-propi" onchange="dpPropi(this.checked)"> <span>Configuració pròpia per a aquest dispositiu</span></label>
+      <div class="gris petit" id="dp-desc"></div>
+      <div id="dp-llista"></div>
+    </div>
     <div class="estils" id="estils"></div>
     <div class="fila"><label>Nom (salutació)</label><input type="text" id="aj-nom" placeholder="p. ex. família"></div>
     <div class="fila"><label>Ciutat del temps</label><input type="text" id="aj-ciutat"><button onclick="cercaCiutat()">Cercar</button></div>
@@ -148,6 +157,7 @@
     <label class="check"><input type="checkbox" id="md-internet">Buscar caràtules i fitxes a internet</label>
     <div class="fila"><label>Clau TMDB</label><input type="text" id="md-tmdb" placeholder="opcional · themoviedb.org ▸ Configuració ▸ API"></div>
     <div class="fila"><label>Clau OMDb</label><input type="text" id="md-omdb" placeholder="opcional · omdbapi.com/apikey.aspx"></div>
+    <div class="fila"><label>Durada mínima</label><input type="number" id="md-min" min="0" max="240" style="width:110px"><span class="gris petit" style="margin-left:12px">minuts · els vídeos més curts no surten a Pel·lícules (sí a «Fitxers»)</span></div>
     <div class="peu"><button class="pri" onclick="mdDesa()">Desar</button></div>
   </div>
 
@@ -221,8 +231,16 @@
 
   <div class="sec" id="s-sistema">
     <h2>Servidor</h2>
-    <div class="desc">Adreça per obrir a l'iPad (Safari ▸ Compartir ▸ Afegir a la pantalla d'inici):</div>
+    <div class="desc">Adreça per obrir a l'iPad, al mòbil o a l'ordinador:</div>
     <div id="ips"></div>
+    <h2>Instal·lar com a app</h2>
+    <div id="inst-ok" class="desc" style="display:none">✓ Ja l'estàs fent servir com a app, a pantalla completa.</div>
+    <div id="inst-boto" style="display:none;margin-bottom:10px"><button class="pri" onclick="instalaApp()">Instal·lar Hearth</button></div>
+    <ul class="desc" id="inst-passos">
+      <li><b>iPad / iPhone (Safari):</b> botó Compartir ▸ <b>Afegir a la pantalla d'inici</b>. S'obre a pantalla completa, sense barres, amb la icona de Hearth. Funciona des d'iOS 9.</li>
+      <li><b>Android (Chrome):</b> menú ⋮ ▸ <b>Afegir a la pantalla d'inici</b>.</li>
+      <li><b>PC (Edge o Chrome):</b> menú ▸ Aplicacions ▸ <b>Instal·lar aquest lloc com a aplicació</b>. Al mateix PC on corre Hearth, obre <b>http://localhost:8080</b> per tenir la instal·lació completa.</li>
+    </ul>
     <div id="estat" class="gris" style="margin:14px 0"></div>
     <button onclick="reindexa()">Tornar a indexar les fotos</button>
     <button onclick="esborraMinis()">Esborrar les miniatures</button>
@@ -262,17 +280,14 @@ function carrega() {
     if (st == 401) { $('s-acces').style.display = 'block'; $('tot').style.display = 'none'; }
     else errXarxa('carregar la configuració')(st);
   });
-  dades('ajustos', function (d) {
+  ajustosDispositiu(function (a, d, p) {
     C.aj = d || { ciutat: 'Barcelona', lat: 41.3874, lon: 2.1686, marcSeg: 15, marcMin: 0, nom: '', lleuger: false };
-    $('aj-nom').value = C.aj.nom || '';
+    C.dp = p || { propi: false, ajustos: {} };
+    if (!C.dp.ajustos) C.dp.ajustos = {};
     $('aj-ciutat').value = C.aj.ciutat || '';
-    $('aj-seg').value = C.aj.marcSeg || 15;
-    $('aj-min').value = C.aj.marcMin || 0;
-    $('aj-fons').value = C.aj.fonsSeg || 20;
-    $('aj-foscor').value = C.aj.foscor == null ? 25 : C.aj.foscor; $('aj-foscor-v').textContent = $('aj-foscor').value + '%';
     $('fn-spotify').checked = !!C.aj.spotify; $('fn-whatsapp').checked = !!C.aj.whatsapp;
-    pintaEstils();
-    pintaTargeta();
+    omplInici();
+    dpPinta();
   });
   dades('webs', function (d) { WB.llista = d || []; pintaWebs(); pintaTargeta(); });
   gfEstat();
@@ -351,19 +366,23 @@ function triaCiutat(i) {
 function desaInici() {
   var a = C.aj;
   if (C.ciutat) { a.ciutat = C.ciutat.ciutat; a.lat = C.ciutat.lat; a.lon = C.ciutat.lon; }
-  a.nom = retalla($('aj-nom').value);
-  a.marcSeg = Math.max(5, parseInt($('aj-seg').value, 10) || 15);
-  a.marcMin = Math.max(0, parseInt($('aj-min').value, 10) || 0);
-  a.fonsSeg = Math.max(8, parseInt($('aj-fons').value, 10) || 20);
-  a.foscor = parseInt($('aj-foscor').value, 10) || 0;
-  a.estil = a.estil || 'fotos';
-  a.targeta = $('aj-targeta').value;
-  desaDades('ajustos', a, function () { avis('Desat'); if (Casa) Casa.recarrega(); });
+  var v = ajV();
+  v.nom = retalla($('aj-nom').value);
+  v.marcSeg = Math.max(5, parseInt($('aj-seg').value, 10) || 15);
+  v.marcMin = Math.max(0, parseInt($('aj-min').value, 10) || 0);
+  v.fonsSeg = Math.max(8, parseInt($('aj-fons').value, 10) || 20);
+  v.foscor = parseInt($('aj-foscor').value, 10) || 0;
+  v.estil = v.estil || 'ambient';
+  v.targeta = $('aj-targeta').value;
+  desaDades('ajustos', a, function () {
+    desaDades('disp_' + DISP.id, C.dp, function () { avis(T('Desat')); if (Casa) Casa.recarrega(); });
+  });
 }
 
 
 /* Idioma, país i estil */
-var ESTILS = [['fotos', 'Fotos', 'linear-gradient(135deg,#6a8f5a,#2c4a6b)'], ['targetes', 'Targetes', 'linear-gradient(135deg,#8a6a3a,#3a5a7a)'], ['rellotge', 'Rellotge', 'linear-gradient(135deg,#3a3a5a,#1a1a2a)'], ['vidre', 'Vidre', 'linear-gradient(135deg,#4a5a8a,#7a4a7a)'], ['fosc', 'Fosc', '#000']];
+var ESTILS = [['ambient', 'Ambient', 'linear-gradient(135deg,#6a8f5a,#2c4a6b)'], ['widgets', 'Widgets', 'linear-gradient(135deg,#4a5a8a,#7a4a7a)'], ['standby', 'StandBy', 'radial-gradient(circle at 30% 40%,#ff9f0a 0,#ff9f0a 14%,#1c1c1e 15%,#000 60%)'], ['fosc', 'Fosc', '#000']];
+var ESTIL_VELL = { fotos: 'ambient', targetes: 'widgets', vidre: 'widgets', rellotge: 'standby' };
 function pintaLlengua() {
   var h = '', i;
   for (i = 0; i < LLENGUES.length; i++) h += '<option value="' + LLENGUES[i][0] + '"' + (LLENGUES[i][0] == LANG ? ' selected' : '') + '>' + esc(LLENGUES[i][1]) + '</option>';
@@ -379,9 +398,9 @@ function desaLlengua() {
   setTimeout(function () { (window.parent || window).location.reload(); }, 900);
 }
 function pintaEstils() {
-  var h = '', e = (C.aj && C.aj.estil) || 'fotos';
+  var h = '', e = (C.aj && ajV().estil) || 'ambient'; e = ESTIL_VELL[e] || e;
   for (var i = 0; i < ESTILS.length; i++)
-    h += '<div class="estil' + (ESTILS[i][0] == e ? ' on' : '') + '" style="background:' + ESTILS[i][2] + '" onclick="C.aj.estil=\'' + ESTILS[i][0] + '\';pintaEstils()"><i></i><span>' + esc(T(ESTILS[i][1])) + '</span></div>';
+    h += '<div class="estil' + (ESTILS[i][0] == e ? ' on' : '') + '" style="background:' + ESTILS[i][2] + '" onclick="ajV().estil=\'' + ESTILS[i][0] + '\';pintaEstils()"><i></i><span>' + esc(T(ESTILS[i][1])) + '</span></div>';
   $('estils').innerHTML = h;
 }
 
@@ -472,7 +491,7 @@ function afegeixGoogleHome() {
 var INFC = { d: { actiu: false, pin: '', apps: ['docs', 'radio', 'musica'] } };
 var APPS_INF = [['musica', 'Música'], ['spotify', 'Spotify'], ['radio', 'Ràdio'], ['podcasts', 'Pòdcasts'], ['pelis', 'Pel·lícules'], ['tv', 'TV'], ['youtube', 'YouTube'], ['casa', 'Casa'], ['fotos', 'Fotos'], ['missatges', 'Missatges'], ['docs', 'Documents'], ['webs', 'Webs']];
 function infCarrega() {
-  dades('infantil', function (d) {
+  dadesInf(function (d) {
     if (d) INFC.d = d;
     $('inf-pin').value = INFC.d.pin || '';
     var h = '';
@@ -487,7 +506,7 @@ function infDesa(activa) {
   for (var i = 0; i < l.length; i++) if (l[i].checked) apps.push(l[i].value);
   if (activa && !apps.length) { avis(T('Tria almenys una app')); return; }
   INFC.d = { actiu: !!activa, pin: pin, apps: apps };
-  desaDades('infantil', INFC.d, function () {
+  desaInf(INFC.d, function () {
     avis(activa ? T('Mode infantil activat') : T('Desat'));
     if (Casa && Casa.infantilCanviat) { Casa.infantilCanviat(); if (activa) Casa.inici(); }
   });
@@ -572,6 +591,7 @@ function mdCarrega() {
     $('md-internet').checked = C.md.internet !== false && C.md.internet !== 'false';
     $('md-tmdb').value = C.md.tmdb || '';
     $('md-omdb').value = C.md.omdb || '';
+    $('md-min').value = C.md.pelisMin == null ? 40 : C.md.pelisMin;
   });
 }
 function mdDesa() {
@@ -579,13 +599,14 @@ function mdDesa() {
   a.internet = $('md-internet').checked;
   a.tmdb = retalla($('md-tmdb').value);
   a.omdb = retalla($('md-omdb').value);
-  desaDades('media', a, function () { avis('Desat. Les fitxes noves faran servir aquests ajustos.'); });
+  a.pelisMin = Math.max(0, parseInt($('md-min').value, 10) || 0);
+  desaDades('media', a, function () { avis(T('Desat. Les fitxes noves faran servir aquests ajustos.')); post(api('pelis/reindexa'), '', function () { }, function () { }); });
 }
 
 /* Webs */
 var WB = { llista: [], edita: null, clip: null, punts: [] };
 function pintaTargeta() {
-  var sel = $('aj-targeta'), act = (C.aj && C.aj.targeta) || 'fotos', h = '<option value="fotos">Foto del record</option>';
+  var sel = $('aj-targeta'), act = (C.aj && ajV().targeta) || 'fotos', h = '<option value="fotos">Foto del record</option>';
   for (var i = 0; i < WB.llista.length; i++) h += '<option value="' + esc(WB.llista[i].id) + '"' + (WB.llista[i].id == act ? ' selected' : '') + '>Web: ' + esc(WB.llista[i].nom) + '</option>';
   sel.innerHTML = h;
   sel.value = act;
@@ -801,6 +822,76 @@ window.casaObre = function (a) {
   if (s) setTimeout(function () { $('pag').scrollTop = s.offsetTop - 10; }, 100);
 };
 carrega();
+
+/* Instal·lar com a app */
+function instalaApp() { try { if (parent.Casa.instal()) return; } catch (e) { } avis(T('Fes servir el menú del navegador per instal·lar-la.')); }
+function pintaInstal() {
+  var C2 = null; try { C2 = parent.Casa; } catch (e) { }
+  var inst = C2 && C2.installada && C2.installada();
+  $('inst-ok').style.display = inst ? 'block' : 'none';
+  $('inst-passos').style.display = inst ? 'none' : 'block';
+  $('inst-boto').style.display = !inst && C2 && C2.potInstal && C2.potInstal() ? 'block' : 'none';
+}
+setTimeout(pintaInstal, 300);
+
+/* Configuració per dispositiu */
+function ajV() { return C.dp && C.dp.propi ? C.dp.ajustos : C.aj; }
+function omplInici() {
+  var v = ajV();
+  $('aj-nom').value = v.nom || '';
+  $('aj-seg').value = v.marcSeg || 15;
+  $('aj-min').value = v.marcMin || 0;
+  $('aj-fons').value = v.fonsSeg || 20;
+  $('aj-foscor').value = v.foscor == null ? 25 : v.foscor; $('aj-foscor-v').textContent = $('aj-foscor').value + '%';
+  pintaEstils();
+  pintaTargeta();
+}
+function dpPropi(on) {
+  C.dp.propi = !!on;
+  if (on) for (var i = 0; i < AJ_DISP.length; i++) { var k = AJ_DISP[i]; if (C.dp.ajustos[k] == null && C.aj[k] != null) C.dp.ajustos[k] = C.aj[k]; }
+  omplInici();
+  dpDesc();
+}
+function dpDesc() {
+  $('dp-desc').textContent = C.dp.propi ? T("Els canvis d'aquesta secció (estil, fons, marc, targeta i salutació) només s'apliquen a aquest dispositiu. El mode infantil també és de cada dispositiu.")
+    : T("Aquest dispositiu fa servir la configuració general. El mode infantil és de cada dispositiu.");
+}
+function dpPinta() {
+  $('dp-propi').checked = !!C.dp.propi;
+  dpDesc();
+  registraDispositiu(function (d) {
+    $('dp-nom').value = (d[DISP.id] && d[DISP.id].nom) || '';
+    var h = '', ids = [], k;
+    for (k in d) if (d.hasOwnProperty(k)) ids.push(k);
+    ids.sort(function (a, b) { return (d[b].vist || 0) - (d[a].vist || 0); });
+    if (ids.length > 1) {
+      h += '<div class="gris petit" style="margin-top:8px">' + esc(T('Dispositius connectats')) + ':</div>';
+      for (var i = 0; i < ids.length; i++) {
+        var e = d[ids[i]], dt = new Date(e.vist || 0);
+        h += '<div class="dp-el">' + (ids[i] == DISP.id ? '<b>' + esc(e.nom) + '</b> · ' + esc(T('aquest')) : esc(e.nom)) +
+          ' <span class="gris petit">' + dt.getDate() + '/' + (dt.getMonth() + 1) + ' ' + dt.getHours() + ':' + ('0' + dt.getMinutes()).slice(-2) + '</span>' +
+          (ids[i] != DISP.id ? ' <a class="petit" onclick="dpOblida(\'' + ids[i] + '\')">' + esc(T('Oblida')) + '</a>' : '') + '</div>';
+      }
+    }
+    $('dp-llista').innerHTML = h;
+  });
+}
+function dpDesaNom() {
+  var n = retalla($('dp-nom').value);
+  if (!n) return;
+  dades('dispositius', function (d) {
+    d = d || {}; d[DISP.id] = d[DISP.id] || {}; d[DISP.id].nom = n.substring(0, 40);
+    desaDades('dispositius', d, function () { avis(T('Desat')); dpPinta(); });
+  });
+}
+function dpOblida(id) {
+  dades('dispositius', function (d) {
+    if (d && d[id]) delete d[id];
+    desaDades('dispositius', d || {}, function () {
+      desaDades('disp_' + id, null, function () { dpPinta(); });
+    });
+  });
+}
 </script>
 </body>
 </html>

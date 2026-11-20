@@ -521,11 +521,53 @@ public static class Media
 
     static readonly Dictionary<string, DateTime> noTrobades = new Dictionary<string, DateTime>();
 
-    static Dictionary<string, object> Fitxa(string rel)
+    static string FontActual() { return "4" + (A("tmdb", "") != "" ? "t" : "") + (A("omdb", "") != "" ? "o" : "") + (Internet() ? "i" : "") + Llengua(); }
+
+    // Fitxa ja desada (sense anar a internet); null si encara no se n'ha buscat cap
+    internal static Dictionary<string, object> MetaEnCau(string rel)
+    {
+        string font = FontActual();
+        lock (lk)
+        {
+            CarregaMetes();
+            object v;
+            if (metes.TryGetValue(rel, out v) && v is Dictionary<string, object> && S((Dictionary<string, object>)v, "font") == font) return (Dictionary<string, object>)v;
+        }
+        return null;
+    }
+
+    // Titols corregits a ma (des de la fitxa de la pel.licula)
+    static Dictionary<string, object> titols;
+    static string FitxerTitols { get { return Path.Combine(CasaServidor.DirDades, "pelis-titols.json"); } }
+    static Dictionary<string, object> Titols()
+    {
+        if (titols == null)
+        {
+            try { titols = File.Exists(FitxerTitols) ? new JavaScriptSerializer().DeserializeObject(File.ReadAllText(FitxerTitols, Encoding.UTF8)) as Dictionary<string, object> : null; } catch { }
+            if (titols == null) titols = new Dictionary<string, object>();
+        }
+        return titols;
+    }
+    internal static void CorregeixTitol(string rel, string titol, string any)
+    {
+        lock (lk)
+        {
+            Dictionary<string, object> t = Titols();
+            if (string.IsNullOrEmpty(titol)) t.Remove(rel);
+            else { Dictionary<string, object> x = new Dictionary<string, object>(); x["t"] = titol; x["a"] = any ?? ""; t[rel] = x; }
+            File.WriteAllText(FitxerTitols, new JavaScriptSerializer().Serialize(t), new UTF8Encoding(false));
+            CarregaMetes();
+            metes.Remove(rel);
+            noTrobades.Clear();
+            DesaMetes();
+        }
+    }
+
+    internal static Dictionary<string, object> Fitxa(string rel)
     {
         string full = CasaServidor.Ruta("pelis", rel);
         if (full == null || (!File.Exists(full) && !Directory.Exists(full))) return null;
-        string font = "3" + (A("tmdb", "") != "" ? "t" : "") + (A("omdb", "") != "" ? "o" : "") + (Internet() ? "i" : "") + Llengua();
+        string font = FontActual();
         lock (lk)
         {
             CarregaMetes();
@@ -534,7 +576,12 @@ public static class Media
             DateTime quan;
             if (noTrobades.TryGetValue(rel + "|" + font, out quan) && (DateTime.Now - quan).TotalMinutes < 30 && metes.TryGetValue(rel + "|no", out v)) return (Dictionary<string, object>)v;
         }
-        Dictionary<string, object> m = CercaPeli(Candidats(full));
+        List<string[]> cands = Candidats(full);
+        object tc;
+        lock (lk) { Titols().TryGetValue(rel, out tc); }
+        Dictionary<string, object> tcd = tc as Dictionary<string, object>;
+        if (tcd != null) cands.Insert(0, new string[] { S(tcd, "t"), S(tcd, "a") });
+        Dictionary<string, object> m = CercaPeli(cands);
         m["font"] = font;
         lock (lk)
         {
@@ -564,6 +611,29 @@ public static class Media
         return null;
     }
 
+    // Un fotograma del video (al 12% de la durada) per a les pel.licules sense caratula
+    static string Fotograma(string rel)
+    {
+        string full = CasaServidor.Ruta("pelis", rel);
+        if (full == null || !File.Exists(full)) return null;
+        string dir = Path.Combine(CasaServidor.DirDades, "fotogrames");
+        Directory.CreateDirectory(dir);
+        string f = Path.Combine(dir, CasaServidor.Hash(rel) + ".jpg");
+        if (File.Exists(f)) return f;
+        string ff = SoPC.RutaFfmpeg();
+        if (ff == null) return null;
+        int d = Pelis.Durada(rel);
+        int seg = d > 0 ? Math.Max(5, d * 12 / 100) : 60;
+        try
+        {
+            System.Diagnostics.ProcessStartInfo si = new System.Diagnostics.ProcessStartInfo(ff, "-nostdin -loglevel error -ss " + seg + " -i \"" + full + "\" -frames:v 1 -vf scale=480:-2 -q:v 4 -y \"" + f + "\"");
+            si.UseShellExecute = false; si.CreateNoWindow = true;
+            using (System.Diagnostics.Process p = System.Diagnostics.Process.Start(si)) { if (!p.WaitForExit(20000)) { try { p.Kill(); } catch { } } }
+        }
+        catch { }
+        return File.Exists(f) ? f : null;
+    }
+
     public static void Api(string nom, Dictionary<string, string> q, HttpListenerContext ctx)
     {
         HttpListenerResponse res = ctx.Response;
@@ -578,15 +648,21 @@ public static class Media
                 case "portada": EnviaImatge(ctx, Portada(CasaServidor.Q(q, "c"), CasaServidor.Q(q, "p")), m); return;
                 case "caratula":
                     {
-                        string rel = CasaServidor.Q(q, "p");
-                        string f = PosterLocal(rel);
-                        if (f == null)
-                        {
-                            Dictionary<string, object> fx = Fitxa(rel);
-                            string camp = CasaServidor.Q(q, "fons") == "1" ? "fons" : "poster";
-                            if (fx != null && fx.ContainsKey(camp)) f = ImatgeExterna(fx[camp].ToString(), 8000);
-                        }
+                        // Nomes la caratula de la fitxa (no les imatges que hi hagi a la carpeta); si no n'hi ha, un fotograma del video
+                        string rel = CasaServidor.Q(q, "p"), f = null;
+                        Dictionary<string, object> fx = CasaServidor.Q(q, "cau") == "1" ? MetaEnCau(rel) : Fitxa(rel);
+                        string camp = CasaServidor.Q(q, "fons") == "1" ? "fons" : "poster";
+                        if (fx != null && fx.ContainsKey(camp)) f = ImatgeExterna(fx[camp].ToString(), 8000);
+                        if (f == null && camp == "poster") f = Fotograma(rel);
                         EnviaImatge(ctx, f, m);
+                        return;
+                    }
+                case "peli-titol":
+                    {
+                        CorregeixTitol(CasaServidor.Q(q, "p"), CasaServidor.Q(q, "t").Trim(), CasaServidor.Q(q, "a").Trim());
+                        Dictionary<string, object> fx = Fitxa(CasaServidor.Q(q, "p"));
+                        if (fx == null) { CasaServidor.Error(res, 404, "No trobat"); return; }
+                        CasaServidor.Json(res, fx);
                         return;
                     }
                 case "peli":

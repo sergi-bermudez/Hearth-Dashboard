@@ -297,3 +297,49 @@ function iniciaMandros() {
   }, false);
   window.addEventListener('resize', function () { setTimeout(mandros, 100); }, false);
 }
+
+/* ---------- Dispositiu (cada tauleta pot tenir la seva configuració) ---------- */
+var DISP = (function () {
+  var id = ls('disp');
+  if (!id || !/^[a-z0-9]{6,16}$/.test(id)) { id = ''; for (var i = 0; i < 10; i++) id += 'abcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 36)); ls('disp', id); }
+  return { id: id };
+})();
+function nomDispositiuDefecte() {
+  var u = navigator.userAgent, m;
+  if (/iPad/.test(u)) { m = u.match(/OS (\d+)_/); return 'iPad' + (m ? ' (iOS ' + m[1] + ')' : ''); }
+  if (/iPhone/.test(u)) return 'iPhone';
+  if (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) return 'iPad';
+  if (/Android/.test(u)) return /Mobile/.test(u) ? 'Android (mòbil)' : 'Android (tauleta)';
+  if (/Windows/.test(u)) return 'PC';
+  if (/Macintosh/.test(u)) return 'Mac';
+  return 'Navegador';
+}
+/* Ajustos que poden ser propis de cada dispositiu */
+var AJ_DISP = ['estil', 'foscor', 'fonsSeg', 'marcSeg', 'marcMin', 'targeta', 'nom'];
+/* Llegeix els ajustos generals i hi aplica els d'aquest dispositiu (si en té) */
+function ajustosDispositiu(ok) {
+  dades('ajustos', function (g) {
+    dades('disp_' + DISP.id, function (p) {
+      var a = {}, k;
+      if (g) for (k in g) if (g.hasOwnProperty(k)) a[k] = g[k];
+      if (p && p.propi && p.ajustos) for (k in p.ajustos) if (p.ajustos.hasOwnProperty(k)) a[k] = p.ajustos[k];
+      ok(a, g, p);
+    });
+  });
+}
+/* Registra el dispositiu (nom i darrera connexió) perquè surti a Configuració */
+function registraDispositiu(ok) {
+  dades('dispositius', function (d) {
+    d = d || {};
+    var e = d[DISP.id] || {};
+    e.nom = e.nom || nomDispositiuDefecte();
+    e.vist = new Date().getTime();
+    e.ua = navigator.userAgent.substring(0, 160);
+    d[DISP.id] = e;
+    DISP.nom = e.nom;
+    post(api('dades', { n: 'dispositius' }), JSON.stringify(d), function () { if (ok) ok(d); }, function () { });
+  });
+}
+/* El mode infantil és de cada dispositiu (si encara no en té, es fa servir el general d'abans) */
+function dadesInf(ok) { dades('inf_' + DISP.id, function (d) { if (d) ok(d); else dades('infantil', ok); }); }
+function desaInf(v, ok) { desaDades('inf_' + DISP.id, v, ok); }

@@ -1,4 +1,4 @@
-﻿// Servidor Casa - servidor HTTP lleuger per al dashboard de l'iPad.
+\ufeff// Servidor Casa - servidor HTTP lleuger per al dashboard de l'iPad.
 // Es compila sol amb Add-Type des de servidor.ps1 (.NET Framework, C# 5).
 using System;
 using System.Collections.Generic;
@@ -156,6 +156,7 @@ public static class CasaServidor
         FotosDeLaCache();
         RefrescaFotos();
         Musica.Indexa();
+        Pelis.Indexa();
         Mdns.Inicia("hearth");
         if (FuncioActiva("spotify")) Spotify.AlArrencar();
         if (FuncioActiva("whatsapp")) WhatsApp.AlArrencar();
@@ -337,11 +338,11 @@ public static class CasaServidor
         if (nom.StartsWith("radio/")) { RadioHls.Api(nom.Substring(6), q, ctx); return; }
         if (nom.StartsWith("tuya/")) { Tuya.Api(nom.Substring(5), q, ctx); return; }
         if (nom == "agenda") { Agenda.Api(q, ctx); return; }
-        if (nom == "pelis") { Pelis.Api(q, ctx); return; }
+        if (nom.StartsWith("pelis/")) { Pelis.Api(nom, q, ctx); return; }
         if (nom == "musica") { Musica.Api(q, ctx); return; }
         if (nom.StartsWith("youtube/") && nom != "youtube/instal-la") { YouTube.Api(nom.Substring(8), q, ctx); return; }
         if (nom == "agenda/calendaris") { Agenda.Llista(q, ctx); return; }
-        if (nom == "imgx" || nom == "portada" || nom == "caratula" || nom == "peli") { Media.Api(nom, q, ctx); return; }
+        if (nom == "imgx" || nom == "portada" || nom == "caratula" || nom == "peli" || nom == "peli-titol") { Media.Api(nom, q, ctx); return; }
         if (nom.StartsWith("admin/")) { Admin(nom.Substring(6), q, ctx); return; }
         Error(res, 404, "API desconeguda");
     }
@@ -402,7 +403,7 @@ public static class CasaServidor
                         cs.Add(e);
                     }
                     r["carpetes"] = cs; r["port"] = Port; r["clau"] = !string.IsNullOrEmpty(Clau);
-                    r["local"] = ctx.Request.IsLocal; r["ips"] = Ips(); r["versio"] = "3.0"; r["nomXarxa"] = Mdns.Nom + ".local";
+                    r["local"] = ctx.Request.IsLocal; r["ips"] = Ips(); r["versio"] = "3.4"; r["nomXarxa"] = Mdns.Nom + ".local";
                     Json(res, r);
                     return;
                 }
@@ -885,6 +886,7 @@ public static class CasaServidor
             case ".css": return "text/css; charset=utf-8";
             case ".js": return "application/javascript; charset=utf-8";
             case ".json": return "application/json; charset=utf-8";
+            case ".webmanifest": return "application/manifest+json; charset=utf-8";
             case ".xml": case ".rss": return "text/xml; charset=utf-8";
             case ".vtt": return "text/vtt; charset=utf-8";
             case ".srt": return "text/plain; charset=utf-8";

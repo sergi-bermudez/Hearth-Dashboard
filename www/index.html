@@ -9,6 +9,10 @@
 <meta name="format-detection" content="telephone=no">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b0d12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Hearth">
 <title>Hearth</title>
 <script src="i18n.js"></script>
 <style>
@@ -30,11 +34,16 @@ button:active,.toc:active{opacity:.6}
 .fimg{position:absolute;top:0;left:0;right:0;bottom:0;background:center/cover no-repeat;opacity:0;-webkit-transition:opacity 2s;transition:opacity 2s}
 .fimg.on{opacity:1}
 #fons .ombra{position:absolute;top:0;left:0;right:0;bottom:0;background:-webkit-linear-gradient(top,rgba(0,0,0,.45) 0,rgba(0,0,0,0) 32%,rgba(0,0,0,0) 45%,rgba(0,0,0,.72) 100%);background:linear-gradient(to bottom,rgba(0,0,0,.45) 0,rgba(0,0,0,0) 32%,rgba(0,0,0,0) 45%,rgba(0,0,0,.72) 100%)}
-/* Estil vidre: fons difuminat (foto petita ampliada) i targetes */
-body.e-vidre .fimg{top:-6%;left:-6%;right:-6%;bottom:-6%}
-body.e-vidre #fons .ombra{background:rgba(6,8,14,.45)}
-body.e-vidre .panell{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:16px 20px}
-body.e-vidre #fpeu{display:none}
+/* Estil Widgets (iPadOS): foto difuminada i targetes de vidre */
+body.e-widgets .fimg{top:-6%;left:-6%;right:-6%;bottom:-6%}
+body.e-widgets #fons .ombra{background:rgba(6,8,14,.38)}
+body.e-widgets .panell,body.e-widgets #agenda,body.e-widgets #rapid{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.16);border-radius:24px;padding:16px 20px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+body.e-widgets #agenda{padding:12px 16px}
+body.e-widgets #rapid{padding:12px 14px 6px}
+body.e-widgets #temps{margin-left:14px}
+body.e-widgets .ombrat{text-shadow:0 1px 2px rgba(0,0,0,.35)}
+body.e-widgets #fpeu{display:none}
+body.e-widgets #hora{font-weight:300}
 /* Estil fosc: negre, sense fotos */
 body.e-fosc #fons{background:#000}
 body.e-fosc .fimg,body.e-fosc #fpeu{display:none}
@@ -44,26 +53,26 @@ body.e-fosc .ombrat{text-shadow:none}
 /* Vel fosc regulable (Configuració ▸ Pantalla d'inici ▸ Foscor del fons) */
 #fons .vel{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;opacity:.25}
 body.e-fosc #fons .vel{display:none}
-/* Estil Targetes: foto nítida de fons i targetes fosques translúcides (el text sempre es llegeix bé) */
-body.e-targetes .panell,body.e-targetes #agenda,body.e-targetes #rapid{background:rgba(12,14,22,.58);border-radius:22px;padding:16px 20px}
-body.e-targetes #agenda{padding:10px 14px}
-body.e-targetes #rapid{padding:10px 12px 4px}
-body.e-targetes .ombrat{text-shadow:none}
-body.e-targetes #temps{margin-left:14px}
-body.e-targetes #fpeu{background:rgba(12,14,22,.5);border-radius:12px;padding:4px 10px}
-/* Estil Rellotge: rellotge gran centrat, la resta discreta */
-body.e-rellotge .d-cap{-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;text-align:center}
-body.e-rellotge .d-hora{-webkit-flex:none;flex:none;width:100%}
-body.e-rellotge #hora{font-size:170px;font-weight:100;letter-spacing:-6px;margin:0}
-body.e-rellotge #salut{padding-left:0 !important}
-body.e-rellotge #temps{max-width:100%;text-align:center;margin-top:4px}
-body.e-rellotge .t-ara{-webkit-justify-content:center;justify-content:center}
-body.e-rellotge .t-ara svg{width:44px;height:44px}
-body.e-rellotge .t-ara .gr{font-size:36px}
-body.e-rellotge .t-dies,body.e-rellotge #temps .t-ds+.t-ds{display:none}
-body.e-rellotge #agenda{left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%);text-align:center;max-width:70%}
-body.e-rellotge #agenda .ag i{vertical-align:1px}
-@media (orientation:portrait){ body.e-rellotge #hora{font-size:150px} }
+/* Estil Ambient (Nest Hub): foto a tota pantalla, sense caixes, text fi i discret */
+body.e-ambient #fons .ombra{background:-webkit-linear-gradient(top,rgba(0,0,0,.35) 0,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 50%,rgba(0,0,0,.6) 100%);background:linear-gradient(to bottom,rgba(0,0,0,.35) 0,rgba(0,0,0,0) 28%,rgba(0,0,0,0) 50%,rgba(0,0,0,.6) 100%)}
+body.e-ambient #hora{font-weight:300;letter-spacing:-2px}
+body.e-ambient .t-dies{display:none}
+body.e-ambient .t-ara svg{width:52px;height:52px}
+body.e-ambient .t-ara .gr{font-size:44px;font-weight:300}
+body.e-ambient .d-dock{background:rgba(0,0,0,.32);border-color:rgba(255,255,255,.08)}
+/* Estil StandBy (Apple): negre, rellotge gros i gruixut, targetes grises arrodonides */
+body.e-standby #fons{background:#000}
+body.e-standby .fimg,body.e-standby #fpeu,body.e-standby #fons .vel,body.e-standby #fons .ombra{display:none}
+body.e-standby .ombrat{text-shadow:none}
+body.e-standby .panell,body.e-standby #agenda,body.e-standby #rapid{background:#1c1c1e;border-radius:28px;padding:16px 22px}
+body.e-standby #agenda{padding:12px 18px}
+body.e-standby #rapid{padding:12px 14px 6px}
+body.e-standby #temps{margin-left:14px}
+body.e-standby #hora{font-weight:700;letter-spacing:-4px;color:#ff9f0a}
+body.e-standby #salut,body.e-standby #data{color:#ffd9a0}
+body.e-standby .d-dock{background:#1c1c1e;border-color:#1c1c1e}
+body.e-standby .gb{background:#2c2c2e;border-color:#2c2c2e}
+body.e-standby #cfg{background:#2c2c2e}
 /* Pantalles baixes (Safari amb barres, iPad en horitzontal): versions compactes */
 #dash.c1 .t-dies{display:none}
 #dash.c1 #hora,#dash.c2 #hora,#dash.c3 #hora{font-size:84px}
@@ -75,8 +84,6 @@ body.e-rellotge #agenda .ag i{vertical-align:1px}
 #dash.c3 #rapid{display:none}
 #dash.c3 .app .nm{display:none}
 #dash.c3 .d-dock{padding-top:10px;padding-bottom:10px}
-body.e-rellotge #dash.c1 #hora{font-size:120px}
-body.e-rellotge #dash.c2 #hora,body.e-rellotge #dash.c3 #hora{font-size:96px}
 /* ===== Dashboard ===== */
 #dash{position:absolute;top:0;left:0;right:0;bottom:0;padding:24px 28px 16px;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column}
 html.sa #dash{top:20px}
@@ -181,9 +188,10 @@ body.amb-pest #apps iframe{height:-webkit-calc(100% - 52px);height:calc(100% - 5
 #pest span{display:inline-block;padding:6px 16px;border-radius:9px;font-size:15px;color:#aab2bd;cursor:pointer}
 #pest span .ic{width:20px;height:20px;margin:-2px 6px 0 0}
 #pest span.on{background:#fff;color:#111;font-weight:600}
-#nav .nv-cfg{-webkit-flex:none;flex:none;width:56px}
-#cfg{position:absolute;top:0;left:0;padding:6px;opacity:.75;cursor:pointer}
-#cfg .ic{width:26px;height:26px}
+#nav .nv-cfg{-webkit-flex:none;flex:none;width:72px}
+#cfg{position:absolute;z-index:6;top:-6px;left:-6px;width:44px;height:44px;padding:9px;box-sizing:border-box;opacity:.8;cursor:pointer;border-radius:50%;background:rgba(255,255,255,.14);-webkit-tap-highlight-color:rgba(255,255,255,.3)}
+#cfg .ic{width:26px;height:26px;display:block}
+body.e-fosc #cfg{background:rgba(255,255,255,.08)}
 @media (orientation:portrait){#pest span{padding:6px 11px;font-size:14px}}
 
 /* ===== TV ===== */
@@ -250,7 +258,6 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 #agenda .ag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
 #agenda .ag i{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:8px;vertical-align:0}
 #agenda .ag b{font-weight:600;margin-right:8px;font-variant-numeric:tabular-nums}
-body.e-vidre #agenda{background:rgba(255,255,255,.1);border-radius:16px;padding:10px 14px}
 #marc .hora .seg-ag{display:block;font-size:18px;margin-top:6px;opacity:.95}
 #marc .hora .seg-ag i{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:8px}
 /* Avisos de missatges */
@@ -298,14 +305,14 @@ html.sa #mc-sona{top:40px}
 }
 </style>
 </head>
-<body class="e-fotos">
+<body class="e-ambient">
 <div id="fons"><div class="fimg" id="fons-a"></div><div class="fimg" id="fons-b"></div><div class="ombra"></div><div class="vel" id="vel"></div></div>
 
 <div id="dash">
   <div class="d-cap">
     <div class="d-hora ombrat panell" style="position:relative">
       <div id="cfg" onclick="obreConfig()"></div>
-      <div id="salut" style="padding-left:34px"></div>
+      <div id="salut" style="padding-left:46px"></div>
       <div id="hora">--:--</div>
       <div id="data"></div>
     </div>
@@ -401,7 +408,7 @@ function obreGrup(gid) {
 }
 var A = {
   vista: 'dash',
-  ajustos: { ciutat: 'Barcelona', lat: 41.3874, lon: 2.1686, marcSeg: 15, marcMin: 0, nom: '', estil: 'fotos', fonsSeg: 20 },
+  ajustos: { ciutat: 'Barcelona', lat: 41.3874, lon: 2.1686, marcSeg: 15, marcMin: 0, nom: '', estil: 'ambient', fonsSeg: 20 },
   temps: null, radios: [], canals: [], desbloquejat: false
 };
 var SILENCI = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//NwwAAAAAAAAAAAAEluZm8AAAAPAAAACAAAA/oAR0dHR0dHR0dHR0dHYmJiYmJiYmJiYmJifHx8fHx8fHx8fHx8fJaWlpaWlpaWlpaWlrGxsbGxsbGxsbGxsbHLy8vLy8vLy8vLy8vl5eXl5eXl5eXl5eXl////////////////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQC1AAAAAAAAAP6yysejgAAAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==';
@@ -478,7 +485,7 @@ function pintaTemps() {
   rellotge();
 }
 function carregaAjustos() {
-  dades('ajustos', function (d) {
+  ajustosDispositiu(function (d) {
     if (d) for (var k in d) if (d.hasOwnProperty(k)) A.ajustos[k] = d[k];
     estatCos();
     rellotge();
@@ -510,7 +517,7 @@ function fotosRecarrega() { FO.llista = null; fonsInicia(); }
 var FS = { ordre: [], n: 0, t: null, capa: 0, actual: null };
 function fonsInicia() {
   clearTimeout(FS.t);
-  if (A.ajustos.estil == 'fosc') { posaFons(''); $('fpeu').innerHTML = ''; return; }
+  if (estil() == 'fosc' || estil() == 'standby') { posaFons(''); $('fpeu').innerHTML = ''; return; }
   fotosLlista(function () {
     var f = FO.fotos || [];
     if (!f.length) { posaFons(''); $('fpeu').innerHTML = ''; return; }
@@ -531,7 +538,7 @@ function fonsSeguent() {
   var f = FS.ordre[FS.n % FS.ordre.length];
   FS.n++;
   FS.actual = f;
-  var vidre = A.ajustos.estil == 'vidre';
+  var vidre = estil() == 'widgets';
   posaFons(miniUrl('fotos', f[0], vidre ? 40 : (window.innerWidth > 900 || window.innerHeight > 900 ? 1600 : 1024)));
   var d = new Date(f[1]), avui = new Date(), anys = avui.getFullYear() - d.getFullYear();
   var rec = d.getDate() == avui.getDate() && d.getMonth() == avui.getMonth() && anys > 0;
@@ -588,7 +595,7 @@ function pintaDock() {
     h += '<div class="app" id="dk-' + g.id + '" onclick="obreGrup(\'' + g.id + '\')"><div class="bx" style="' + grad(g.c1, g.c2) + '">' + svg(g.ic) + '</div><span class="nm">' + esc(T(g.nom)) + '</span></div>';
     n += '<div onclick="obreGrup(\'' + g.id + '\')" id="nv-' + g.id + '">' + svg(g.ic) + esc(T(g.nom)) + '</div>';
   }
-  n += '<div onclick="obreConfig()" id="nv-config" class="nv-cfg">' + svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config) + '</div>';
+  n += '<div onclick="obreConfig()" id="nv-config" class="nv-cfg">' + svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config) + esc(T('Ajustos')) + '</div>';
   $('cfg').innerHTML = svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config);
   $('dock').innerHTML = h;
   $('nav').innerHTML = n;
@@ -664,10 +671,13 @@ function inici() {
   pintaWebDash();
   tvLloc();
 }
+/* Estils: els antics es reconverteixen als nous */
+var ESTIL_VELL = { fotos: 'ambient', targetes: 'widgets', vidre: 'widgets', rellotge: 'standby' };
+function estil() { var e = A.ajustos.estil || 'ambient'; return ESTIL_VELL[e] || e; }
 function estatCos() {
   var f = A.ajustos.foscor;
-  $('vel').style.opacity = (f == null ? (A.ajustos.estil == 'targetes' ? 15 : 25) : f) / 100;
-  var c = ['e-' + (A.ajustos.estil || 'fotos')];
+  $('vel').style.opacity = (f == null ? (estil() == 'widgets' ? 10 : 25) : f) / 100;
+  var c = ['e-' + estil()];
   if (A.vista != 'dash') c.push('en-app');
   if (A.vista != 'dash' && A.pest) c.push('amb-pest');
   if (R.cua.length || TV.canal) c.push('sona');
@@ -1148,7 +1158,7 @@ function pintaSona(intern) {
   s.style.display = 'block';
   if (TV.canal && TV.mode != 'gran') {
     var c = TV.canal, vod = !!c.vod, esp = espaiSona();
-    var W = s.clientWidth - (A.ajustos.estil == 'vidre' ? 40 : 0), estret = W < 620;
+    var cs = getComputedStyle(s), W = s.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0), estret = W < 620;
     /* En horitzontal: vídeo a l'esquerra i controls a la dreta. Apilat només si els controls no hi caben al costat */
     var fr = TV.mida == 'p' ? 0.36 : TV.mida == 'm' ? 0.5 : 0.64;
     var Wt = Math.round(Math.min(W * fr, esp * 16 / 9));
@@ -1458,7 +1468,7 @@ function permesa(id) {
   return !INF.actiu || id == 'dash' || INF.apps.indexOf(id) >= 0;
 }
 function carregaInfantil() {
-  dades('infantil', function (d) {
+  dadesInf(function (d) {
     INF = d || { actiu: false, pin: '', apps: [] };
     if (!INF.apps) INF.apps = [];
     pintaDock(); pintaRapid(); if (A.vista == 'dash') pintaSona();
@@ -1489,7 +1499,7 @@ function obreConfig() {
   if (!INF.actiu) { obre('config'); return; }
   demanaPin(T('Escriu el PIN per sortir del mode infantil'), function () {
     INF.actiu = false;
-    desaDades('infantil', INF, function () { pintaDock(); avis(T('Mode infantil desactivat')); });
+    desaInf(INF, function () { pintaDock(); avis(T('Mode infantil desactivat')); });
   });
 }
 
@@ -1527,6 +1537,7 @@ function casaToca(i) {
 /* ---------- API per a les apps ---------- */
 window.Casa = {
   R: R, au: au,
+  instal: function () { return instalApp(); }, potInstal: function () { return !!INST.ev; }, installada: esInstallada,
   toca: repInicia, play: repPlay, atura: repAtura, seguent: repSeguent, anterior: repAnterior,
   radioItem: radioItem,
   spotify: spEscolta, spotifyOrdre: spOrdre, spotifyEstat: function () { return SP.estat; },
@@ -1563,6 +1574,7 @@ window.Casa = {
   setInterval(rellotge, 10000);
   estatCos();
   carregaAjustos();
+  registraDispositiu();
   carregaSuggeriments();
   carregaAgenda();
   carregaInfantil();
@@ -1581,6 +1593,17 @@ window.Casa = {
   }
   window.addEventListener('beforeunload', function () { poDesaPos(); vodDesa(); });
 })();
+
+/* ---------- Instal·lar com a app (PWA) ---------- */
+var INST = { ev: null };
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); INST.ev = e; });
+window.addEventListener('appinstalled', function () { INST.ev = null; });
+if ('serviceWorker' in navigator && window.isSecureContext) { try { navigator.serviceWorker.register('sw.js'); } catch (e) { } }
+function instalApp() {
+  if (!INST.ev) return false;
+  INST.ev.prompt(); INST.ev = null; return true;
+}
+function esInstallada() { return !!(navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); }
 </script>
 </body>
 </html>
