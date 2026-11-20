@@ -1,6 +1,6 @@
 // Pont entre Hearth i WhatsApp Web (s'executa dins l'Edge del servidor).
 // Si WhatsApp canvia la web, normalment n'hi ha prou d'ajustar els selectors d'aquest fitxer.
-if (!window.__wa || window.__wa.v !== 5) (function () {
+if (!window.__wa || window.__wa.v !== 6) (function () {
   const q = (s, a) => (a || document).querySelector(s);
   const qa = (s, a) => Array.from((a || document).querySelectorAll(s));
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -64,7 +64,7 @@ if (!window.__wa || window.__wa.v !== 5) (function () {
   let primer = true;
 
   window.__wa = {
-    v: 5,
+    v: 6,
     estat() {
       const qr = q('canvas[aria-label]') || q('div[data-ref] canvas') || q('[data-testid="qrcode"] canvas');
       return { sessio: !!panell(), qr: !panell() && !!qr, carregant: !panell() && !qr };
@@ -185,8 +185,19 @@ if (!window.__wa || window.__wa.v !== 5) (function () {
         let rows = qa('[role="row"]', m);
         if (!rows.length) rows = qa('.message-in, .message-out', m);
         for (const row of rows.slice(-60)) {
-          const surt = !!(q('.message-out', row) || row.classList.contains('message-out'));
-          const entra = !!(q('.message-in', row) || row.classList.contains('message-in'));
+          let surt = !!(q('.message-out', row) || row.classList.contains('message-out'));
+          let entra = !!(q('.message-in', row) || row.classList.contains('message-in'));
+          // WhatsApp canvia sovint les classes: un missatge té data-pre-plain-text o una hora; els enviats porten els "checks"
+          // i la bombolla queda a la dreta
+          const esMsg = q('[data-pre-plain-text], .copyable-text, [data-icon^="msg-"]', row);
+          if (!surt && !entra && esMsg) {
+            if (q('[data-icon^="msg-dblcheck"], [data-icon^="msg-check"], [data-icon="msg-time"]', row)) surt = true;
+            else {
+              const bb = (q('[data-pre-plain-text]', row) || esMsg).getBoundingClientRect(), mr = m.getBoundingClientRect();
+              surt = bb.width > 0 && (bb.left + bb.right) / 2 > (mr.left + mr.right) / 2 + 10;
+            }
+            entra = !surt;
+          }
           if (!surt && !entra) { const s = txt(row); if (s && s.length < 40) r.push({ tipus: 'sistema', text: s }); continue; }
           r.push(this.unMissatge(row, surt));
         }

@@ -175,7 +175,7 @@ body.sona #mini{display:-webkit-flex;display:flex}
 #mini button{background:none;padding:6px 9px;-webkit-flex:none;flex:none}
 #mini button .ic{width:30px;height:30px}
 #nav{height:66px;display:-webkit-flex;display:flex}
-#nav div{-webkit-flex:1;flex:1;text-align:center;padding-top:9px;font-size:10px;color:#8d95a1;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nav div{-webkit-flex:1 1 0;flex:1 1 0;min-width:0;padding-left:1px;padding-right:1px;text-align:center;padding-top:9px;font-size:10px;color:#8d95a1;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #nav div .ic{display:block;margin:0 auto 3px;width:26px;height:26px}
 #nav div.activa{color:#7fb0ff}
 
@@ -341,6 +341,12 @@ html.sa #mc-sona{top:40px}
 #cast{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:180;display:none}
 #cast .card{position:absolute;left:50%;top:60px;width:440px;margin-left:-220px;background:#1c1c1e;border-radius:20px;padding:18px 18px 12px;max-height:80%;overflow-y:auto;-webkit-overflow-scrolling:touch}
 #cast h3{margin:0 0 10px;font-size:20px}
+#cast .ce.cua{padding:8px 10px}
+#cast .ce.cua .cn{width:30px;-webkit-flex:none;flex:none;text-align:center;opacity:.6;font-size:14px}
+#cast .ce.cua.on .cn{opacity:1}
+#cast .ce.cua .ct{min-width:0;-webkit-flex:1;flex:1}
+#cast .ce.cua .ct b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+#cast .ce.cua .ct span{display:block;font-size:13px;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #cast .ce{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:12px 6px;border-top:1px solid rgba(255,255,255,.07);cursor:pointer}
 #cast .ce .ic{width:28px;height:28px;margin-right:14px;fill:#7fb0ff}
 #cast .ce div{-webkit-flex:1;flex:1}
@@ -947,7 +953,7 @@ function repToca() {
   estatCos();
   pintaMini();
   if (A.vista == 'dash') pintaSona();
-  
+  if ($('cast').style.display == 'block' && $('cast-c').querySelector('.cua')) cuaPinta();
   notifica();
 }
 function repPlay() {
@@ -1509,6 +1515,7 @@ function pintaSona(intern) {
     var ctlA = '<div class="s-ctl">' + (radio ? '' : '<button onclick="repAnterior()">' + svg(pod ? IC.enrere : IC.ant) + '</button>') +
       '<button class="gp" id="s-play" onclick="repPlay()"></button>' +
       (radio ? '' : '<button onclick="repSeguent()">' + svg(pod ? IC.endavant : IC.seg) + '</button>') +
+      (!radio && R.cua.length > 1 ? '<button class="sec" onclick="cuaObre()" title="' + esc(T('A continuació')) + '">' + svg(IC_CUA) + '</button>' : '') +
       '<span class="salt"></span>' +
       (VOL.ok ? '<span class="volw">' + svg(IC_SO) + htmlVolum() + '</span>' : '') +
       '<button class="mida" onclick="audMidaCanvia()" title="' + esc(T('Mida')) + '">' + (am == 'p' ? 'S' : am == 'm' ? 'M' : 'L') + '</button>' +
@@ -2011,6 +2018,27 @@ function castMedia() {
   if (c) return c.vod ? { u: c.u, k: c.k == 'yt' ? 'yt' : 'video', t: c.nom, img: c.poster || '' } : { u: c.urls[0], k: 'tv', t: c.nom, img: '' };
   if (it) return { u: it.k == 'radio' ? it.id : (it.orig || it.u), k: it.k || 'musica', t: it.t + (it.s ? ' · ' + it.s : ''), img: it.art || '' };
   return null;
+}
+/* ---------- Llista de reproducció (cua) ---------- */
+var IC_CUA = 'M3 6h12v2H3zm0 4h12v2H3zm0 4h8v2H3zm14-4v8.18A3 3 0 1019 21V12h3v-2z';
+function cuaObre() {
+  $('cast').style.display = 'block';
+  cuaPinta();
+  setTimeout(function () { var on = $('cast-c').querySelector('.ce.on'); if (on) $('cast-c').scrollTop = Math.max(0, on.offsetTop - 80); }, 0);
+}
+function cuaPinta() {
+  var h = '<h3>' + T('A continuació') + ' <span class="gris petit">' + (R.pos + 1) + ' / ' + R.cua.length + '</span></h3>';
+  for (var i = 0; i < R.cua.length; i++) {
+    var it = R.cua[i];
+    h += '<div class="ce cua' + (i == R.pos ? ' on' : '') + '" onclick="cuaVes(' + i + ')">' +
+      '<div class="cn">' + (i == R.pos ? '<span class="eq"><span></span><span></span><span></span></span>' : (i + 1)) + '</div>' +
+      '<div class="ct"><b>' + esc(it.t || '') + '</b><span>' + esc(it.s || '') + '</span></div></div>';
+  }
+  $('cast-c').innerHTML = h;
+}
+function cuaVes(i) {
+  if (i == R.pos) { castTanca(); return; }
+  R.pos = i; repToca(); castTanca();
 }
 function castObre() {
   $('cast').style.display = 'block';

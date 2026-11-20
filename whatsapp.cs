@@ -45,7 +45,7 @@ public static class WhatsApp
     static string Crida(string expr, int ms)
     {
         Cdp c = Assegura();
-        string js = "(async () => { if (!window.__wa || window.__wa.v !== 5) { " + Pont() + "\n } return JSON.stringify(await window.__wa." + expr + "); })()";
+        string js = "(async () => { if (!window.__wa || window.__wa.v !== 6) { " + Pont() + "\n } return JSON.stringify(await window.__wa." + expr + "); })()";
         try
         {
             object v = Edge.Avalua(c, js, ms);
