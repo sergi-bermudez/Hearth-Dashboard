@@ -715,7 +715,7 @@ function pintaWebDash() {
 /* ---------- Barra d'apps i navegació ---------- */
 function grad(c1, c2) { return 'background:' + c2 + ';background:-webkit-linear-gradient(135deg,' + c1 + ',' + c2 + ');background:linear-gradient(135deg,' + c1 + ',' + c2 + ')'; }
 function pintaDock() {
-  var h = '', n = '<div onclick="inici()" id="nv-dash">' + svg(IC.casa) + T('Inici') + '</div>';
+  var h = '', n = '<div onclick="navInici()" id="nv-dash">' + svg(IC.casa) + T('Inici') + '</div>';
   for (var i = 0; i < GRUPS.length; i++) {
     var g = GRUPS[i];
     if (g.id == 'webs' && !WB.defs.length) continue;
@@ -802,6 +802,19 @@ function tancaApp(id) {
   f.src = 'about:blank';
   f.parentNode.removeChild(f);
   delete FR[id];
+}
+/* Recarregar Hearth: la manera segura de treure tocs bloquejats a iOS 9 */
+var RC = { t: 0 };
+function recarrega(forca) {
+  var sona = R.cua.length || TV.canal;
+  if (sona && !forca && Date.now() - RC.t > 3000) { RC.t = Date.now(); avis(T('Toca «Inici» un altre cop per recarregar (s\'aturarà el que sona).'), 3000); return; }
+  avis(T('Recarregant…'), 3000);
+  setTimeout(function () { location.reload(); }, 150);
+}
+/* Tocar «Inici» a la barra quan ja s'és a l'inici recarrega (si algun toc s'ha quedat bloquejat) */
+function navInici() {
+  if (A.vista == 'dash' && IOS_VELL && !marcObert()) { recarrega(); return; }
+  inici();
 }
 function inici() {
   if (A.vista != 'dash') {
@@ -1250,6 +1263,8 @@ function tvAtura(silenci) {
   tvVideoNou();
   TV.mode = 'normal';
   if (!silenci) { estatCos(); if (A.vista == 'dash') { pintaSona(); pintaRapid(); } notifica(); }
+  /* iOS 9: després de la TV, si no sona res més, es recarrega per treure capes que bloquegen tocs */
+  if (!silenci && IOS_VELL && !R.cua.length) recarrega(true);
 }
 function tvCanvia(d) {
   if (TV.canal && TV.canal.vod) { vodSalta(d > 0 ? 30 : -15); return; }

@@ -704,3 +704,5 @@ TR.en["Segons per foto"]="Seconds per photo";
 TR.en["S'obre sol després de"]="Opens by itself after";
 TR.en["Les fotos del fons de la pantalla d'inici fan servir el mateix estil (Ken Burns o foto sencera)"]="Home screen background photos use the same style (Ken Burns or whole photo)";
 TR.en["L'estil, el temps, la salutació, el fons i els modes lleuger i nit."]="Style, weather, greeting, background, and light and night modes.";
+TR.en["Toca «Inici» un altre cop per recarregar (s'aturarà el que sona)."]="Tap “Home” again to reload (what's playing will stop).";
+TR.en["Recarregant…"]="Reloading…";

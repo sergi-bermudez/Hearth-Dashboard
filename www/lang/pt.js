@@ -704,3 +704,5 @@ TR.pt["Segons per foto"]="Segundos por foto";
 TR.pt["S'obre sol després de"]="Abre sozinha depois de";
 TR.pt["Les fotos del fons de la pantalla d'inici fan servir el mateix estil (Ken Burns o foto sencera)"]="As fotos do fundo do ecrã inicial usam o mesmo estilo (Ken Burns ou foto inteira)";
 TR.pt["L'estil, el temps, la salutació, el fons i els modes lleuger i nit."]="O estilo, o tempo, a saudação, o fundo e os modos leve e noite.";
+TR.pt["Toca «Inici» un altre cop per recarregar (s'aturarà el que sona)."]="Toca em «Início» outra vez para recarregar (o que está a tocar pára).";
+TR.pt["Recarregant…"]="A recarregar…";

@@ -704,3 +704,5 @@ TR.fr["Segons per foto"]="Secondes par photo";
 TR.fr["S'obre sol després de"]="S'ouvre seul après";
 TR.fr["Les fotos del fons de la pantalla d'inici fan servir el mateix estil (Ken Burns o foto sencera)"]="Les photos de fond de l'accueil utilisent le même style (Ken Burns ou photo entière)";
 TR.fr["L'estil, el temps, la salutació, el fons i els modes lleuger i nit."]="Le style, la météo, la salutation, le fond et les modes léger et nuit.";
+TR.fr["Toca «Inici» un altre cop per recarregar (s'aturarà el que sona)."]="Touche « Accueil » encore une fois pour recharger (la lecture s'arrêtera).";
+TR.fr["Recarregant…"]="Rechargement…";
