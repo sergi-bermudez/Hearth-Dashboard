@@ -395,6 +395,7 @@ var APPS = [
   { id: 'pelis', nom: 'Pel·lícules', ic: IC.pelis, c1: '#4b6cf7', c2: '#2a3fb0' },
   { id: 'tv', nom: 'TV', ic: IC.tv, c1: '#5aa0ff', c2: '#2a5fd0' },
   { id: 'youtube', nom: 'YouTube', ic: IC.video, c1: '#ff5a5a', c2: '#c4161c' },
+  { id: 'futbol', nom: 'Futbol', ic: 'M12 2a10 10 0 100 20 10 10 0 000-20zm1 3.3l1.35-.95a8 8 0 014.3 3.14l-.39 1.32-1.35.46L13 6.7V5.3zM9.65 4.35L11 5.3v1.4L7.1 9.27l-1.35-.46-.39-1.32a8 8 0 014.29-3.14zM7.08 17.11l-1.14.1A7.95 7.95 0 014 12c0-.12.01-.23.02-.35l1-.73 1.38.48 1.46 4.35-.78 1.36zm7.42 2.59a7.9 7.9 0 01-5 0l-.69-1.49.64-1.1h4.11l.64 1.11-.7 1.48zM14.27 15H9.73l-1.35-4.02L12 8.44l3.63 2.54L14.27 15zm3.79 2.21l-1.14-.1-.79-1.37 1.46-4.36 1.39-.47 1 .73L20 12a7.95 7.95 0 01-1.94 5.21z', c1: '#30d158', c2: '#0b7a3b' },
   { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12' },
   { id: 'fotos', nom: 'Fotos', ic: IC.fotos, c1: '#3fd18b', c2: '#14905a' },
   { id: 'missatges', nom: 'Missatges', ic: IC.missatges, c1: '#3ad07a', c2: '#0f8a55' },
@@ -405,7 +406,7 @@ var APPS = [
 /* Espais de la barra: cada un agrupa apps que es mostren com a pestanyes */
 var GRUPS = [
   { id: 'escoltar', nom: 'Escoltar', ic: IC.musica, c1: '#ff7a59', c2: '#c2185b', apps: ['musica', 'spotify', 'radio', 'podcasts'] },
-  { id: 'mirar', nom: 'Mirar', ic: IC.pelis, c1: '#5a7bff', c2: '#3a2bb0', apps: ['pelis', 'tv', 'youtube'] },
+  { id: 'mirar', nom: 'Mirar', ic: IC.pelis, c1: '#5a7bff', c2: '#3a2bb0', apps: ['pelis', 'tv', 'youtube', 'futbol'] },
   { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12', apps: ['casa'] },
   { id: 'fotos', nom: 'Fotos', ic: IC.fotos, c1: '#3fd18b', c2: '#14905a', apps: ['fotos'] },
   { id: 'missatges', nom: 'Missatges', ic: IC.missatges, c1: '#3ad07a', c2: '#0f8a55', apps: ['missatges'] },
@@ -1514,6 +1515,7 @@ var INF = { actiu: false, pin: '', apps: [] };
 function permesa(id) {
   /* Spotify i WhatsApp estan desactivats fins que s'activen a Configuració */
   if (id == 'spotify' && !A.ajustos.spotify) return false;
+  if (id == 'futbol' && A.ajustos.futbol === false) return false;
   if (id == 'missatges' && !A.ajustos.whatsapp) return false;
   if (id == 'casa' && !A.ajustos.tuya) return false;
   return !INF.actiu || id == 'dash' || INF.apps.indexOf(id) >= 0;

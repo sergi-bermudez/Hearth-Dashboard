@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<script src="i18n.js"></script>
+<title>Futbol</title>
+<style>
+.pest{margin-bottom:14px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pest button{margin-right:8px;border-radius:22px;padding:9px 18px}
+.pest button.on{background:#fff;color:#111}
+.dia{font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:#8d95a1;margin:18px 4px 8px}
+.dia:first-child{margin-top:4px}
+.pt{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;background:#1c1c1e;border-radius:16px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.pt.viu{box-shadow:inset 3px 0 0 #e0283b}
+.pt .eqs{-webkit-flex:1;flex:1;min-width:0}
+.pt .eq{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;height:32px}
+.pt .eq .lg{width:26px;height:26px;-webkit-flex:none;flex:none;margin-right:12px;background:center/contain no-repeat}
+.pt .eq .nm{-webkit-flex:1;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:17px}
+.pt .eq .nm.meu{font-weight:700}
+.pt .eq .gl{width:34px;text-align:right;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.pt .eq.perd .nm,.pt .eq.perd .gl{opacity:.55}
+.pt .est{width:96px;-webkit-flex:none;flex:none;text-align:center;border-left:1px solid rgba(255,255,255,.08);margin-left:12px;padding-left:10px}
+.pt .est b{display:block;font-size:20px;font-weight:600}
+.pt .est span{font-size:12px;color:#8d95a1;display:block;margin-top:2px}
+.pt .est .dir{color:#ff453a;font-weight:700}
+.pt .lliga{font-size:12px;color:#8d95a1;margin:0 0 4px 38px}
+.pt .rad{-webkit-flex:none;flex:none;margin-left:10px;width:46px;height:46px;border-radius:23px;padding:0;background:#2c2c2e}
+.pt .rad .ic{width:24px;height:24px}
+.chips span{display:inline-block;margin:0 8px 8px 0;padding:8px 14px;border-radius:20px;background:#2c2c2e;cursor:pointer}
+.chips span.on{background:#0a84ff;color:#fff}
+#fitxa{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:50;display:none}
+#fitxa .card{position:absolute;left:50%;top:40px;width:520px;margin-left:-260px;max-height:85%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#1c1c1e;border-radius:20px;padding:20px}
+#fitxa h3{margin:0 0 4px}
+#fitxa .em{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:10px 4px;border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer}
+#fitxa .em .ic{width:26px;height:26px;margin-right:12px;fill:#ffab3d}
+#fitxa .em div{-webkit-flex:1;flex:1}
+#fitxa .em small{display:block;color:#8d95a1}
+#fitxa .eqb{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:8px 4px;cursor:pointer}
+#fitxa .eqb .ic{width:24px;height:24px;margin-right:10px;fill:#ffc93c}
+@media (max-width:700px){ #fitxa .card{left:12px;right:12px;width:auto;margin-left:0} .pt .est{width:78px} }
+</style>
+</head>
+<body>
+<div id="pag">
+  <div class="capc"><h1>Futbol</h1></div>
+  <div class="pest" id="pest"></div>
+  <div id="llista"><div class="gris">Carregant…</div></div>
+  <p class="gris petit" style="margin-top:24px">Resultats i calendari d'ESPN. Els partits es poden escoltar en directe per les ràdios que els narren.</p>
+</div>
+<div id="fitxa" onclick="if(event.target==this)tancaFitxa()"><div class="card" id="fitxa-c"></div></div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('futbol');
+var LLIGUES = [
+  ['por.1', 'Liga Portugal', 'pt'], ['esp.1', 'LaLiga', 'es'], ['uefa.champions', 'Champions League', 'eu'], ['uefa.europa', 'Europa League', 'eu'],
+  ['uefa.europa.conf', 'Conference League', 'eu'], ['eng.1', 'Premier League', 'gb'], ['ita.1', 'Serie A', 'it'], ['ger.1', 'Bundesliga', 'de'],
+  ['fra.1', 'Ligue 1', 'fr'], ['esp.2', 'LaLiga 2', 'es'], ['esp.copa_del_rey', 'Copa del Rey', 'es'], ['por.taca.portugal', 'Taça de Portugal', 'pt'],
+  ['fifa.world', 'Mundial', 'eu'], ['uefa.euro', 'Eurocopa', 'eu'], ['uefa.nations', 'Nations League', 'eu']
+];
+/* Ràdios que narren els partits, per país (es busquen al cercador de ràdios de Hearth) */
+var RADIOS = {
+  es: [['Catalunya Ràdio', 'Catalunya Ràdio', 'Tot Costa / Tot gira'], ['RAC1', 'RAC1', 'Primer Toc / Tu diràs'], ['Cadena SER', 'Cadena SER', 'Carrusel Deportivo'], ['COPE', 'COPE', 'Tiempo de Juego'], ['Onda Cero', 'Onda Cero', 'Radioestadio'], ['Radio Marca', 'Radio Marca', '']],
+  pt: [['Antena 1', 'Antena 1', 'Relatos em direto'], ['TSF', 'TSF', 'Bancada'], ['Rádio Renascença', 'Renascença', 'Bola Branca'], ['Rádio Observador', 'Observador', '']],
+  gb: [['BBC Radio 5 Live', 'BBC Radio 5 Live', ''], ['talkSPORT', 'talkSPORT', '']],
+  fr: [['RMC', 'RMC', ''], ['France Info', 'franceinfo', '']],
+  it: [['Rai Radio 1', 'Rai Radio 1', 'Tutto il calcio minuto per minuto']],
+  de: [['WDR 2', 'WDR 2', 'Bundesliga live']]
+};
+var F = { pest: 'ara', d: { lligues: null, equips: [] }, partits: [], carregant: 0, t: null, radCau: {} };
+var PEST = [['ara', 'Ara'], ['meus', '★ Els meus equips'], ['calendari', 'Calendari'], ['resultats', 'Resultats'], ['lligues', 'Lligues']];
+
+function pintaPest() {
+  var h = '';
+  for (var i = 0; i < PEST.length; i++) h += '<button class="' + (PEST[i][0] == F.pest ? 'on' : '') + '" onclick="F.pest=\'' + PEST[i][0] + '\';pintaPest();pinta()">' + esc(T(PEST[i][1])) + '</button>';
+  $('pest').innerHTML = h;
+}
+function lligaDef(id) { for (var i = 0; i < LLIGUES.length; i++) if (LLIGUES[i][0] == id) return LLIGUES[i]; return null; }
+function lliguesTriades() {
+  if (F.d.lligues) return F.d.lligues;
+  return PAIS == 'PT' ? ['por.1', 'uefa.champions', 'esp.1'] : PAIS == 'GB' ? ['eng.1', 'uefa.champions'] : ['esp.1', 'uefa.champions', 'por.1'];
+}
+function ymd(d) { return d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2); }
+/* "2026-11-21T20:00Z" (el Safari 9 no l'entén amb Date.parse) */
+function dataIso(s) {
+  var m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d))?/.exec(s || '');
+  return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0))) : new Date(0);
+}
+function carrega() {
+  var l = lliguesTriades(), avui = new Date(), d1 = new Date(avui.getTime() - 3 * 864e5), d2 = new Date(avui.getTime() + 8 * 864e5);
+  var tots = [], pendents = l.length;
+  if (!pendents) { F.partits = []; pinta(); return; }
+  F.carregant = 1;
+  for (var i = 0; i < l.length; i++) (function (lg) {
+    getJson(viaX('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/scoreboard?limit=300&dates=' + ymd(d1) + '-' + ymd(d2)), function (d) {
+      var ev = (d && d.events) || [];
+      for (var j = 0; j < ev.length; j++) { var p = partit(ev[j], lg); if (p) tots.push(p); }
+      if (--pendents == 0) acaba();
+    }, function () { if (--pendents == 0) acaba(); });
+  })(l[i]);
+  function acaba() {
+    tots.sort(function (a, b) { return a.dt - b.dt; });
+    F.partits = tots; F.carregant = 0; pinta();
+    var viu = false;
+    for (var k = 0; k < tots.length; k++) if (tots[k].estat == 'in') viu = true;
+    clearTimeout(F.t);
+    F.t = setTimeout(carrega, viu ? 30000 : 300000);
+  }
+}
+function partit(e, lg) {
+  var c = e.competitions && e.competitions[0];
+  if (!c || !c.competitors || c.competitors.length < 2) return null;
+  var p = { id: e.id, lg: lg, dt: dataIso(e.date), estat: (e.status && e.status.type && e.status.type.state) || 'pre', detall: (e.status && e.status.type && e.status.type.shortDetail) || '', rellotge: (e.status && e.status.displayClock) || '', eq: [] };
+  for (var i = 0; i < c.competitors.length; i++) {
+    var x = c.competitors[i], t = x.team || {};
+    var o = { id: String(t.id || ''), nom: t.shortDisplayName || t.displayName || t.name || '', llarg: t.displayName || '', logo: t.logo || '', gols: x.score, casa: x.homeAway == 'home', guanya: !!x.winner };
+    if (o.casa) p.eq.unshift(o); else p.eq.push(o);
+  }
+  p.tv = [];
+  if (c.broadcasts) for (i = 0; i < c.broadcasts.length; i++) if (c.broadcasts[i].names) p.tv = p.tv.concat(c.broadcasts[i].names);
+  return p;
+}
+function esMeu(eq) { for (var i = 0; i < F.d.equips.length; i++) if (F.d.equips[i].id == eq.id) return true; return false; }
+function partitMeu(p) { return esMeu(p.eq[0]) || esMeu(p.eq[1]); }
+function hora(d) { return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function nomDia(d) {
+  var avui = new Date(), dema = new Date(avui.getTime() + 864e5), ahir = new Date(avui.getTime() - 864e5);
+  if (d.toDateString() == avui.toDateString()) return T('Avui');
+  if (d.toDateString() == dema.toDateString()) return T('Demà');
+  if (d.toDateString() == ahir.toDateString()) return T('Ahir');
+  return DIES[d.getDay()] + ' ' + d.getDate() + ' ' + MESOS[d.getMonth()];
+}
+function htmlPartit(p, i) {
+  var viu = p.estat == 'in', fet = p.estat == 'post', h = '<div class="pt' + (viu ? ' viu' : '') + '" onclick="fitxa(' + i + ')"><div class="eqs"><div class="lliga">' + esc((lligaDef(p.lg) || [0, ''])[1]) + '</div>';
+  for (var k = 0; k < 2; k++) {
+    var e = p.eq[k], perd = fet && !e.guanya && p.eq[1 - k].guanya;
+    h += '<div class="eq' + (perd ? ' perd' : '') + '"><div class="lg" style="background-image:' + bg(e.logo ? imgx(e.logo, 64) : '') + '"></div><div class="nm' + (esMeu(e) ? ' meu' : '') + '">' + esc(e.nom) + '</div>' + (p.estat != 'pre' ? '<div class="gl">' + esc(e.gols == null ? '' : e.gols) + '</div>' : '') + '</div>';
+  }
+  h += '</div><div class="est">' + (viu ? '<b class="dir">' + esc(p.rellotge || p.detall) + '</b><span class="dir">' + T('EN DIRECTE') + '</span>' : fet ? '<b>' + T('Final') + '</b><span>' + esc(nomDia(p.dt)) + '</span>' : '<b>' + hora(p.dt) + '</b><span>' + esc(nomDia(p.dt)) + '</span>') + '</div>';
+  if (!fet) h += '<button class="rad" onclick="event.stopPropagation();fitxa(' + i + ',true)">' + svg(IC.radio) + '</button>';
+  return h + '</div>';
+}
+function pinta() {
+  var h = '', l = F.partits, i, dia = '';
+  if (F.pest == 'lligues') { pintaLligues(); return; }
+  var ara = new Date(), fiAvui = new Date(ara.getFullYear(), ara.getMonth(), ara.getDate() + 1), iniAvui = new Date(ara.getFullYear(), ara.getMonth(), ara.getDate());
+  var mostra = [];
+  for (i = 0; i < l.length; i++) {
+    var p = l[i], ok = false;
+    if (F.pest == 'ara') ok = p.estat == 'in' || (p.dt >= iniAvui && p.dt < fiAvui);
+    else if (F.pest == 'meus') ok = partitMeu(p);
+    else if (F.pest == 'calendari') ok = p.estat == 'pre';
+    else if (F.pest == 'resultats') ok = p.estat == 'post';
+    if (ok) mostra.push(i);
+  }
+  if (F.pest == 'resultats') mostra.reverse();
+  for (i = 0; i < mostra.length; i++) {
+    var q = l[mostra[i]], nd = nomDia(q.dt);
+    if (nd != dia) { h += '<div class="dia">' + esc(nd) + '</div>'; dia = nd; }
+    h += htmlPartit(q, mostra[i]);
+  }
+  if (!h) {
+    if (F.carregant) h = '<div class="gris">' + T('Carregant…') + '</div>';
+    else if (F.pest == 'meus') h = '<div class="gris">' + T('Toca un partit i marca l\'estrella dels teus equips: sortiran aquí.') + '</div>';
+    else if (F.pest == 'ara') h = '<div class="gris">' + T('Avui no hi ha partits de les teves lligues. Mira el calendari.') + '</div>';
+    else h = '<div class="gris">' + T('No hi ha partits.') + '</div>';
+  }
+  $('llista').innerHTML = h;
+}
+function pintaLligues() {
+  var t = lliguesTriades(), h = '<div class="dia">' + T('Les lligues que segueixes') + '</div><div class="chips">';
+  for (var i = 0; i < LLIGUES.length; i++) h += '<span class="' + (t.indexOf(LLIGUES[i][0]) >= 0 ? 'on' : '') + '" onclick="canviaLliga(\'' + LLIGUES[i][0] + '\')">' + esc(LLIGUES[i][1]) + '</span>';
+  h += '</div><div class="dia">' + T('Els teus equips') + '</div>';
+  if (!F.d.equips.length) h += '<div class="gris">' + T('Toca un partit i marca l\'estrella dels teus equips.') + '</div>';
+  for (i = 0; i < F.d.equips.length; i++) h += '<div class="pt" style="cursor:default"><div class="eqs"><div class="eq"><div class="lg" style="background-image:' + bg(F.d.equips[i].logo ? imgx(F.d.equips[i].logo, 64) : '') + '"></div><div class="nm meu">' + esc(F.d.equips[i].nom) + '</div></div></div><button class="acc" onclick="treuEquip(' + i + ')">' + T('Treu') + '</button></div>';
+  $('llista').innerHTML = h;
+}
+function canviaLliga(id) {
+  var t = lliguesTriades().slice(), p = t.indexOf(id);
+  if (p >= 0) t.splice(p, 1); else t.push(id);
+  F.d.lligues = t; desa(); pintaLligues(); carrega();
+}
+function treuEquip(i) { F.d.equips.splice(i, 1); desa(); pintaLligues(); }
+function desa() { desaDades('futbol', F.d); }
+
+/* Fitxa: equips preferits i ràdios per escoltar-lo */
+function fitxa(i, nomesRadio) {
+  var p = F.partits[i]; if (!p) return;
+  F.actual = i;
+  var h = '<h3>' + esc(p.eq[0].llarg || p.eq[0].nom) + ' – ' + esc(p.eq[1].llarg || p.eq[1].nom) + '</h3><div class="gris">' + esc((lligaDef(p.lg) || [0, ''])[1]) + ' · ' + esc(nomDia(p.dt)) + ' ' + hora(p.dt) + (p.estat != 'pre' ? ' · ' + esc(p.detall) : '') + '</div>';
+  if (p.tv.length) h += '<div class="gris petit" style="margin-top:6px">TV: ' + esc(p.tv.join(', ')) + '</div>';
+  if (!nomesRadio) {
+    h += '<div class="dia">' + T('Els teus equips') + '</div>';
+    for (var k = 0; k < 2; k++) h += '<div class="eqb" onclick="canviaEquip(' + k + ')">' + svg(esMeu(p.eq[k]) ? IC.estrella : IC.estrellaBuida) + esc(p.eq[k].llarg || p.eq[k].nom) + '</div>';
+  }
+  if (p.estat != 'post') {
+    h += '<div class="dia">' + T('Escolta-ho a la ràdio') + '</div>';
+    var l = radiosPer(p);
+    for (k = 0; k < l.length; k++) h += '<div class="em" onclick="escolta(' + k + ')">' + svg(IC.radio) + '<div>' + esc(l[k][0]) + (l[k][2] ? '<small>' + esc(l[k][2]) + '</small>' : '') + '</div></div>';
+    F.radLlista = l;
+  }
+  h += '<div style="text-align:right;margin-top:14px"><button onclick="tancaFitxa()">' + T('Tanca') + '</button></div>';
+  $('fitxa-c').innerHTML = h;
+  $('fitxa').style.display = 'block';
+}
+function tancaFitxa() { $('fitxa').style.display = 'none'; }
+function canviaEquip(k) {
+  var e = F.partits[F.actual].eq[k], meu = false;
+  for (var i = 0; i < F.d.equips.length; i++) if (F.d.equips[i].id == e.id) { F.d.equips.splice(i, 1); meu = true; break; }
+  if (!meu) F.d.equips.push({ id: e.id, nom: e.llarg || e.nom, logo: e.logo });
+  desa(); fitxa(F.actual); pinta();
+}
+/* Ràdios del país de la lliga i, després, les del teu país */
+function radiosPer(p) {
+  var pa = (lligaDef(p.lg) || [0, 0, 'eu'])[2], meu = (PAIS || 'ES').toLowerCase(), ordre = [], r = [], vist = {};
+  if (pa != 'eu') ordre.push(pa);
+  ordre.push(meu == 'ad' ? 'es' : meu);
+  ordre.push('es'); ordre.push('pt');
+  for (var i = 0; i < ordre.length; i++) {
+    var l = RADIOS[ordre[i]] || [];
+    for (var j = 0; j < l.length; j++) if (!vist[l[j][0]]) { vist[l[j][0]] = 1; r.push(l[j]); }
+  }
+  return r;
+}
+function escolta(k) {
+  var e = F.radLlista[k]; if (!e || !Casa) return;
+  if (F.radCau[e[1]]) { Casa.toca([Casa.radioItem(F.radCau[e[1]])], 0); tancaFitxa(); return; }
+  avis(Tf('Buscant {1}…', e[0]));
+  getJson(api('radios', { name: e[1], limit: 10 }), function (l) {
+    l = l || [];
+    /* La que s'assembla més pel nom; si n'hi ha diverses, la de més qualitat */
+    var millor = null, nb = e[1].toLowerCase();
+    for (var i = 0; i < l.length; i++) {
+      var t = (l[i].t || '').toLowerCase(), punts = (t == nb ? 100 : t.indexOf(nb) == 0 ? 50 : 10) + Math.min(+l[i].br || 0, 192) / 10;
+      if (!millor || punts > millor.p) millor = { p: punts, s: l[i] };
+    }
+    if (!millor) { avis(Tf('No he trobat {1}. Busca-la a Ràdio.', e[0]), 5000); return; }
+    F.radCau[e[1]] = millor.s;
+    Casa.toca([Casa.radioItem(millor.s)], 0);
+    tancaFitxa();
+  }, function () { avis(T('No s\'ha pogut buscar la ràdio')); });
+}
+window.casaEstat = function () { };
+dades('futbol', function (d) {
+  if (d) { F.d = d; if (!F.d.equips) F.d.equips = []; }
+  if (F.d.equips.length) F.pest = 'meus';
+  pintaPest(); pinta(); carrega();
+});
+</script>
+</body>
+</html>

@@ -137,6 +137,7 @@ body{background:#000}
     <div class="desc">Aquestes funcions fan servir les webs de Spotify i WhatsApp des de l'Edge del PC, d'una manera que les seves condicions d'ús potser no permeten. Per això estan desactivades: activa-les només si ho acceptes.</div>
     <label class="check"><input type="checkbox" id="fn-spotify" onchange="desaFuncions()">Spotify (sona al PC i el so arriba a l'iPad)</label>
     <label class="check"><input type="checkbox" id="fn-whatsapp" onchange="desaFuncions()">WhatsApp (llegir i respondre missatges)</label>
+    <label class="check"><input type="checkbox" id="fn-futbol" onchange="desaFuncions()">Futbol (resultats, calendari i ràdios que narren els partits)</label>
   </div>
 
   <div class="sec" id="s-inici">
@@ -354,7 +355,7 @@ function carrega() {
     C.dp = p || { propi: false, ajustos: {} };
     if (!C.dp.ajustos) C.dp.ajustos = {};
     $('aj-ciutat').value = C.aj.ciutat || '';
-    $('fn-spotify').checked = !!C.aj.spotify; $('fn-whatsapp').checked = !!C.aj.whatsapp;
+    $('fn-spotify').checked = !!C.aj.spotify; $('fn-whatsapp').checked = !!C.aj.whatsapp; $('fn-futbol').checked = C.aj.futbol !== false;
     omplInici();
     dpPinta();
     valorsMenu();
@@ -560,7 +561,7 @@ function afegeixGoogleHome() {
 
 /* Mode infantil */
 var INFC = { d: { actiu: false, pin: '', apps: ['docs', 'radio', 'musica'] } };
-var APPS_INF = [['musica', 'Música'], ['spotify', 'Spotify'], ['radio', 'Ràdio'], ['podcasts', 'Pòdcasts'], ['pelis', 'Pel·lícules'], ['tv', 'TV'], ['youtube', 'YouTube'], ['casa', 'Casa'], ['fotos', 'Fotos'], ['missatges', 'Missatges'], ['docs', 'Documents'], ['webs', 'Webs']];
+var APPS_INF = [['musica', 'Música'], ['spotify', 'Spotify'], ['radio', 'Ràdio'], ['podcasts', 'Pòdcasts'], ['pelis', 'Pel·lícules'], ['tv', 'TV'], ['youtube', 'YouTube'], ['futbol', 'Futbol'], ['casa', 'Casa'], ['fotos', 'Fotos'], ['missatges', 'Missatges'], ['docs', 'Documents'], ['webs', 'Webs']];
 function infCarrega() {
   dadesInf(function (d) {
     if (d) INFC.d = d;
@@ -587,6 +588,7 @@ function obreApp(a) { if (Casa) Casa.obre(a); }
 function desaFuncions() {
   C.aj.spotify = $('fn-spotify').checked;
   C.aj.whatsapp = $('fn-whatsapp').checked;
+  C.aj.futbol = $('fn-futbol').checked;
   desaDades('ajustos', C.aj, function () { avis(T('Desat')); if (Casa) Casa.recarrega(); });
 }
 
