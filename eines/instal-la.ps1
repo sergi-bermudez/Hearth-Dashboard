@@ -3,7 +3,8 @@ $ErrorActionPreference = 'Continue'
 $dir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $eines = Join-Path $dir 'eines'
 $port = 8080
-try { $c = Get-Content (Join-Path $dir 'config.json') -Raw | ConvertFrom-Json; if ($c.port) { $port = [int]$c.port } } catch {}
+$cfg = Join-Path $dir 'config.json'
+if (Test-Path $cfg) { try { $c = Get-Content $cfg -Raw -ErrorAction Stop | ConvertFrom-Json; if ($c.port) { $port = [int]$c.port } } catch {} }
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $Host.UI.RawUI.WindowTitle = 'Instal-lant Hearth'
 

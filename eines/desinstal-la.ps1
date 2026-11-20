@@ -2,7 +2,8 @@
 $ErrorActionPreference = 'Continue'
 $dir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $port = 8080
-try { $c = Get-Content (Join-Path $dir 'config.json') -Raw | ConvertFrom-Json; if ($c.port) { $port = [int]$c.port } } catch {}
+$cfg = Join-Path $dir 'config.json'
+if (Test-Path $cfg) { try { $c = Get-Content $cfg -Raw -ErrorAction Stop | ConvertFrom-Json; if ($c.port) { $port = [int]$c.port } } catch {} }
 Write-Host ""
 Write-Host "  Desinstal-lant Hearth..." -ForegroundColor Yellow
 Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object { $_.CommandLine -match 'servidor\.ps1' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
