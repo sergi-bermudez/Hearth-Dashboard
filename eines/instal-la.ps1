@@ -25,6 +25,10 @@ netsh http add urlacl url=http://+:$port/ sddl="D:(A;;GX;;;WD)" | Out-Null
 foreach ($n in @('Hearth', 'Hearth (nom a la xarxa)', 'Servidor Casa')) { netsh advfirewall firewall delete rule name="$n" 2>&1 | Out-Null }
 netsh advfirewall firewall add rule name="Hearth" dir=in action=allow protocol=TCP localport=$port profile=private,domain | Out-Null
 netsh advfirewall firewall add rule name="Hearth (nom a la xarxa)" dir=in action=allow protocol=UDP localport=5353 profile=private,domain | Out-Null
+# Punt d'acces Wi-Fi del PC (Windows el considera xarxa publica): nomes els aparells connectats al PC
+foreach ($n in @('Hearth (punt d''acces)', 'Hearth (punt d''acces, nom)')) { netsh advfirewall firewall delete rule name="$n" 2>&1 | Out-Null }
+netsh advfirewall firewall add rule name="Hearth (punt d'acces)" dir=in action=allow protocol=TCP localport=$port profile=public remoteip=192.168.137.0/24 | Out-Null
+netsh advfirewall firewall add rule name="Hearth (punt d'acces, nom)" dir=in action=allow protocol=UDP localport=5353 profile=public remoteip=192.168.137.0/24 | Out-Null
 try {
     $publiques = Get-NetConnectionProfile | Where-Object { $_.NetworkCategory -eq 'Public' }
     foreach ($x in $publiques) {

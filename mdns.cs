@@ -11,10 +11,13 @@ using System.Threading;
 public static class Mdns
 {
     static UdpClient udp;
+    static Timer rejunta;
     public static string Nom = "hearth";
     static readonly IPAddress Grup = IPAddress.Parse("224.0.0.251");
 
-    static List<IPAddress> Adreces()
+    static List<IPAddress> Adreces() { return Adreces(false); }
+    // totes=true inclou adaptadors virtuals (p. ex. el punt d'acces Wi-Fi del PC, 192.168.137.1)
+    static List<IPAddress> Adreces(bool totes)
     {
         List<IPAddress> l = new List<IPAddress>();
         try
@@ -23,7 +26,7 @@ public static class Mdns
             {
                 if (ni.OperationalStatus != OperationalStatus.Up || ni.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
                 string d = (ni.Description + " " + ni.Name).ToLowerInvariant();
-                if (d.Contains("virtual") || d.Contains("vmware") || d.Contains("hyper-v") || d.Contains("vpn") || d.Contains("tailscale") || d.Contains("bluetooth")) continue;
+                if (!totes && (d.Contains("virtual") || d.Contains("vmware") || d.Contains("hyper-v") || d.Contains("vpn") || d.Contains("tailscale") || d.Contains("bluetooth"))) continue;
                 foreach (UnicastIPAddressInformation a in ni.GetIPProperties().UnicastAddresses)
                     if (a.Address.AddressFamily == AddressFamily.InterNetwork && !a.Address.ToString().StartsWith("169.254")) l.Add(a.Address);
             }
@@ -49,9 +52,11 @@ public static class Mdns
                 udp = new UdpClient();
                 udp.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 udp.Client.Bind(new IPEndPoint(IPAddress.Any, 5353));
-                foreach (IPAddress a in Adreces()) { try { udp.JoinMulticastGroup(Grup, a); } catch { } }
+                foreach (IPAddress a in Adreces(true)) { try { udp.JoinMulticastGroup(Grup, a); } catch { } }
                 try { udp.JoinMulticastGroup(Grup); } catch { }
                 Anuncia();
+                // Si despres s'activa el punt d'acces o canvia la xarxa, s'hi torna a apuntar
+                rejunta = new Timer(delegate { foreach (IPAddress a in Adreces(true)) { try { udp.JoinMulticastGroup(Grup, a); } catch { } } }, null, 60000, 60000);
                 while (true)
                 {
                     IPEndPoint de = new IPEndPoint(IPAddress.Any, 0);
@@ -120,13 +125,14 @@ public static class Mdns
     static byte[] Resposta(byte id0, byte id1, IPAddress qui)
     {
         List<IPAddress> l = Adreces();
-        if (l.Count == 0) return null;
-        IPAddress tria = l[0];
+        IPAddress tria = l.Count > 0 ? l[0] : null;
         if (qui != null)
         {
+            // La IP de la mateixa xarxa que l'aparell que pregunta (inclou el punt d'acces del PC)
             byte[] q = qui.GetAddressBytes();
-            foreach (IPAddress a in l) { byte[] x = a.GetAddressBytes(); if (x[0] == q[0] && x[1] == q[1] && x[2] == q[2]) { tria = a; break; } }
+            foreach (IPAddress a in Adreces(true)) { byte[] x = a.GetAddressBytes(); if (x[0] == q[0] && x[1] == q[1] && x[2] == q[2]) { tria = a; break; } }
         }
+        if (tria == null) return null;
         List<byte> r = new List<byte>();
         r.AddRange(new byte[] { 0, 0, 0x84, 0x00, 0, 0, 0, 1, 0, 0, 0, 0 });
         foreach (string part in (Nom + ".local").Split('.')) { byte[] p = Encoding.UTF8.GetBytes(part); r.Add((byte)p.Length); r.AddRange(p); }
