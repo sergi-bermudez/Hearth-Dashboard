@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<title>Casa</title>
+<script src="i18n.js"></script>
+<style>
+.esc{white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px}
+.esc span{display:inline-block;padding:11px 18px;border-radius:14px;background:rgba(255,255,255,.08);margin-right:10px;font-weight:600;cursor:pointer}
+.esc span:active{background:#ffab3d;color:#111}
+h2.g{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8d95a1;margin:18px 0 10px}
+.rj{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:0 -6px}
+.ap{width:25%;padding:6px}
+.ap .c{background:rgba(255,255,255,.07);border-radius:20px;padding:14px;height:150px;position:relative;cursor:pointer;-webkit-transition:background .2s;transition:background .2s}
+.ap.on .c{background:#f5f1e8;color:#1a1a1a}
+.ap.off-line .c{opacity:.45}
+.ap .ic{width:34px;height:34px;fill:#8d95a1}
+.ap.on .ic{fill:#ff9f1c}
+.ap .nm{font-weight:600;font-size:16px;margin-top:10px;line-height:1.2;max-height:2.4em;overflow:hidden}
+.ap .es{font-size:13px;color:#8d95a1;margin-top:3px}
+.ap.on .es{color:#6b6458}
+.ap .fav{position:absolute;right:8px;top:8px;background:none;padding:4px}
+.ap .fav .ic{width:22px;height:22px;fill:#5d6673}
+.ap .fav.si .ic{fill:#ffab3d}
+.ap input[type=range]{position:absolute;left:14px;right:14px;bottom:14px;width:auto;-webkit-appearance:none;height:28px;background:transparent}
+.ap input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:rgba(128,128,128,.35)}
+.ap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:12px;background:#ff9f1c;margin-top:-9px}
+.ap .bts{position:absolute;left:10px;right:10px;bottom:10px;display:-webkit-flex;display:flex}
+.ap .bts button{-webkit-flex:1;flex:1;margin:0 3px;padding:8px 0;font-size:13px}
+@media (orientation:portrait){ .ap{width:33.33%} }
+</style>
+</head>
+<body>
+<div id="pag">
+  <div class="capc"><h1>Casa</h1></div>
+  <div class="esc" id="esc"></div>
+  <div id="cont"><div class="gris">Carregant…</div></div>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('casa');
+var ICA = {
+  llum: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z',
+  endoll: 'M16 7V3h-2v4h-4V3H8v4c-1.1 0-2 .9-2 2v5.5L9.5 18v3h5v-3l3.5-3.5V9c0-1.1-.9-2-2-2z',
+  persiana: 'M20 19V3H4v16H2v2h20v-2h-2zM16 9h2v2h-2V9zm-2 2H6V9h8v2zm4-4H6V5h12v2zm-4 6v2H6v-2h8zm2 0h2v2h-2v-2zm-10 4h12v2H6v-2z',
+  clima: 'M15 13V5c0-1.66-1.34-3-3-3S9 3.34 9 5v8c-1.21.91-2 2.37-2 4 0 2.76 2.24 5 5 5s5-2.24 5-5c0-1.63-.79-3.09-2-4zm-4-8c0-.55.45-1 1-1s1 .45 1 1h-1v1h1v2h-1v1h1v2h-2V5z',
+  sensor: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+  altre: 'M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z',
+  estrella: 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'
+};
+var GRUPS_CAT = [['llum', 'Llums', ['dj', 'dd', 'fwd', 'tgq', 'xdd', 'dc', 'tyndj', 'gyd']], ['endoll', 'Endolls i interruptors', ['cz', 'pc', 'kg', 'tdq', 'dlq', 'qjdcz']], ['persiana', 'Persianes i cortines', ['cl', 'clkg', 'mc']], ['clima', 'Clima', ['wk', 'kt', 'qn', 'rs', 'fs', 'kj', 'cs', 'wkf']], ['sensor', 'Sensors', ['wsdcg', 'mcs', 'pir', 'ywbj', 'rqbj', 'sj', 'co2bj', 'pm2.5', 'hjjcy', 'ldcg']]];
+var INTERRUPTORS = ['switch_led', 'switch', 'switch_1', 'switch_2', 'switch_3', 'switch_4', 'switch_usb1', 'led_switch'];
+var CA = { l: [], fav: [], t: null, ocupat: 0 };
+
+function tipus(d) {
+  for (var i = 0; i < GRUPS_CAT.length; i++) if (GRUPS_CAT[i][2].indexOf(d.cat) >= 0) return GRUPS_CAT[i][0];
+  return 'altre';
+}
+function interruptor(d) { for (var i = 0; i < INTERRUPTORS.length; i++) if (typeof d.estat[INTERRUPTORS[i]] == 'boolean') return INTERRUPTORS[i]; return null; }
+function brillantor(d) {
+  if (typeof d.estat.bright_value_v2 == 'number') return { codi: 'bright_value_v2', min: 10, max: 1000 };
+  if (typeof d.estat.bright_value == 'number') return { codi: 'bright_value', min: 25, max: 255 };
+  return null;
+}
+function textEstat(d) {
+  var e = d.estat, s = [];
+  if (!d.online) return T('Desconnectat');
+  if (typeof e.va_temperature == 'number') s.push((e.va_temperature / 10).toFixed(1) + '°');
+  if (typeof e.temp_current == 'number') s.push((e.temp_current > 100 ? e.temp_current / 10 : e.temp_current) + '°');
+  if (typeof e.va_humidity == 'number') s.push(e.va_humidity + '%');
+  if (typeof e.percent_state == 'number') s.push(e.percent_state + '%');
+  if (typeof e.doorcontact_state == 'boolean') s.push(e.doorcontact_state ? T('Obert') : T('Tancat'));
+  if (typeof e.battery_percentage == 'number') s.push('🔋 ' + e.battery_percentage + '%');
+  var sw = interruptor(d);
+  if (sw && !s.length) s.push(e[sw] ? T('Encès') : T('Apagat'));
+  var b = brillantor(d);
+  if (b && sw && e[sw]) s.push(Math.round(100 * (e[b.codi] - b.min) / (b.max - b.min)) + '%');
+  return s.join(' · ');
+}
+function carrega(fresc) {
+  clearTimeout(CA.t);
+  if (Date.now() - CA.ocupat < 3000) { CA.t = setTimeout(carrega, 3000); return; }
+  getJson(api('tuya/dispositius', fresc ? { fresc: 1 } : {}), function (l) {
+    CA.l = l || [];
+    pinta();
+    CA.t = setTimeout(carrega, 6000);
+  }, function (st, txt) {
+    var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
+    $('cont').innerHTML = '<div class="ajuda">' + (/configurar/.test(m || '') ? T('Encara no has connectat Tuya. Ves a Configuració ▸ Casa (Tuya) i segueix els passos.') : esc(m || T('No s\'ha pogut connectar amb Tuya.'))) + '</div>';
+    CA.t = setTimeout(carrega, 20000);
+  });
+}
+function pinta() {
+  var grups = {}, i, d, h = '';
+  var favs = [];
+  for (i = 0; i < CA.l.length; i++) {
+    d = CA.l[i];
+    if (CA.fav.indexOf(d.id) >= 0) favs.push(i);
+    var t = tipus(d);
+    (grups[t] = grups[t] || []).push(i);
+  }
+  if (favs.length) h += '<h2 class="g">★ ' + T('Preferits') + '</h2><div class="rj">' + favs.map(rajola).join('') + '</div>';
+  var ordre = GRUPS_CAT.concat([['altre', 'Altres', []]]);
+  for (i = 0; i < ordre.length; i++) {
+    var g = grups[ordre[i][0]];
+    if (!g) continue;
+    h += '<h2 class="g">' + esc(T(ordre[i][1])) + '</h2><div class="rj">' + g.map(rajola).join('') + '</div>';
+  }
+  $('cont').innerHTML = h || '<div class="gris">' + T('No hi ha cap aparell.') + '</div>';
+}
+function rajola(i) {
+  var d = CA.l[i], sw = interruptor(d), on = sw && d.estat[sw], b = brillantor(d), t = tipus(d), fav = CA.fav.indexOf(d.id) >= 0, extra = '';
+  if (b && sw) extra = '<input type="range" min="' + b.min + '" max="' + b.max + '" value="' + d.estat[b.codi] + '" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation();CA.ocupat=Date.now()" onchange="brillo(' + i + ',this.value)">';
+  else if (d.cat == 'cl' || d.estat.control != null) extra = '<div class="bts"><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'open\')">▲</button><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'stop\')">■</button><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'close\')">▼</button></div>';
+  return '<div class="ap' + (on ? ' on' : '') + (d.online ? '' : ' off-line') + '"><div class="c" onclick="toca(' + i + ')">' +
+    svg(ICA[t] || ICA.altre) + '<button class="fav' + (fav ? ' si' : '') + '" onclick="event.stopPropagation();canviaFav(' + i + ')">' + svg(ICA.estrella) + '</button>' +
+    '<div class="nm">' + esc(d.nom) + '</div><div class="es">' + esc(textEstat(d)) + '</div>' + extra + '</div></div>';
+}
+function toca(i) {
+  var d = CA.l[i], sw = interruptor(d);
+  if (!sw || !d.online) return;
+  ordre(i, sw, !d.estat[sw]);
+}
+function brillo(i, v) { ordre(i, brillantor(CA.l[i]).codi, parseInt(v, 10)); }
+function ordre(i, codi, valor) {
+  var d = CA.l[i];
+  CA.ocupat = Date.now();
+  if (typeof valor != 'string') { d.estat[codi] = valor; pinta(); }
+  peticio('POST', api('tuya/ordre'), JSON.stringify({ id: d.id, codi: codi, valor: valor }), function () {
+    CA.ocupat = 0; setTimeout(function () { carrega(true); }, 800);
+  }, function (st, txt) { var m = ''; try { m = JSON.parse(txt).error; } catch (e) { } avis(m || T('No s\'ha pogut'), 5000); CA.ocupat = 0; carrega(true); });
+}
+function canviaFav(i) {
+  var id = CA.l[i].id, p = CA.fav.indexOf(id);
+  if (p >= 0) CA.fav.splice(p, 1); else CA.fav.push(id);
+  desaDades('casa_fav', CA.fav);
+  if (Casa && Casa.casaCanviada) Casa.casaCanviada();
+  pinta();
+}
+function escenes() {
+  getJson(api('tuya/escenes'), function (d) {
+    var l = (d && d.escenes) || [], h = '';
+    CA.esc = l;
+    for (var i = 0; i < l.length; i++) h += '<span onclick="escena(' + i + ')">' + esc(l[i].nom) + '</span>';
+    $('esc').innerHTML = h;
+  }, function () { });
+}
+function escena(i) {
+  var e = CA.esc[i];
+  post(api('tuya/escena', { casa: e.casa, id: e.id }), '', function () { avis(Tf('«{1}» activada', e.nom)); setTimeout(function () { carrega(true); }, 1500); }, errXarxa(T('activar l\'escena')));
+}
+window.casaMostra = function () { carrega(true); };
+window.casaAmaga = function () { clearTimeout(CA.t); };
+dades('casa_fav', function (f) { CA.fav = f || []; carrega(); escenes(); });
+</script>
+</body>
+</html>

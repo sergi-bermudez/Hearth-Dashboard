@@ -304,7 +304,7 @@ public static class CasaServidor
             case "dades":
                 {
                     string n = Q(q, "n");
-                    if (!Regex.IsMatch(n, "^[a-z0-9_]{1,40}$")) { Error(res, 400, "Nom"); return; }
+                    if (!Regex.IsMatch(n, "^[a-z0-9_]{1,40}$") || n == "tuya") { Error(res, 400, "Nom"); return; }
                     string f = Path.Combine(Dades, n + ".json");
                     if (post)
                     {
@@ -335,6 +335,7 @@ public static class CasaServidor
         if (nom.StartsWith("web/")) { Webs.Api(nom.Substring(4), q, ctx); return; }
         if (nom == "radios") { Radios.Api(q, ctx); return; }
         if (nom.StartsWith("radio/")) { RadioHls.Api(nom.Substring(6), q, ctx); return; }
+        if (nom.StartsWith("tuya/")) { Tuya.Api(nom.Substring(5), q, ctx); return; }
         if (nom == "agenda") { Agenda.Api(q, ctx); return; }
         if (nom == "pelis") { Pelis.Api(q, ctx); return; }
         if (nom == "musica") { Musica.Api(q, ctx); return; }
@@ -354,6 +355,7 @@ public static class CasaServidor
         if (nom.StartsWith("spotify/")) { Spotify.Admin(nom.Substring(8), q, ctx); return; }
         if (nom.StartsWith("gfotos/")) { GFotos.Admin(nom.Substring(7), q, ctx); return; }
         if (nom == "youtube/instal-la") { YouTube.Api("instal-la", q, ctx); return; }
+        if (nom == "tuya/ajustos") { Tuya.Ajusta(ctx); return; }
         if (nom.StartsWith("wa/")) { if (nom != "wa/atura" && !FuncioActiva("whatsapp")) { Error(ctx.Response, 403, "WhatsApp est\u00e0 desactivat (Configuraci\u00f3 \u25b8 Funcions opcionals)"); return; } WhatsApp.Api(nom.Substring(3), q, ctx); return; }
         switch (nom)
         {

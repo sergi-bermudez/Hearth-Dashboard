@@ -372,6 +372,7 @@ var APPS = [
   { id: 'pelis', nom: 'Pel·lícules', ic: IC.pelis, c1: '#4b6cf7', c2: '#2a3fb0' },
   { id: 'tv', nom: 'TV', ic: IC.tv, c1: '#5aa0ff', c2: '#2a5fd0' },
   { id: 'youtube', nom: 'YouTube', ic: IC.video, c1: '#ff5a5a', c2: '#c4161c' },
+  { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12' },
   { id: 'fotos', nom: 'Fotos', ic: IC.fotos, c1: '#3fd18b', c2: '#14905a' },
   { id: 'missatges', nom: 'Missatges', ic: IC.missatges, c1: '#3ad07a', c2: '#0f8a55' },
   { id: 'docs', nom: 'Documents', ic: IC.docs, c1: '#43b4ff', c2: '#1a6fc4' },
@@ -382,6 +383,7 @@ var APPS = [
 var GRUPS = [
   { id: 'escoltar', nom: 'Escoltar', ic: IC.musica, c1: '#ff7a59', c2: '#c2185b', apps: ['musica', 'spotify', 'radio', 'podcasts'] },
   { id: 'mirar', nom: 'Mirar', ic: IC.pelis, c1: '#5a7bff', c2: '#3a2bb0', apps: ['pelis', 'tv', 'youtube'] },
+  { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12', apps: ['casa'] },
   { id: 'fotos', nom: 'Fotos', ic: IC.fotos, c1: '#3fd18b', c2: '#14905a', apps: ['fotos'] },
   { id: 'missatges', nom: 'Missatges', ic: IC.missatges, c1: '#3ad07a', c2: '#0f8a55', apps: ['missatges'] },
   { id: 'docs', nom: 'Documents', ic: IC.docs, c1: '#43b4ff', c2: '#1a6fc4', apps: ['docs'] },
@@ -485,6 +487,7 @@ function carregaAjustos() {
     pintaDock();
     if (A.vista == 'dash') { pintaRapid(); pintaSona(); }
     if (A.ajustos.whatsapp && NF.para !== false) { NF.para = false; vigilaMissatges(); }
+    casaCarrega();
   });
 }
 
@@ -1223,7 +1226,14 @@ function veientLlista() {
   return r;
 }
 function pintaRapid() {
-  var h = '', i, fav = permesa('radio') ? A.radios || [] : [], cs = permesa('tv') ? A.canals || [] : [], v = permesa('pelis') ? veientLlista() : [], parts = [];
+  var h = '', i, ap = permesa('casa') ? CF.l : [];
+  for (i = 0; i < ap.length; i++) {
+    var on = ap[i].on;
+    h += '<div class="rt" onclick="casaToca(' + i + ')"><div class="lg color" style="background-color:' + (on ? '#f5c25a' : 'rgba(255,255,255,.14)') + '">' + svg(appDef('casa').ic) + '</div><span class="nm">' + esc(ap[i].nom) + '</span></div>';
+  }
+  var parts0 = h ? [h] : [];
+  h = '';
+  var fav = permesa('radio') ? A.radios || [] : [], cs = permesa('tv') ? A.canals || [] : [], v = permesa('pelis') ? veientLlista() : [], parts = [];
   if (fav.length) {
     for (i = 0; i < fav.length; i++)
       h += '<div class="rt" onclick="tocaRadio(' + i + ')"><div class="lg" style="background-image:' + bg(fav[i].img ? imgx(fav[i].img, 150) : '') + '">' + (fav[i].img ? '' : svg(IC.radio)) + '</div><span class="nm">' + esc(fav[i].t) + '</span></div>';
@@ -1242,6 +1252,7 @@ function pintaRapid() {
     h += '<div class="rt" onclick="continua(' + i + ')"><div class="lg poster" style="background-image:' + bg(p) + '">' + (p ? '' : svg(IC.video)) + '</div><span class="nm">' + esc(RV[i].n) + '</span></div>';
   }
   if (h) parts.push(h);
+  parts = parts0.concat(parts);
   var r = $('rapid');
   r.innerHTML = parts.join('<span class="rsep"></span>');
   r.style.display = parts.length ? 'block' : 'none';
@@ -1443,6 +1454,7 @@ function permesa(id) {
   /* Spotify i WhatsApp estan desactivats fins que s'activen a Configuració */
   if (id == 'spotify' && !A.ajustos.spotify) return false;
   if (id == 'missatges' && !A.ajustos.whatsapp) return false;
+  if (id == 'casa' && !A.ajustos.tuya) return false;
   return !INF.actiu || id == 'dash' || INF.apps.indexOf(id) >= 0;
 }
 function carregaInfantil() {
@@ -1481,6 +1493,37 @@ function obreConfig() {
   });
 }
 
+
+/* ---------- Casa (Tuya): preferits al dashboard ---------- */
+var CF = { ids: [], l: [], t: null };
+var INTERR = ['switch_led', 'switch', 'switch_1', 'switch_2', 'switch_3', 'switch_4', 'led_switch'];
+function casaCarrega() {
+  clearTimeout(CF.t);
+  if (!A.ajustos.tuya) return;
+  dades('casa_fav', function (f) {
+    CF.ids = f || [];
+    if (!CF.ids.length) { CF.l = []; pintaRapid(); return; }
+    getJson(api('tuya/dispositius'), function (l) {
+      var r = [];
+      for (var i = 0; i < (l || []).length; i++) if (CF.ids.indexOf(l[i].id) >= 0) {
+        var sw = null;
+        for (var k = 0; k < INTERR.length; k++) if (typeof l[i].estat[INTERR[k]] == 'boolean') { sw = INTERR[k]; break; }
+        r.push({ id: l[i].id, nom: l[i].nom, sw: sw, on: sw ? l[i].estat[sw] : false });
+      }
+      CF.l = r;
+      if (A.vista == 'dash') { pintaRapid(); pintaSona(); }
+    }, function () { });
+  });
+  CF.t = setTimeout(casaCarrega, A.vista == 'dash' ? 30000 : 120000);
+}
+function casaToca(i) {
+  var d = CF.l[i];
+  if (!d || !d.sw) { obre('casa'); return; }
+  d.on = !d.on;
+  pintaRapid();
+  peticio('POST', api('tuya/ordre'), JSON.stringify({ id: d.id, codi: d.sw, valor: d.on }), function () { }, function () { d.on = !d.on; pintaRapid(); avis(T('No s\'ha pogut'), 3000); });
+}
+
 /* ---------- API per a les apps ---------- */
 window.Casa = {
   R: R, au: au,
@@ -1498,6 +1541,7 @@ window.Casa = {
   canalsCanviats: function (l) { A.canals = l; pintaCanalsTv(); pintaRapid(); },
   veientCanviat: function () { pintaRapid(); },
   agendaCanviada: carregaAgenda,
+  casaCanviada: casaCarrega,
   infantilCanviat: carregaInfantil
 };
 

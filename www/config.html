@@ -47,6 +47,8 @@
 .estil i{position:absolute;left:8px;top:8px;width:46px;height:20px;border-radius:5px;background:rgba(255,255,255,.85)}
 .colors span{display:inline-block;width:26px;height:26px;border-radius:13px;margin:0 6px 0 0;cursor:pointer;border:3px solid transparent;vertical-align:middle}
 .colors span.on{border-color:#fff}
+.passos{margin:0 0 14px;padding-left:22px;line-height:1.5;color:#c3c9d2}
+.passos li{margin-bottom:6px}
 .ip{font-size:24px;font-weight:600;color:#7fb0ff;margin:6px 0}
 @media (max-width:800px){ #explorador .card{width:auto;left:16px;right:16px;margin-left:0} .fila label{width:110px} }
 </style>
@@ -157,6 +159,22 @@
     <div class="peu"><button onclick="infDesa(false)">Desar</button> <button class="pri" onclick="infDesa(true)">Activa el mode infantil</button></div>
   </div>
 
+  <div class="sec" id="s-casa">
+    <h2>Casa (Tuya / Smart Life)</h2>
+    <div class="desc">Per controlar els llums, endolls i persianes de l'app Smart Life o Tuya. Només cal fer-ho un cop (uns 10 minuts):</div>
+    <ol class="passos">
+      <li>Entra a <b>iot.tuya.com</b> i crea un compte gratuït (pots fer servir el mateix correu de l'app).</li>
+      <li><b>Cloud ▸ Development ▸ Create Cloud Project</b>. Indústria: «Smart Home»; mètode: «Smart Home»; centre de dades: <b>Central Europe</b> (o el de la teva zona).</li>
+      <li>Accepta els serveis que proposa (IoT Core, Authorization, Smart Home Scene Linkage).</li>
+      <li>A la pestanya <b>Devices ▸ Link App Account ▸ Add App Account</b> surt un codi QR: escaneja'l amb l'app <b>Smart Life</b> (Jo ▸ icona d'escanejar a dalt).</li>
+      <li>A <b>Overview</b> copia l'<b>Access ID</b> i l'<b>Access Secret</b> aquí sota.</li>
+    </ol>
+    <div class="fila"><label>Access ID</label><input type="text" id="ty-id" autocapitalize="off" autocorrect="off"></div>
+    <div class="fila"><label>Access Secret</label><input type="password" id="ty-secret" placeholder="(desat)"></div>
+    <div class="fila"><label>Centre de dades</label><select id="ty-regio" class="sel"><option value="eu">Central Europe</option><option value="weu">Western Europe</option><option value="us">Western America</option><option value="usw">Eastern America</option><option value="cn">China</option><option value="in">India</option></select></div>
+    <div class="peu"><button class="pri" onclick="tyDesa()">Desar i provar</button> <span class="gris" id="ty-estat"></span></div>
+  </div>
+
   <div class="sec" id="s-whatsapp">
     <h2>WhatsApp</h2>
     <div class="desc">Els missatges es llegeixen i s'envien amb el WhatsApp Web de l'Edge del PC. Es vincula un sol cop des de l'app Missatges (escanejant el codi QR amb el telèfon).</div>
@@ -260,6 +278,7 @@ function carrega() {
   gfEstat();
   mdCarrega();
   agCarrega();
+  tyCarrega();
   ytInfo();
   infCarrega();
   pintaLlengua();
@@ -451,7 +470,7 @@ function afegeixGoogleHome() {
 
 /* Mode infantil */
 var INFC = { d: { actiu: false, pin: '', apps: ['docs', 'radio', 'musica'] } };
-var APPS_INF = [['musica', 'Música'], ['spotify', 'Spotify'], ['radio', 'Ràdio'], ['podcasts', 'Pòdcasts'], ['pelis', 'Pel·lícules'], ['tv', 'TV'], ['youtube', 'YouTube'], ['fotos', 'Fotos'], ['missatges', 'Missatges'], ['docs', 'Documents'], ['webs', 'Webs']];
+var APPS_INF = [['musica', 'Música'], ['spotify', 'Spotify'], ['radio', 'Ràdio'], ['podcasts', 'Pòdcasts'], ['pelis', 'Pel·lícules'], ['tv', 'TV'], ['youtube', 'YouTube'], ['casa', 'Casa'], ['fotos', 'Fotos'], ['missatges', 'Missatges'], ['docs', 'Documents'], ['webs', 'Webs']];
 function infCarrega() {
   dades('infantil', function (d) {
     if (d) INFC.d = d;
@@ -480,6 +499,33 @@ function desaFuncions() {
   C.aj.whatsapp = $('fn-whatsapp').checked;
   desaDades('ajustos', C.aj, function () { avis(T('Desat')); if (Casa) Casa.recarrega(); });
 }
+
+/* Casa (Tuya) */
+function tyCarrega() {
+  getJson(api('admin/tuya/ajustos'), function (d) {
+    $('ty-id').value = d.id || '';
+    $('ty-regio').value = d.regio || 'eu';
+    $('ty-secret').placeholder = d.teSecret ? T('(desat)') : '';
+  }, function () { });
+}
+function tyDesa() {
+  var d = { id: retalla($('ty-id').value), secret: retalla($('ty-secret').value), regio: $('ty-regio').value };
+  if (!d.id) { avis(T('Falta l\'Access ID')); return; }
+  $('ty-estat').textContent = T('Provant…');
+  peticio('POST', api('admin/tuya/ajustos'), JSON.stringify(d), function () {
+    $('ty-secret').value = '';
+    getJson(api('tuya/prova'), function (r) {
+      $('ty-estat').textContent = Tf('Connectat: {1} aparells', r.aparells);
+      C.aj.tuya = true;
+      desaDades('ajustos', C.aj, function () { if (Casa) Casa.recarrega(); });
+    }, function (st, txt) {
+      var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
+      $('ty-estat').textContent = m || T('No s\'ha pogut connectar');
+      if (/1106|permission|1100/.test(m || '')) $('ty-estat').textContent += ' — ' + T('Revisa que hagis vinculat l\'app Smart Life al projecte i triat el centre de dades correcte.');
+    });
+  }, errXarxa(T('desar')));
+}
+
 /* Canals */
 function pintaCanals() {
   var h = '';
