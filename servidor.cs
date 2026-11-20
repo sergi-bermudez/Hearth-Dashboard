@@ -161,6 +161,7 @@ public static class CasaServidor
         if (FuncioActiva("spotify")) Spotify.AlArrencar();
         if (FuncioActiva("whatsapp")) WhatsApp.AlArrencar();
         GFotos.AlArrencar();
+        Actualitza.Inicia();
         while (true)
         {
             HttpListenerContext ctx;
@@ -357,6 +358,7 @@ public static class CasaServidor
         if (nom.StartsWith("gfotos/")) { GFotos.Admin(nom.Substring(7), q, ctx); return; }
         if (nom == "youtube/instal-la") { YouTube.Api("instal-la", q, ctx); return; }
         if (nom == "tuya/ajustos") { Tuya.Ajusta(ctx); return; }
+        if (nom.StartsWith("actualitza/")) { Actualitza.Api(nom, q, ctx); return; }
         if (nom.StartsWith("wa/")) { if (nom != "wa/atura" && !FuncioActiva("whatsapp")) { Error(ctx.Response, 403, "WhatsApp est\u00e0 desactivat (Configuraci\u00f3 \u25b8 Funcions opcionals)"); return; } WhatsApp.Api(nom.Substring(3), q, ctx); return; }
         switch (nom)
         {
@@ -403,7 +405,7 @@ public static class CasaServidor
                         cs.Add(e);
                     }
                     r["carpetes"] = cs; r["port"] = Port; r["clau"] = !string.IsNullOrEmpty(Clau);
-                    r["local"] = ctx.Request.IsLocal; r["ips"] = Ips(); r["versio"] = "3.4.3"; r["nomXarxa"] = Mdns.Nom + ".local";
+                    r["local"] = ctx.Request.IsLocal; r["ips"] = Ips(); r["versio"] = Actualitza.Local(); r["nomXarxa"] = Mdns.Nom + ".local";
                     Json(res, r);
                     return;
                 }

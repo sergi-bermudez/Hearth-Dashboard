@@ -233,6 +233,11 @@
     <h2>Servidor</h2>
     <div class="desc">Adreça per obrir a l'iPad, al mòbil o a l'ordinador:</div>
     <div id="ips"></div>
+    <h2>Actualitzacions</h2>
+    <div class="desc">Hearth s'actualitza sol des de GitHub. Abans de canviar res comprova que la versió nova funciona; si no arrenca, torna a posar l'anterior. Les teves dades i ajustos no es toquen.</div>
+    <div id="act-estat" class="gris" style="margin-bottom:8px">…</div>
+    <label class="check"><input type="checkbox" id="act-auto" onchange="actAuto(this.checked)"> <span>Actualitza automàticament (de matinada, entre les 3 i les 5)</span></label>
+    <div class="peu" style="text-align:left"><button onclick="actMira()">Comprovar ara</button> <button class="pri" id="act-boto" style="display:none" onclick="actAplica()">Actualitzar ara</button></div>
     <h2>Instal·lar com a app</h2>
     <div id="inst-ok" class="desc" style="display:none">✓ Ja l'estàs fent servir com a app, a pantalla completa.</div>
     <div id="inst-boto" style="display:none;margin-bottom:10px"><button class="pri" onclick="instalaApp()">Instal·lar Hearth</button></div>
@@ -892,6 +897,46 @@ function dpOblida(id) {
     });
   });
 }
+
+/* Actualitzacions */
+function actPinta(d) {
+  var t = Tf('Versió instal·lada: {1}', d.local);
+  if (d.aplicant) t += ' · ' + T('Actualitzant…');
+  else if (d.hiHa) t += ' · ' + Tf('Hi ha una versió nova: {1}', d.remota);
+  else if (d.remota) t += ' · ' + T('Està al dia.');
+  if (d.error) t += ' · ' + d.error;
+  if (d.darrer) t += '\n' + d.darrer;
+  $('act-estat').textContent = t;
+  $('act-estat').style.whiteSpace = 'pre-line';
+  $('act-auto').checked = d.auto !== false;
+  $('act-boto').style.display = d.hiHa && !d.aplicant ? 'inline-block' : 'none';
+}
+function actMira(ara) {
+  getJson(api('admin/actualitza/estat', ara === false ? {} : { ara: 1 }), actPinta, function () { $('act-estat').textContent = T('No s\'ha pogut consultar.'); });
+}
+function actAplica() {
+  post(api('admin/actualitza/aplica'), '', function (txt) {
+    var d = {}; try { d = JSON.parse(txt); } catch (e) { }
+    avis(T(d.missatge || 'Actualitzant'), 6000);
+    if (d.ok) { $('act-estat').textContent = T('Actualitzant… Hearth es reiniciarà en un minut i aquesta pàgina es tornarà a obrir.'); actEspera(0); }
+  }, errXarxa('actualitzar'));
+}
+/* Espera que el servidor torni i recarrega */
+function actEspera(n) {
+  setTimeout(function () {
+    getJson(api('admin/actualitza/estat'), function (d) {
+      if (!d.aplicant && /ERROR/.test(d.darrer || '')) { actPinta(d); avis(T('No s\'ha pogut actualitzar. Hearth continua amb la versió d\'abans.'), 8000); return; }
+      if (!d.aplicant && n > 3) { (window.parent || window).location.reload(); return; }
+      if (n < 60) actEspera(n + 1);
+    }, function () { if (n < 60) actEspera(n + 1); });
+  }, 5000);
+}
+function actAuto(on) {
+  if (!C.aj) return;
+  C.aj.actualitzaAuto = !!on;
+  desaDades('ajustos', C.aj, function () { avis(T('Desat')); });
+}
+setTimeout(function () { actMira(false); }, 600);
 </script>
 </body>
 </html>
