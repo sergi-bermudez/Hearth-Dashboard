@@ -618,3 +618,7 @@ TR.en["Revista"]="Magazine";
 TR.en["Foto sencera"]="Whole photo";
 TR.en["Prova"]="Try";
 TR.en["Aquest any"]="This year";
+TR.en["Mostra a l'inici"]="Show on home";
+TR.en["A l'inici"]="On home";
+TR.en["Es veurà a la pantalla d'inici"]="It will show on the home screen";
+TR.en["Ja no es veurà a la pantalla d'inici"]="It won't show on the home screen any more";

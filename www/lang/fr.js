@@ -618,3 +618,7 @@ TR.fr["Revista"]="Magazine";
 TR.fr["Foto sencera"]="Photo entière";
 TR.fr["Prova"]="Essayer";
 TR.fr["Aquest any"]="Cette année";
+TR.fr["Mostra a l'inici"]="Afficher à l'accueil";
+TR.fr["A l'inici"]="À l'accueil";
+TR.fr["Es veurà a la pantalla d'inici"]="Elle s'affichera sur l'écran d'accueil";
+TR.fr["Ja no es veurà a la pantalla d'inici"]="Elle ne s'affichera plus sur l'écran d'accueil";

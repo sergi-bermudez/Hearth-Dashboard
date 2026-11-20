@@ -618,3 +618,7 @@ TR.pt["Revista"]="Revista";
 TR.pt["Foto sencera"]="Foto inteira";
 TR.pt["Prova"]="Experimentar";
 TR.pt["Aquest any"]="Este ano";
+TR.pt["Mostra a l'inici"]="Mostrar no início";
+TR.pt["A l'inici"]="No início";
+TR.pt["Es veurà a la pantalla d'inici"]="Vai aparecer no ecrã inicial";
+TR.pt["Ja no es veurà a la pantalla d'inici"]="Já não aparece no ecrã inicial";

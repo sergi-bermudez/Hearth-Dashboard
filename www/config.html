@@ -158,7 +158,6 @@ body{background:#000}
     <div class="estils" id="passis"></div>
     <div class="fila"><label>Marc: segons</label><input type="number" id="aj-seg" min="5" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto</span></div>
     <div class="fila"><label>Marc automàtic</label><input type="number" id="aj-min" min="0" max="240" style="width:120px"><span class="gris petit" style="margin-left:12px">minuts sense tocar la pantalla (0 = mai)</span></div>
-    <div class="fila"><label>Targeta de la dreta</label><select id="aj-targeta" class="sel"></select></div>
     <div class="peu"><button class="pri" onclick="desaInici()">Desar</button></div>
   </div>
 
@@ -252,7 +251,7 @@ body{background:#000}
 
   <div class="sec" id="s-webs">
     <h2>Webs</h2>
-    <div class="desc">Webs del PC que es veuen a l'iPad com una imatge que s'actualitza (o seguida, com un vídeo). Es pot triar només una part de la pàgina.</div>
+    <div class="desc">Webs del PC que es veuen a l'iPad com una imatge que s'actualitza (o seguida, com un vídeo). Es pot triar només una part de la pàgina, i amb «Mostra a l'inici» una d'elles surt a la pantalla d'inici (una càmera, el temps…).</div>
     <div style="margin-bottom:12px"><button onclick="afegeixGoogleHome()">+ Google Home</button> <span class="gris petit">Llums, endolls i càmeres de Google Home, amb la sessió de Google del PC.</span></div>
     <div id="webs-llista" class="llista" style="margin-bottom:14px"></div>
     <div class="fila"><label>Nom</label><input type="text" id="wb-nom" placeholder="p. ex. Radar de pluja"></div>
@@ -359,8 +358,9 @@ function carrega() {
     omplInici();
     dpPinta();
     valorsMenu();
+    if (WB.llista) pintaWebs();
   });
-  dades('webs', function (d) { WB.llista = d || []; pintaWebs(); pintaTargeta(); });
+  dades('webs', function (d) { WB.llista = d || []; pintaWebs(); });
   gfEstat();
   mdCarrega();
   agCarrega();
@@ -444,7 +444,6 @@ function desaInici() {
   v.fonsSeg = Math.max(8, parseInt($('aj-fons').value, 10) || 20);
   v.foscor = parseInt($('aj-foscor').value, 10) || 0;
   v.estil = v.estil || 'ambient';
-  v.targeta = $('aj-targeta').value;
   desaDades('ajustos', a, function () {
     desaDades('disp_' + DISP.id, C.dp, function () { avis(T('Desat')); if (Casa) Casa.recarrega(); });
   });
@@ -554,7 +553,7 @@ function afegeixGoogleHome() {
   WB.llista.push({ id: 'ghome', nom: 'Google Home', url: 'https://home.google.com/', mode: 'directe', interval: 3, w: 1280, h: 860, clip: null });
   desaDades('webs', WB.llista, function () {
     avis(T('Afegit. Si et demana iniciar sessió, fes-ho a Google Fotos ▸ Inicia sessió (és el mateix compte).'), 7000);
-    pintaWebs(); pintaTargeta(); if (Casa) Casa.websCanviades(WB.llista);
+    pintaWebs(); if (Casa) Casa.websCanviades(WB.llista);
   });
 }
 
@@ -677,17 +676,20 @@ function mdDesa() {
 
 /* Webs */
 var WB = { llista: [], edita: null, clip: null, punts: [] };
-function pintaTargeta() {
-  var sel = $('aj-targeta'), act = (C.aj && ajV().targeta) || 'fotos', h = '<option value="fotos">Foto del record</option>';
-  for (var i = 0; i < WB.llista.length; i++) h += '<option value="' + esc(WB.llista[i].id) + '"' + (WB.llista[i].id == act ? ' selected' : '') + '>Web: ' + esc(WB.llista[i].nom) + '</option>';
-  sel.innerHTML = h;
-  sel.value = act;
+/* Una web es pot mostrar a la pantalla d'inici (p. ex. una càmera o el temps) */
+function webAInici(id) {
+  var v = ajV();
+  v.targeta = v.targeta == id ? '' : id;
+  desaDades('ajustos', C.aj, function () {
+    desaDades('disp_' + DISP.id, C.dp, function () { avis(T(v.targeta ? 'Es veurà a la pantalla d\'inici' : 'Ja no es veurà a la pantalla d\'inici')); pintaWebs(); if (Casa) Casa.recarrega(); });
+  });
 }
 function pintaWebs() {
   var h = '';
   for (var i = 0; i < WB.llista.length; i++) {
     var w = WB.llista[i];
     h += '<div class="el"><div class="t">' + esc(w.nom) + '<div class="sub">' + esc(w.url) + ' · ' + (w.mode == 'directe' ? 'en directe' : 'cada ' + w.interval + ' s') + (w.clip ? ' · una part' : '') + '</div></div>' +
+      '<button class="acc" onclick="webAInici(\'' + esc(w.id) + '\')">' + (C.aj && ajV().targeta == w.id ? '✓ ' + T('A l\'inici') : T('Mostra a l\'inici')) + '</button>' +
       '<button class="acc" onclick="editaWeb(' + i + ')">Editar</button><button class="acc" onclick="post(api(\'web/mostra\',{id:WB.llista[' + i + '].id}),\'\',function(){avis(\'Finestra oberta al PC: inicia sessió si cal\',5000)},errXarxa(\'obrir\'))">Obrir al PC</button>' +
       '<button class="acc" onclick="post(api(\'web/amaga\',{id:WB.llista[' + i + '].id}),\'\',null,null)">Amagar</button>' +
       '<button class="acc" onclick="treuWeb(' + i + ')">' + svg(IC.paperera) + '</button></div>';
@@ -721,13 +723,13 @@ function desaWeb(despres) {
   var w = webForm();
   if (!w) return;
   if (WB.edita != null) WB.llista[WB.edita] = w; else { WB.llista.push(w); WB.edita = WB.llista.length - 1; }
-  desaDades('webs', WB.llista, function () { avis('Web desada'); pintaWebs(); pintaTargeta(); if (Casa) Casa.websCanviades(WB.llista); if (despres) despres(w); });
+  desaDades('webs', WB.llista, function () { avis('Web desada'); pintaWebs(); if (Casa) Casa.websCanviades(WB.llista); if (despres) despres(w); });
 }
 function treuWeb(i) {
   if (!confirm('Treure «' + WB.llista[i].nom + '»?')) return;
   post(api('web/tanca', { id: WB.llista[i].id }), '', null, null);
   WB.llista.splice(i, 1);
-  desaDades('webs', WB.llista, function () { pintaWebs(); pintaTargeta(); if (Casa) Casa.websCanviades(WB.llista); });
+  desaDades('webs', WB.llista, function () { pintaWebs(); if (Casa) Casa.websCanviades(WB.llista); });
   netejaWeb();
 }
 function obreZona() {
@@ -978,7 +980,6 @@ function omplInici() {
   $('aj-foscor').value = v.foscor == null ? 25 : v.foscor; $('aj-foscor-v').textContent = $('aj-foscor').value + '%';
   pintaEstils();
   pintaPassis();
-  pintaTargeta();
 }
 function dpPropi(on) {
   C.dp.propi = !!on;
