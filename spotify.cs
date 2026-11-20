@@ -370,6 +370,19 @@ public static class SoPC
         tl.IsBackground = true; tl.Start();
     }
 
+    // Si ningu escolta el MP3, allibera el dispositiu de so (per a la captura a trossos)
+    public static bool AlliberaSiLliure()
+    {
+        lock (lk)
+        {
+            if (clients.Count > 0) return false;
+            if (aturada != null) { aturada.Dispose(); aturada = null; }
+            bool havia = ff != null && !ff.HasExited;
+            Atura();
+            return havia;
+        }
+    }
+
     public static void Atura()
     {
         lock (lk)
@@ -382,6 +395,7 @@ public static class SoPC
     // Engega ffmpeg abans que ningu l'escolti (quan s'obre l'app de Spotify), i l'atura si ningu l'escolta en 10 min
     public static void Escalfa()
     {
+        if (Pcm.SpotifyViu()) return;   // l'iPad ja l'escolta a trossos: no capturis dues vegades el mateix dispositiu
         lock (lk)
         {
             try { if (ff == null || ff.HasExited) Engega(); } catch { return; }

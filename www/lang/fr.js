@@ -696,3 +696,4 @@ TR.fr["Automàtic (iPads amb iOS 9 o anterior)"]="Automatique (iPad sous iOS 9 o
 TR.fr["Sempre activat"]="Toujours activé";
 TR.fr["Treu animacions i ombres, fa servir fotos de fons més petites i les canvia menys sovint. Ajuda els iPads antics a anar més fluids i a no tancar Safari."]="Supprime animations et ombres, utilise des photos de fond plus petites et les change moins souvent. Aide les vieux iPad à être plus fluides et évite que Safari se ferme.";
 TR.fr["adhesiu"]="autocollant";
+TR.fr["No arriba el so de l'Spotify des del PC. Mira Configuració ▸ Diagnòstic."]="Le son de Spotify n'arrive pas du PC. Regarde Réglages ▸ Diagnostic.";

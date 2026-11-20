@@ -1853,7 +1853,7 @@ function pcmInicia(params) {
     if (g != PCM.gen) return;
     var e = ''; try { e = JSON.parse(txt).error; } catch (x) { }
     PCM.actiu = false; iconesPlay();
-    avis(T('Aquesta emissora no respon. Prova\'n una altra.') + (e ? ' (' + e + ')' : ''), 6000);
+    avis((params.font == 'spotify' ? T('No arriba el so de l\'Spotify des del PC. Mira Configuració ▸ Diagnòstic.') : T('Aquesta emissora no respon. Prova\'n una altra.')) + (e ? ' (' + e + ')' : ''), 8000);
   });
   return true;
 }

@@ -23,6 +23,7 @@ public static class Pcm
         public string Error = "";
         public readonly object Lk = new object();
         public bool Viu = true;
+        public bool Spotify;
     }
 
     static readonly Dictionary<string, Font> fonts = new Dictionary<string, Font>();
@@ -41,16 +42,28 @@ public static class Pcm
         return "-hide_banner -loglevel error -nostdin " + extra + "-i \"" + u.Replace("\"", "%22") + "\"" + sortida;
     }
 
+    public static bool SpotifyViu()
+    {
+        lock (lk) foreach (Font f in fonts.Values) if (f.Spotify && f.Viu) return true;
+        return false;
+    }
+
     static Font Obre(string font, string u)
     {
         string id = CasaServidor.Hash(font + "|" + u).Substring(0, 12);
+        if (font == "spotify")
+        {
+            bool viu;
+            lock (lk) { Font x; viu = fonts.TryGetValue(id, out x) && x.Viu && x.P != null && !x.P.HasExited; }
+            if (!viu && SoPC.AlliberaSiLliure()) Thread.Sleep(800);   // el dispositiu de so nomes el pot fer servir un ffmpeg
+        }
         lock (lk)
         {
             Font f;
             if (fonts.TryGetValue(id, out f) && f.Viu && f.P != null && !f.P.HasExited) { f.Vist = DateTime.Now; return f; }
             string exe = SoPC.RutaFfmpeg();
             if (exe == null) throw new Exception("Falta ffmpeg");
-            f = new Font(); f.Id = id;
+            f = new Font(); f.Id = id; f.Spotify = font == "spotify";
             ProcessStartInfo si = new ProcessStartInfo(exe, Args(font, u));
             si.UseShellExecute = false; si.CreateNoWindow = true; si.RedirectStandardOutput = true; si.RedirectStandardError = true;
             f.P = Process.Start(si);
