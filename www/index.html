@@ -402,6 +402,21 @@ body.lleu #tv .tv-ctl,body.lleu #tv .tv-canals,body.lleu #tv .tv-vod{-webkit-tra
 .s-aud.petit .s-ctl button{padding:6px 8px}
 .s-aud.petit .s-ctl button .ic{width:28px;height:28px}
 .s-aud.petit .s-ctl .mida{width:40px;height:34px}
+/* L: el reproductor ocupa la pantalla d'inici */
+body.aud-l #rapid,body.aud-l #agenda{display:none !important}
+.s-aud.gran.g{-webkit-align-items:center;align-items:center}
+.s-aud.gran.g .s-art{margin-right:34px;border-radius:22px}
+.s-aud.gran.g .s-tit{font-size:42px;letter-spacing:-.5px}
+.s-aud.gran.g .s-sub{font-size:23px}
+.s-aud.gran.g .s-kick{font-size:14px}
+.s-aud.gran.g .s-prog{margin-top:18px}
+.s-aud.gran.g .s-ctl{margin-top:16px}
+.s-aud.gran.g .s-ctl .gp{width:78px;height:78px}
+.s-aud.gran.g .s-ctl button .ic{width:38px;height:38px}
+.s-aud.gran.g.vert{display:block;text-align:center}
+.s-aud.gran.g.vert .s-art{margin:0 auto 16px}
+.s-aud.gran.g.vert .s-ctl{-webkit-justify-content:center;justify-content:center;margin-left:0;-webkit-flex-wrap:nowrap;flex-wrap:nowrap}
+.s-aud.gran.g.vert .s-temps{text-align:left}
 </style>
 </head>
 <body class="e-ambient">
@@ -801,6 +816,7 @@ function estatCos() {
   if (A.vista != 'dash') c.push('en-app');
   if (A.vista != 'dash' && A.pest) c.push('amb-pest');
   if (R.cua.length || TV.canal) c.push('sona');
+  if (R.cua.length && !TV.canal && window.AUD && AUD.mida == 'g') c.push('aud-l');
   if (lleuger()) c.push('lleu');
   document.body.className = c.join(' ');
 }
@@ -1280,6 +1296,7 @@ var AUD = { mida: ls('auMida') || 'g' };
 function audMidaCanvia() {
   AUD.mida = AUD.mida == 'p' ? 'm' : AUD.mida == 'm' ? 'g' : 'p';
   ls('auMida', AUD.mida);
+  estatCos();
   pintaSona();
 }
 function tvMidaCanvia() {
@@ -1367,7 +1384,16 @@ function pintaSona(intern) {
     var mida = Math.max(64, Math.min(esp, maxA, Math.round(s.clientWidth * (gran ? 0.36 : 0.3))));
     art.style.width = mida + 'px'; art.style.height = mida + 'px';
     /* M i L: la caràtula fa la mateixa alçada que el bloc de text i controls del costat */
-    if (gran && window.innerWidth > 480) {
+    /* L: tot l'espai per al reproductor (sense dreceres ni agenda), caràtula ben gran */
+    if (am == 'g' && window.innerWidth > 480 && window.innerHeight > window.innerWidth) {
+      /* En vertical, com el «Ara sona» del mòbil: caràtula a dalt i tot el text a sota */
+      s.firstChild.className += ' vert';
+      var inf3 = s.querySelector('.s-info'), m4 = Math.max(140, Math.min(esp - inf3.offsetHeight - 16, Math.round(s.clientWidth * 0.66), 520));
+      art.style.width = m4 + 'px'; art.style.height = m4 + 'px';
+    } else if (am == 'g' && window.innerWidth > 480) {
+      var m3 = Math.max(120, Math.min(esp, Math.round(s.clientWidth * 0.42), 440));
+      art.style.width = m3 + 'px'; art.style.height = m3 + 'px';
+    } else if (gran && window.innerWidth > 480) {
       var inf = s.querySelector('.s-info');
       for (var k = 0; k < 2; k++) {
         var hi = inf.offsetHeight, m2 = Math.max(80, Math.min(hi, Math.round(s.clientWidth * 0.42), am == 'm' ? 250 : 320));
