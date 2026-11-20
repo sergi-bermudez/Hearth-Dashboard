@@ -281,6 +281,19 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 #marc{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;z-index:90;display:none}
 #marc .capa{position:absolute;top:0;left:0;right:0;bottom:0;background:center/cover no-repeat;opacity:0;-webkit-transition:opacity 1.8s;transition:opacity 1.8s}
 #marc .capa.on{opacity:1}
+/* Estils del passi de fotos */
+#marc .capa .kb{position:absolute;top:0;left:0;right:0;bottom:0;background:center/cover no-repeat;-webkit-animation:kb 20s linear forwards;animation:kb 20s linear forwards}
+@-webkit-keyframes kb{from{-webkit-transform:scale(1.02)}to{-webkit-transform:scale(1.2)}}
+@keyframes kb{from{transform:scale(1.02)}to{transform:scale(1.2)}}
+#marc .capa .fb{position:absolute;top:-8%;left:-8%;right:-8%;bottom:-8%;background:center/cover no-repeat;opacity:.55}
+#marc .capa .fc{position:absolute;top:0;left:0;right:0;bottom:0;background:center/contain no-repeat}
+#marc .capa .rv{position:absolute;background:#111 center/cover no-repeat}
+#marc .capa .rv-t{position:absolute;left:34px;top:30px;z-index:2;font-family:Georgia,"Times New Roman",serif;text-shadow:0 2px 18px rgba(0,0,0,.8)}
+#marc .capa .rv-t b{display:block;font-size:58px;font-weight:400;font-style:italic;line-height:1.05}
+#marc .capa .rv-t span{display:block;font-size:15px;letter-spacing:3px;text-transform:uppercase;margin-top:8px;opacity:.9}
+#marc.revista .hora{left:auto;right:24px;bottom:24px;text-align:right;background:rgba(0,0,0,.4);padding:10px 16px;border-radius:16px}
+#marc.revista .hora b{font-size:64px}
+#marc.revista .baix{display:none}
 #marc .baix{position:absolute;left:0;right:0;bottom:0;height:45%;background:-webkit-linear-gradient(transparent,rgba(0,0,0,.6));background:linear-gradient(transparent,rgba(0,0,0,.6));z-index:2}
 #marc .hora{position:absolute;left:34px;bottom:30px;z-index:3;text-shadow:0 2px 14px rgba(0,0,0,.85)}
 #marc .hora b{display:block;font-size:92px;font-weight:200;line-height:1;letter-spacing:-2px}
@@ -1341,26 +1354,61 @@ function marcSona() {
   m.style.display = 'flex';
   iconesPlay();
 }
-function marcSeguent() {
-  clearTimeout(MC.t);
+/* Estils: fos (clàssic), kenburns (com els Records de l'iPhone), revista (3 fotos de la mateixa època) i marc (foto sencera) */
+function estilPassi() { return A.ajustos.passi || 'fos'; }
+function marcFotos() {
+  /* Revista: fotos consecutives per data (de la mateixa sortida o viatge) */
+  if (estilPassi() == 'revista') {
+    if (!MC.perData) MC.perData = FO.fotos.slice().sort(function (a, b) { return a[1] - b[1]; });
+    var l = MC.perData, i = Math.floor(Math.random() * Math.max(1, l.length - 2));
+    return l.slice(i, i + 3);
+  }
   var f = MC.ordre[MC.n % MC.ordre.length];
   MC.n++;
-  var url = miniUrl('fotos', f[0], 1600), img = new Image();
-  img.onload = img.onerror = function () {
-    if (!marcObert()) return;
+  return [f];
+}
+function marcHtml(fs, urls) {
+  var e = estilPassi();
+  if (e == 'kenburns') {
+    var o = ['0% 0%', '100% 0%', '0% 100%', '100% 100%', '50% 50%', '30% 60%'][Math.floor(Math.random() * 6)];
+    var d = (A.ajustos.marcSeg || 15) + 4;
+    return '<div class="kb" style="background-image:' + bg(urls[0]) + ';-webkit-transform-origin:' + o + ';transform-origin:' + o + ';-webkit-animation-duration:' + d + 's;animation-duration:' + d + 's"></div>';
+  }
+  if (e == 'marc') return '<div class="fb" style="background-image:' + bg(miniUrl('fotos', fs[0][0], 40)) + '"></div><div class="fc" style="background-image:' + bg(urls[0]) + '"></div>';
+  if (e == 'revista') {
+    var W = window.innerWidth, H = window.innerHeight, g = 6, r = [], h = '';
+    if (urls.length < 3) r = [[0, 0, W, H]];
+    else if (W >= H) { var a = Math.round(W * 0.62); r = [[0, 0, a, H], [a + g, 0, W - a - g, Math.round((H - g) / 2)], [a + g, Math.round((H + g) / 2), W - a - g, H - Math.round((H + g) / 2)]]; }
+    else { var b = Math.round(H * 0.6); r = [[0, 0, W, b], [0, b + g, Math.round((W - g) / 2), H - b - g], [Math.round((W + g) / 2), b + g, W - Math.round((W + g) / 2), H - b - g]]; }
+    for (var i = 0; i < r.length && i < urls.length; i++) h += '<div class="rv" style="left:' + r[i][0] + 'px;top:' + r[i][1] + 'px;width:' + r[i][2] + 'px;height:' + r[i][3] + 'px;background-image:' + bg(urls[i]) + '"></div>';
+    var dt = new Date(fs[0][1]), ara = new Date(), anys = ara.getFullYear() - dt.getFullYear();
+    h += '<div class="rv-t"><b>' + esc(mesAny(dt.getMonth(), dt.getFullYear())) + '</b><span>' + esc(anys > 0 ? (anys == 1 ? T('fa 1 any') : Tf('fa {1} anys', anys)) : T('Aquest any')) + '</span></div>';
+    return h;
+  }
+  return '';
+}
+function marcSeguent() {
+  clearTimeout(MC.t);
+  var fs = marcFotos(), e = estilPassi(), urls = [], fets = 0;
+  $('marc').className = e;
+  for (var i = 0; i < fs.length; i++) urls.push(miniUrl('fotos', fs[i][0], e == 'revista' && i > 0 ? 800 : 1600));
+  function llest() {
+    if (++fets < urls.length || !marcObert()) return;
     var a = $(MC.capa ? 'mc-a' : 'mc-b'), b = $(MC.capa ? 'mc-b' : 'mc-a');
-    a.style.backgroundImage = bg(url); a.className = 'capa on'; b.className = 'capa';
+    var h = marcHtml(fs, urls);
+    if (h) { a.style.backgroundImage = 'none'; a.innerHTML = h; } else { a.innerHTML = ''; a.style.backgroundImage = bg(urls[0]); }
+    a.className = 'capa on'; b.className = 'capa';
     MC.capa = 1 - MC.capa;
-    setTimeout(function () { if (b.className == 'capa') b.style.backgroundImage = 'none'; }, 2200);
-    MC.t = setTimeout(marcSeguent, (A.ajustos.marcSeg || 15) * 1000);
-  };
-  img.src = url;
+    setTimeout(function () { if (b.className == 'capa') { b.style.backgroundImage = 'none'; b.innerHTML = ''; } }, 2200);
+    MC.t = setTimeout(marcSeguent, (A.ajustos.marcSeg || 15) * 1000 * (e == 'revista' ? 1.5 : 1));
+  }
+  for (i = 0; i < urls.length; i++) { var img = new Image(); img.onload = img.onerror = llest; img.src = urls[i]; }
 }
 function tancaMarc() {
   clearTimeout(MC.t);
   $('marc').style.display = 'none';
   $('mc-sona').style.display = 'none';
-  $('mc-a').style.backgroundImage = 'none'; $('mc-b').style.backgroundImage = 'none';
+  $('mc-a').style.backgroundImage = 'none'; $('mc-b').style.backgroundImage = 'none'; $('mc-a').innerHTML = ''; $('mc-b').innerHTML = ''; MC.perData = null;
   $('mc-a').className = 'capa'; $('mc-b').className = 'capa';
   toc();
   if (TV.canal) { if (A.vista == 'dash') pintaSona(); tvLloc(); }
