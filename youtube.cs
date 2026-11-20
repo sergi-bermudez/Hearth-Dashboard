@@ -30,6 +30,45 @@ public static class YouTube
         return null;
     }
 
+    // yt-dlp necessita Deno (un motor de JavaScript) per resoldre els reptes de YouTube des del nov. 2025
+    public static string RutaDeno()
+    {
+        foreach (string f in new string[] { Path.Combine(CasaServidor.DirArrel, @"eines\deno.exe"), Path.Combine(CasaServidor.DirArrel, "deno.exe"), Path.Combine(CasaServidor.DirDades, "deno.exe") })
+            if (File.Exists(f)) return f;
+        foreach (string d in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(';'))
+        {
+            try { string f = Path.Combine(d.Trim(), "deno.exe"); if (File.Exists(f)) return f; } catch { }
+        }
+        string u = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), @".deno\bin\deno.exe");
+        return File.Exists(u) ? u : null;
+    }
+    static int instalantDeno = 0;
+    static string errorDeno = "";
+    static void InstallaDeno()
+    {
+        string eines = Path.Combine(CasaServidor.DirArrel, "eines");
+        Directory.CreateDirectory(eines);
+        string zip = Path.Combine(eines, "deno.zip");
+        using (WebClient wc = new WebClient()) { wc.Headers["User-Agent"] = "Hearth"; wc.DownloadFile("https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip", zip); }
+        ProcessStartInfo si = new ProcessStartInfo("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -Command \"Expand-Archive -LiteralPath '" + zip + "' -DestinationPath '" + eines + "' -Force\"");
+        si.UseShellExecute = false; si.CreateNoWindow = true;
+        using (Process p = Process.Start(si)) p.WaitForExit(120000);
+        try { File.Delete(zip); } catch { }
+        if (!File.Exists(Path.Combine(eines, "deno.exe"))) throw new Exception("No s'ha pogut descomprimir deno.exe");
+    }
+    // Si falta Deno, l'instal-la en segon pla (una vegada)
+    static void AsseguraDeno()
+    {
+        if (RutaDeno() != null) return;
+        if (Interlocked.CompareExchange(ref instalantDeno, 1, 0) != 0) return;
+        ThreadPool.QueueUserWorkItem(delegate
+        {
+            try { Console.WriteLine("  YouTube: instal-lant Deno..."); InstallaDeno(); errorDeno = ""; Console.WriteLine("  YouTube: Deno instal-lat."); }
+            catch (Exception e) { errorDeno = e.Message; Console.WriteLine("  YouTube: no s'ha pogut instal-lar Deno: " + e.Message); }
+            finally { instalantDeno = 0; }
+        });
+    }
+
     // Executa yt-dlp i torna la sortida
     static string Executa(string args, int ms)
     {
@@ -39,8 +78,10 @@ public static class YouTube
         si.UseShellExecute = false; si.CreateNoWindow = true;
         si.RedirectStandardOutput = true; si.RedirectStandardError = true;
         si.StandardOutputEncoding = Encoding.UTF8;
-        string ff = SoPC.RutaFfmpeg();
-        if (ff != null) si.EnvironmentVariables["PATH"] = Path.GetDirectoryName(ff) + ";" + Environment.GetEnvironmentVariable("PATH");
+        string ff = SoPC.RutaFfmpeg(), deno = RutaDeno(), cami = Environment.GetEnvironmentVariable("PATH");
+        if (ff != null) cami = Path.GetDirectoryName(ff) + ";" + cami;
+        if (deno != null) cami = Path.GetDirectoryName(deno) + ";" + cami;
+        si.EnvironmentVariables["PATH"] = cami;
         using (Process p = Process.Start(si))
         {
             StringBuilder err = new StringBuilder();
@@ -52,7 +93,8 @@ public static class YouTube
             {
                 string e = err.ToString();
                 Match m = Regex.Match(e, "ERROR:[^\r\n]*");
-                throw new Exception(m.Success ? m.Value : "yt-dlp ha fallat");
+                string pista = RutaDeno() == null ? " (falta Deno: Configuraci\u00f3 \u25b8 YouTube \u25b8 Descarregar)" : "";
+                throw new Exception((m.Success ? m.Value : "yt-dlp ha fallat") + pista);
             }
             return sortida;
         }
@@ -271,6 +313,7 @@ public static class YouTube
                         string t = CasaServidor.Q(q, "q").Trim();
                         if (t == "") { CasaServidor.Text(res, "[]", "application/json; charset=utf-8"); return; }
                         ActualitzaYtDlp();
+                        AsseguraDeno();
                         CasaServidor.Text(res, AmbCau("c:" + t.ToLowerInvariant(), 60, delegate { return Llista("ytsearch24:" + t, 24); }), "application/json; charset=utf-8");
                         return;
                     }
@@ -286,6 +329,7 @@ public static class YouTube
                     {
                         string id = CasaServidor.Q(q, "id"), qu = CasaServidor.Q(q, "q") == "360" ? "360" : "720";
                         if (!IdValid(id)) { CasaServidor.Error(res, 400, "Id"); return; }
+                        AsseguraDeno();
                         Sessio s = IniciaHls(id, qu);
                         string llista = Path.Combine(s.Dir, "index.m3u8");
                         for (int i = 0; i < 240; i++)
@@ -344,7 +388,8 @@ public static class YouTube
                 case "info":
                     {
                         Dictionary<string, object> o = new Dictionary<string, object>();
-                        o["ytdlp"] = Ruta() != null; o["ffmpeg"] = SoPC.RutaFfmpeg() != null;
+                        o["ytdlp"] = Ruta() != null; o["ffmpeg"] = SoPC.RutaFfmpeg() != null; o["deno"] = RutaDeno() != null; o["instalantDeno"] = instalantDeno == 1; o["errorDeno"] = errorDeno;
+                        try { o["versio"] = Ruta() != null ? Executa("--version", 20000).Trim() : ""; } catch { o["versio"] = ""; }
                         CasaServidor.Json(res, o);
                         return;
                     }
@@ -355,6 +400,8 @@ public static class YouTube
                         using (WebClient wc = new WebClient()) { wc.Headers["User-Agent"] = "Hearth"; wc.DownloadFile("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe", desti + ".tmp"); }
                         if (File.Exists(desti)) File.Delete(desti);
                         File.Move(desti + ".tmp", desti);
+                        lock (lk) cau.Clear();
+                        if (RutaDeno() == null) InstallaDeno();
                         CasaServidor.Text(res, "{\"ok\":true}", "application/json; charset=utf-8");
                         return;
                     }

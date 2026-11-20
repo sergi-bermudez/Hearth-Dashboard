@@ -109,8 +109,18 @@ function toca(i, qualitat) {
   var v = Y.llista[i];
   if (!v || !Casa) return;
   /* El PC prepara el vídeo en HLS (com la TV): comença en uns segons, també en HD i a iOS 9 */
-  var q = qualitat || ls('yt.q') || '720';
-  Casa.video({ id: v.id, nom: v.t, s: v.c || 'YouTube', u: api('youtube/hls', { id: v.id, q: q }), poster: imgx(v.img, 320), k: 'yt', desa: 'ytveient' });
+  var q = qualitat || ls('yt.q') || '720', u = api('youtube/hls', { id: v.id, q: q });
+  /* Primer es prepara al PC (així, si falla, se sap per què); després es reprodueix */
+  if (Y.prep) { try { Y.prep.abort(); } catch (e) { } }
+  avis(T('Preparant el vídeo…'), 60000);
+  Y.prep = peticio('GET', u, null, function () {
+    Y.prep = null; avis('', 1);
+    Casa.video({ id: v.id, nom: v.t, s: v.c || 'YouTube', u: u, poster: imgx(v.img, 320), k: 'yt', desa: 'ytveient' });
+  }, function (st, txt) {
+    Y.prep = null;
+    var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
+    avis(T('No s\'ha pogut reproduir el vídeo.') + ' ' + (m || (st ? 'error ' + st : T('Sense connexió amb el servidor'))), 12000);
+  });
 }
 function mes(i) {
   var v = Y.llista[i], h = '<div class="im" style="background-image:' + bg(imgx(v.img, 480)) + '"></div><h3>' + esc(v.t) + '</h3><div class="gris">' + esc(v.c || '') + '</div>';

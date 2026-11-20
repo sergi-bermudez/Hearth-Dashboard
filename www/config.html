@@ -195,7 +195,7 @@
     <h2>YouTube</h2>
     <div class="desc">YouTube funciona amb el programa gratuït yt-dlp al PC (sense anuncis de la web). Per veure vídeos en HD també cal ffmpeg.</div>
     <div class="llista" id="yt-info"><div class="gris">…</div></div>
-    <div class="peu"><button onclick="ytInstal()">Descarregar o actualitzar yt-dlp</button></div>
+    <div class="peu"><button onclick="ytInstal()">Descarregar o actualitzar yt-dlp i Deno</button></div>
   </div>
 
   <div class="sec" id="s-webs">
@@ -473,13 +473,14 @@ function agDesa() {
 function ytInfo() {
   getJson(api('youtube/info'), function (d) {
     var l = '';
-    l += '<div class="el"><div class="mini" style="width:36px;height:36px;line-height:36px;font-size:18px;background:none">' + (d.ytdlp ? '✅' : '⚠️') + '</div><div class="t">yt-dlp<div class="sub">' + (d.ytdlp ? T('Instal·lat') : T('Falta: prem el botó de sota')) + '</div></div></div>';
+    l += '<div class="el"><div class="mini" style="width:36px;height:36px;line-height:36px;font-size:18px;background:none">' + (d.ytdlp ? '✅' : '⚠️') + '</div><div class="t">yt-dlp<div class="sub">' + (d.ytdlp ? T('Instal·lat') + (d.versio ? ' · ' + esc(d.versio) : '') : T('Falta: prem el botó de sota')) + '</div></div></div>';
+    l += '<div class="el"><div class="mini" style="width:36px;height:36px;line-height:36px;font-size:18px;background:none">' + (d.deno ? '✅' : '⚠️') + '</div><div class="t">Deno<div class="sub">' + (d.deno ? T('Instal·lat (YouTube el necessita)') : d.instalantDeno ? T('Instal·lant…') : T('Falta: prem el botó de sota') + (d.errorDeno ? ' · ' + esc(d.errorDeno) : '')) + '</div></div></div>';
     l += '<div class="el"><div class="mini" style="width:36px;height:36px;line-height:36px;font-size:18px;background:none">' + (d.ffmpeg ? '✅' : 'ℹ️') + '</div><div class="t">ffmpeg<div class="sub">' + (d.ffmpeg ? T('Trobat (es pot mirar en HD)') : T('Sense ffmpeg només es pot mirar a 360p')) + '</div></div></div>';
     $('yt-info').innerHTML = l;
   }, function () { $('yt-info').innerHTML = '<div class="gris">' + T('No puc consultar l\'estat.') + '</div>'; });
 }
 function ytInstal() {
-  avis(T('Descarregant yt-dlp…'), 30000);
+  avis(T('Descarregant yt-dlp i Deno… pot trigar un minut.'), 90000);
   post(api('admin/youtube/instal-la'), '', function () { avis(T('Fet')); ytInfo(); }, function (st, txt) { var m = ''; try { m = JSON.parse(txt).error; } catch (e) { } avis(T('No s\'ha pogut:') + ' ' + (m || st), 6000); });
 }
 function afegeixGoogleHome() {

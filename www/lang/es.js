@@ -595,3 +595,10 @@ TR.es["Actualitzant… Hearth es reiniciarà en un minut i aquesta pàgina es to
 TR.es["No s'ha pogut actualitzar. Hearth continua amb la versió d'abans."]="No se ha podido actualizar. Hearth sigue con la versión anterior.";
 TR.es["Actualitzant: Hearth es reiniciarà en un minut"]="Actualizando: Hearth se reiniciará en un minuto";
 TR.es["Ja tens la darrera versió"]="Ya tienes la última versión";
+TR.es["Preparant el vídeo…"]="Preparando el vídeo…";
+TR.es["No s'ha pogut reproduir el vídeo."]="No se ha podido reproducir el vídeo.";
+TR.es["Sense connexió amb el servidor"]="Sin conexión con el servidor";
+TR.es["Instal·lat (YouTube el necessita)"]="Instalado (YouTube lo necesita)";
+TR.es["Instal·lant…"]="Instalando…";
+TR.es["Descarregar o actualitzar yt-dlp i Deno"]="Descargar o actualizar yt-dlp y Deno";
+TR.es["Descarregant yt-dlp i Deno… pot trigar un minut."]="Descargando yt-dlp y Deno… puede tardar un minuto.";
