@@ -67,7 +67,33 @@ if (!window.__wa) (function () {
       if (panell()) primer = false;
       return true;
     },
-    nous(des) { this.vigila(); return nous.filter((n) => n.ts > (des || 0)); },
+    nous(des) {
+      this.vigila();
+      let total = 0;
+      for (const f of files()) total += noLlegits(f);
+      return { llista: nous.filter((n) => n.ts > (des || 0)), total: total };
+    },
+
+    // On és el xat a la pantalla (el servidor hi fa un clic de ratolí "de veritat")
+    async rect(nom) {
+      if (this.actual() === nom) return { ja: true };
+      let f = files().find((x) => nomFila(x) === nom);
+      if (!f) {
+        const caixa = q('#side div[contenteditable="true"]') || q('div[contenteditable="true"][data-tab="3"]');
+        if (caixa) {
+          caixa.focus();
+          document.execCommand('selectAll', false, null);
+          document.execCommand('insertText', false, nom);
+          for (let i = 0; i < 20 && !f; i++) { await espera(150); f = files().find((x) => nomFila(x) === nom); }
+        }
+      }
+      if (!f) return { error: 'No trobo el xat' };
+      f.scrollIntoView({ block: 'center' });
+      await espera(200);
+      const t = q('span[title]', f) || f;
+      const r = t.getBoundingClientRect();
+      return { x: Math.round(r.left + Math.min(r.width / 2, 60)), y: Math.round(r.top + r.height / 2) };
+    },
 
     async obre(nom) {
       if (this.actual() === nom) return true;
@@ -84,7 +110,12 @@ if (!window.__wa) (function () {
       }
       if (!f) return false;
       const clic = q('[role="gridcell"]', f) || q('div[tabindex]', f) || f;
-      for (const t of ['mousedown', 'mouseup', 'click']) clic.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window }));
+      const r = clic.getBoundingClientRect(), o = { bubbles: true, cancelable: true, view: window, clientX: r.left + 20, clientY: r.top + r.height / 2, button: 0 };
+      try { clic.dispatchEvent(new PointerEvent('pointerdown', o)); } catch (e) {}
+      clic.dispatchEvent(new MouseEvent('mousedown', o));
+      try { clic.dispatchEvent(new PointerEvent('pointerup', o)); } catch (e) {}
+      clic.dispatchEvent(new MouseEvent('mouseup', o));
+      clic.dispatchEvent(new MouseEvent('click', o));
       for (let i = 0; i < 30; i++) { await espera(150); if (this.actual() === nom) break; }
       return this.actual() === nom;
     },
@@ -103,6 +134,7 @@ if (!window.__wa) (function () {
       if (!m) return { error: 'No hi ha cap xat obert' };
       const r = [];
       let rows = qa('[role="row"]', m);
+      if (!rows.length) rows = qa('[data-id]', m).filter((x) => x.querySelector('.message-in, .message-out') || /message-(in|out)/.test(x.className));
       if (!rows.length) rows = qa('.message-in, .message-out', m);
       for (const row of rows.slice(-60)) {
         const surt = !!(q('.message-out', row) || row.classList.contains('message-out'));

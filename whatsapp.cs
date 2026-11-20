@@ -60,6 +60,20 @@ public static class WhatsApp
 
     static string Js(string s) { return new JavaScriptSerializer().Serialize(s ?? ""); }
 
+    // Obre un xat amb un clic de ratoli real (WhatsApp ignora sovint els clics fets amb JavaScript)
+    static void ObreXat(string nom)
+    {
+        string r = Crida("rect(" + Js(nom) + ")", 10000);
+        Dictionary<string, object> d = new JavaScriptSerializer().DeserializeObject(r) as Dictionary<string, object>;
+        if (d == null || d.ContainsKey("ja") || !d.ContainsKey("x")) return;
+        double x = Convert.ToDouble(d["x"]), y = Convert.ToDouble(d["y"]);
+        Cdp c = Assegura();
+        c.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseMoved", "x", x, "y", y), 3000);
+        c.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mousePressed", "x", x, "y", y, "button", "left", "clickCount", 1), 3000);
+        c.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseReleased", "x", x, "y", y, "button", "left", "clickCount", 1), 3000);
+        Thread.Sleep(900);
+    }
+
     public static void AlArrencar()
     {
         try
@@ -88,11 +102,14 @@ public static class WhatsApp
                 case "estat": Activa(true); CasaServidor.Text(res, Crida("estat()", 8000), ct); return;
                 case "qr": CasaServidor.Text(res, Crida("qr()", 8000), ct); return;
                 case "xats": CasaServidor.Text(res, Crida("xats()", 8000), ct); return;
-                case "missatges": CasaServidor.Text(res, Crida("missatges(" + Js(CasaServidor.Q(q, "xat")) + ")", 15000), ct); return;
+                case "missatges":
+                    try { ObreXat(CasaServidor.Q(q, "xat")); } catch { }
+                    CasaServidor.Text(res, Crida("missatges(" + Js(CasaServidor.Q(q, "xat")) + ")", 15000), ct);
+                    return;
                 case "nous":
                     {
                         long des; long.TryParse(CasaServidor.Q(q, "des"), out des);
-                        lock (lk) { if (sessio == null || !sessio.Viu) { CasaServidor.Text(res, "[]", ct); return; } }
+                        lock (lk) { if (sessio == null || !sessio.Viu) { CasaServidor.Text(res, "{\"llista\":[],\"total\":0}", ct); return; } }
                         CasaServidor.Text(res, Crida("nous(" + des + ")", 6000), ct);
                         return;
                     }
@@ -101,6 +118,7 @@ public static class WhatsApp
                         string text;
                         using (StreamReader sr = new StreamReader(ctx.Request.InputStream, Encoding.UTF8)) text = sr.ReadToEnd();
                         if (text.Trim() == "") { CasaServidor.Error(res, 400, "Missatge buit"); return; }
+                        try { ObreXat(CasaServidor.Q(q, "xat")); } catch { }
                         CasaServidor.Text(res, Crida("envia(" + Js(CasaServidor.Q(q, "xat")) + "," + Js(text) + ")", 20000), ct);
                         return;
                     }

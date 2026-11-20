@@ -21,7 +21,7 @@ button:active,.toc:active{opacity:.6}
 .flex1{-webkit-flex:1;flex:1;min-width:0}
 .ic{width:24px;height:24px;fill:currentColor;vertical-align:middle}
 .gris{color:rgba(255,255,255,.7)}
-.ombrat{text-shadow:0 1px 10px rgba(0,0,0,.55)}
+.ombrat{text-shadow:0 1px 3px rgba(0,0,0,.65),0 2px 16px rgba(0,0,0,.55)}
 .una{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #avis{position:absolute;left:50%;top:30px;-webkit-transform:translateX(-50%);transform:translateX(-50%);background:rgba(40,46,56,.96);padding:12px 22px;border-radius:14px;z-index:200;display:none;max-width:90%}
 
@@ -41,6 +41,42 @@ body.e-fosc .fimg,body.e-fosc #fpeu{display:none}
 body.e-fosc #hora{font-size:150px;color:#e9e3d6}
 body.e-fosc .ombrat{text-shadow:none}
 
+/* Vel fosc regulable (Configuració ▸ Pantalla d'inici ▸ Foscor del fons) */
+#fons .vel{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;opacity:.25}
+body.e-fosc #fons .vel{display:none}
+/* Estil Targetes: foto nítida de fons i targetes fosques translúcides (el text sempre es llegeix bé) */
+body.e-targetes .panell,body.e-targetes #agenda,body.e-targetes #rapid{background:rgba(12,14,22,.58);border-radius:22px;padding:16px 20px}
+body.e-targetes #agenda{padding:10px 14px}
+body.e-targetes #rapid{padding:10px 12px 4px}
+body.e-targetes .ombrat{text-shadow:none}
+body.e-targetes #temps{margin-left:14px}
+body.e-targetes #fpeu{background:rgba(12,14,22,.5);border-radius:12px;padding:4px 10px}
+/* Estil Rellotge: rellotge gran centrat, la resta discreta */
+body.e-rellotge .d-cap{-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;text-align:center}
+body.e-rellotge .d-hora{-webkit-flex:none;flex:none;width:100%}
+body.e-rellotge #hora{font-size:170px;font-weight:100;letter-spacing:-6px;margin:0}
+body.e-rellotge #salut{padding-left:0 !important}
+body.e-rellotge #temps{max-width:100%;text-align:center;margin-top:4px}
+body.e-rellotge .t-ara{-webkit-justify-content:center;justify-content:center}
+body.e-rellotge .t-ara svg{width:44px;height:44px}
+body.e-rellotge .t-ara .gr{font-size:36px}
+body.e-rellotge .t-dies,body.e-rellotge #temps .t-ds+.t-ds{display:none}
+body.e-rellotge #agenda{left:50%;-webkit-transform:translateX(-50%);transform:translateX(-50%);text-align:center;max-width:70%}
+body.e-rellotge #agenda .ag i{vertical-align:1px}
+@media (orientation:portrait){ body.e-rellotge #hora{font-size:150px} }
+/* Pantalles baixes (Safari amb barres, iPad en horitzontal): versions compactes */
+#dash.c1 .t-dies{display:none}
+#dash.c1 #hora,#dash.c2 #hora,#dash.c3 #hora{font-size:84px}
+#dash.c2 #hora,#dash.c3 #hora{font-size:72px}
+#dash.c2 #data{font-size:18px}
+#dash.c2 #rapid .rt .nm,#dash.c3 #rapid .rt .nm{display:none}
+#dash.c2 #rapid .rt .lg{width:54px;height:54px}
+#dash.c2 #rapid .rt{width:62px}
+#dash.c3 #rapid{display:none}
+#dash.c3 .app .nm{display:none}
+#dash.c3 .d-dock{padding-top:10px;padding-bottom:10px}
+body.e-rellotge #dash.c1 #hora{font-size:120px}
+body.e-rellotge #dash.c2 #hora,body.e-rellotge #dash.c3 #hora{font-size:96px}
 /* ===== Dashboard ===== */
 #dash{position:absolute;top:0;left:0;right:0;bottom:0;padding:24px 28px 16px;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column}
 html.sa #dash{top:20px}
@@ -114,8 +150,9 @@ body.e-fosc .d-dock{background:rgba(255,255,255,.06)}
 html.sa #apps{top:20px}
 body.en-app #apps{display:block}
 body.en-app.sona #apps{bottom:140px}
-#apps iframe{position:absolute;top:0;left:0;width:1px;min-width:100%;height:100%;border:0;display:none;background:#0e1116}
-#apps iframe.activa{display:block}
+/* Les apps amagades no fan servir display:none: al Safari 9 una pàgina incrustada que torna de display:none sovint deixa de rebre tocs */
+#apps iframe{position:absolute;top:-30000px;left:0;width:1px;min-width:100%;height:100%;border:0;background:#0e1116;visibility:hidden}
+#apps iframe.activa{top:0;visibility:visible}
 #barra{position:absolute;left:0;right:0;bottom:0;z-index:20;display:none;background:#0e1116;border-top:1px solid rgba(255,255,255,.08)}
 body.en-app #barra{display:block}
 #mini{height:74px;display:none;-webkit-align-items:center;align-items:center;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.06)}
@@ -138,7 +175,8 @@ body.sona #mini{display:-webkit-flex;display:flex}
 /* Pestanyes dels espais (Escoltar, Mirar) */
 #pest{position:absolute;top:0;left:0;right:0;height:52px;background:#0e1116;display:none;text-align:center;padding-top:8px;border-bottom:1px solid rgba(255,255,255,.06)}
 body.amb-pest #pest{display:block}
-body.amb-pest #apps iframe{top:52px;height:-webkit-calc(100% - 52px);height:calc(100% - 52px)}
+body.amb-pest #apps iframe.activa{top:52px}
+body.amb-pest #apps iframe{height:-webkit-calc(100% - 52px);height:calc(100% - 52px)}
 #pest .seg{display:inline-block;background:rgba(255,255,255,.08);border-radius:12px;padding:3px;white-space:nowrap}
 #pest span{display:inline-block;padding:6px 16px;border-radius:9px;font-size:15px;color:#aab2bd;cursor:pointer}
 #pest span .ic{width:20px;height:20px;margin:-2px 6px 0 0}
@@ -194,6 +232,9 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 /* Mides de la TV al dashboard */
 .s-tvw{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
 .s-tvw.pila{display:block}
+.s-tvw .s-info{-webkit-flex:1;flex:1;min-width:0}
+.s-tvw .s-ctl{margin-left:0;margin-top:8px;-webkit-flex-wrap:wrap;flex-wrap:wrap}
+.s-tvw.pila .s-ctl{margin-top:0}
 .s-tvw.pila .s-info{margin-top:10px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
 .s-tvw.pila .s-tit{font-size:20px;margin:0 10px 0 0;-webkit-flex:1;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .s-tvw.pila .s-kick,.s-tvw.pila .s-sub{display:none}
@@ -222,6 +263,13 @@ body.e-vidre #agenda{background:rgba(255,255,255,.1);border-radius:16px;padding:
 #pin .pt{font-size:40px;letter-spacing:18px;margin:18px 0;min-height:50px}
 #pin .tec{display:inline-block;width:270px}
 #pin .tec button{width:76px;height:76px;margin:6px;border-radius:38px;font-size:28px}
+/* Punt vermell de missatges */
+.app.punt .bx{position:relative}
+.app.punt .bx:after,#nav .punt:after{content:attr(data-n);position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;line-height:22px;padding:0 5px;border-radius:11px;background:#ff3b30;color:#fff;font-size:13px;font-weight:700;text-align:center;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+.app.punt{position:relative}
+.app.punt .bx:after{content:'';min-width:0;width:18px;height:18px;padding:0;border-radius:9px;top:-5px;right:-5px}
+#nav .punt{position:relative}
+#nav .punt:after{top:4px;right:50%;margin-right:-22px;min-width:12px;height:12px;padding:0;content:''}
 /* ===== Passi de fotos (pantalla completa) ===== */
 #marc{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;z-index:90;display:none}
 #marc .capa{position:absolute;top:0;left:0;right:0;bottom:0;background:center/cover no-repeat;opacity:0;-webkit-transition:opacity 1.8s;transition:opacity 1.8s}
@@ -251,7 +299,7 @@ html.sa #mc-sona{top:40px}
 </style>
 </head>
 <body class="e-fotos">
-<div id="fons"><div class="fimg" id="fons-a"></div><div class="fimg" id="fons-b"></div><div class="ombra"></div></div>
+<div id="fons"><div class="fimg" id="fons-a"></div><div class="fimg" id="fons-b"></div><div class="ombra"></div><div class="vel" id="vel"></div></div>
 
 <div id="dash">
   <div class="d-cap">
@@ -534,13 +582,14 @@ function pintaDock() {
     var g = GRUPS[i];
     if (g.id == 'webs' && !WB.defs.length) continue;
     if (!grupPermes(g)) continue;
-    h += '<div class="app" onclick="obreGrup(\'' + g.id + '\')"><div class="bx" style="' + grad(g.c1, g.c2) + '">' + svg(g.ic) + '</div><span class="nm">' + esc(T(g.nom)) + '</span></div>';
+    h += '<div class="app" id="dk-' + g.id + '" onclick="obreGrup(\'' + g.id + '\')"><div class="bx" style="' + grad(g.c1, g.c2) + '">' + svg(g.ic) + '</div><span class="nm">' + esc(T(g.nom)) + '</span></div>';
     n += '<div onclick="obreGrup(\'' + g.id + '\')" id="nv-' + g.id + '">' + svg(g.ic) + esc(T(g.nom)) + '</div>';
   }
   n += '<div onclick="obreConfig()" id="nv-config" class="nv-cfg">' + svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config) + '</div>';
   $('cfg').innerHTML = svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config);
   $('dock').innerHTML = h;
   $('nav').innerHTML = n;
+  if (window.NF) puntMissatges();
 }
 function pintaPestanyes(id) {
   var g = grupDe(id), p = $('pest');
@@ -580,8 +629,17 @@ function obre(id, arg) {
   var g = grupDe(id), nid = 'nv-' + (g ? g.id : id), navs = $('nav').getElementsByTagName('div');
   for (i = 0; i < navs.length; i++) navs[i].className = (navs[i].id == nid ? 'activa' : '') + (navs[i].id == 'nv-config' ? ' nv-cfg' : '');
   try { if (f.contentWindow.casaMostra) f.contentWindow.casaMostra(); } catch (e) { }
+  desperta(f);
   pintaWebDash();
   if (TV.mode != 'gran') tvLloc();
+}
+/* Força el Safari 9 a tornar a calcular on es pot tocar dins la pàgina incrustada */
+function desperta(f) {
+  try {
+    f.style.webkitTransform = 'translateZ(0)';
+    void f.offsetHeight;
+    setTimeout(function () { f.style.webkitTransform = ''; try { if (f.contentWindow.casaDesperta) f.contentWindow.casaDesperta(); } catch (e) { } }, 60);
+  } catch (e) { }
 }
 function tancaApp(id) {
   var f = FR[id];
@@ -604,6 +662,8 @@ function inici() {
   tvLloc();
 }
 function estatCos() {
+  var f = A.ajustos.foscor;
+  $('vel').style.opacity = (f == null ? (A.ajustos.estil == 'targetes' ? 15 : 25) : f) / 100;
   var c = ['e-' + (A.ajustos.estil || 'fotos')];
   if (A.vista != 'dash') c.push('en-app');
   if (A.vista != 'dash' && A.pest) c.push('amb-pest');
@@ -644,6 +704,7 @@ function repToca() {
   R.represa = it.k == 'podcast' ? ((ls('pod') || {})[it.ep] || null) : null;
   if (it.u) { au.src = it.u; au.play(); }
   else { au.pause(); au.removeAttribute('src'); }
+  vigilaRadio();
   estatCos();
   pintaMini();
   if (A.vista == 'dash') pintaSona();
@@ -716,10 +777,30 @@ au.addEventListener('error', function () {
   if (!au.getAttribute('src')) return;
   var it = R.cua[R.pos];
   if (it && it.k == 'spotify') { setTimeout(spReconnecta, 3000); return; }
-  if (it && it.k == 'radio' && it.alt && au.src.indexOf('/api/') < 0) { it.u = it.alt; it.alt = null; au.src = it.u; au.play(); return; }
+  if (it && it.k == 'radio' && provaAlternativa(it)) return;
   avis(T('No s\'ha pogut reproduir:') + ' ' + (it ? it.t : ''), 4000);
   if (it && it.k == 'musica' && R.pos < R.cua.length - 1) setTimeout(function () { R.pos++; repToca(); }, 1500);
 });
+/* Ràdio: si no comença a sonar en 20 s (o falla), prova l'altra via */
+var RW = { t: null, sonant: false };
+au.addEventListener('playing', function () { RW.sonant = true; });
+function vigilaRadio() {
+  clearTimeout(RW.t);
+  RW.sonant = false;
+  var it = R.cua[R.pos];
+  if (!it || it.k != 'radio') return;
+  RW.t = setTimeout(function () {
+    if (R.cua[R.pos] !== it || RW.sonant) return;
+    if (!provaAlternativa(it)) avis(T('Aquesta emissora no respon. Prova\'n una altra.'), 5000);
+  }, 30000);
+}
+function provaAlternativa(it) {
+  if (!it.alt || !it.alt.length) return false;
+  it.u = it.alt.shift();
+  au.src = it.u; au.play();
+  vigilaRadio();
+  return true;
+}
 function iconesPlay() {
   var it = R.cua[R.pos], aturat = TV.canal ? $('tv-v').paused : it && it.k == 'spotify' ? !(SP.estat && SP.estat.sona) : au.paused;
   var p = aturat ? svg(IC.play) : svg(IC.pausa);
@@ -1037,22 +1118,40 @@ function tvMidaCanvia() {
 
 /* ---------- Dashboard: què sona ---------- */
 function espaiSona() {
-  /* Alçada disponible per a la secció "sona" sense que res quedi tallat */
+  /* Alçada que pot ocupar la secció «sona» sense que res quedi tallat ni se superposi */
+  var dash = $('dash'), cs = getComputedStyle(dash), sona = $('sona'), ss = getComputedStyle(sona);
+  var baix = dash.getBoundingClientRect().bottom - parseFloat(cs.paddingBottom || 0);
   var cap = document.querySelector('.d-cap').getBoundingClientRect().bottom;
-  var dock = $('dock').getBoundingClientRect().top, rap = $('rapid');
-  var rapH = rap.style.display == 'none' ? 0 : rap.offsetHeight + 14;
-  var extra = A.ajustos.estil == 'vidre' ? 34 : 0;
-  return Math.max(60, dock - rapH - 14 - cap - 18 - extra);
+  var rap = $('rapid'), rapH = rap.style.display == 'none' || !rap.offsetHeight ? 0 : rap.offsetHeight + parseFloat(getComputedStyle(rap).marginBottom || 0);
+  var dk = $('dock'), dockH = dk.offsetHeight + parseFloat(getComputedStyle(dk).marginTop || 0);
+  var vores = parseFloat(ss.paddingTop || 0) + parseFloat(ss.paddingBottom || 0) + parseFloat(ss.borderTopWidth || 0) + parseFloat(ss.borderBottomWidth || 0) + parseFloat(ss.marginBottom || 0) + parseFloat(ss.marginTop || 0);
+  return Math.max(60, Math.floor(baix - dockH - rapH - cap - 22 - vores) - (SONA_RED || 0));
 }
-function pintaSona() {
+var SONA_RED = 0;
+/* Si no hi cap tot: primer es redueix la TV, després es compacta la capçalera, els preferits i la barra */
+var COMPACTE = 0;
+function desbordDespres() {
+  var dash = $('dash'), baix = dash.getBoundingClientRect().bottom - parseFloat(getComputedStyle(dash).paddingBottom || 0) + 1;
+  var sobra = $('dock').getBoundingClientRect().bottom - baix;
+  if (sobra <= 0) return;
+  if (TV.canal && SONA_RED < 160 && espaiSona() > 130) { SONA_RED += Math.ceil(sobra) + 4; pintaSona(true); return; }
+  if (COMPACTE < 3) { COMPACTE++; dash.className = 'c' + COMPACTE; if (A.ajustos.estil) pintaRapid(); pintaSona(true); return; }
+  if (SONA_RED < 400) { SONA_RED += Math.ceil(sobra) + 4; pintaSona(true); }
+}
+/* Si després de dibuixar encara sobresurt, es redueix i es torna a dibuixar (una vegada) */
+function pintaSona(intern) {
+  if (!intern) { SONA_RED = 0; COMPACTE = 0; $('dash').className = ''; }
   var s = $('sona'), it = R.cua[R.pos], i, h;
   s.style.display = 'block';
   if (TV.canal && TV.mode != 'gran') {
     var c = TV.canal, vod = !!c.vod, esp = espaiSona();
     var W = s.clientWidth - (A.ajustos.estil == 'vidre' ? 40 : 0), estret = W < 620;
-    var pila = TV.mida == 'g' || estret;
-    var Wt = pila ? W * (TV.mida == 'p' ? 0.55 : TV.mida == 'm' ? 0.78 : 1) : W * (TV.mida == 'p' ? 0.34 : 0.52);
-    Wt = Math.max(160, Math.round(Math.min(Wt, (esp - (pila ? 58 : 0)) * 16 / 9)));
+    /* En horitzontal: vídeo a l'esquerra i controls a la dreta. Apilat només si els controls no hi caben al costat */
+    var fr = TV.mida == 'p' ? 0.36 : TV.mida == 'm' ? 0.5 : 0.64;
+    var Wt = Math.round(Math.min(W * fr, esp * 16 / 9));
+    var pila = estret || W - Wt < 360;
+    if (pila) Wt = Math.round(Math.min(W * (TV.mida == 'p' ? 0.6 : TV.mida == 'm' ? 0.8 : 1), (esp - 58) * 16 / 9));
+    Wt = Math.max(160, Wt);
     var Ht = Math.round(Wt * 9 / 16);
     var kick = vod ? (c.k == 'yt' ? 'YouTube' : T('Pel·lícula')) : '<span class="directe">' + T('DIRECTE') + '</span>' + T('Televisió');
     var ctl = '<div class="s-ctl"><button class="mida" onclick="tvMidaCanvia()" title="' + esc(T('Mida')) + '">' + (TV.mida == 'p' ? 'S' : TV.mida == 'm' ? 'M' : 'L') + '</button>' +
@@ -1070,6 +1169,7 @@ function pintaSona() {
     ajustaMig();
     tvLloc();
     setTimeout(tvLloc, 60);
+    desbordDespres();
     return;
   }
   if (it) {
@@ -1090,6 +1190,7 @@ function pintaSona() {
     if (s.clientWidth < 620) { var ctl2 = s.firstChild.lastChild; s.firstChild.style.webkitFlexWrap = 'wrap'; s.firstChild.style.flexWrap = 'wrap'; ctl2.style.width = '100%'; ctl2.style.margin = '10px 0 0'; ctl2.style.webkitJustifyContent = 'center'; ctl2.style.justifyContent = 'center'; }
     iconesPlay(); progres();
     ajustaMig();
+    desbordDespres();
     return;
   }
   var grans = [['radio', 'Ràdio', IC.radio, '#ffab3d', '#e05d12'], ['tv', 'TV', IC.tv, '#5aa0ff', '#2a5fd0'], ['youtube', 'YouTube', IC.video, '#ff5a5a', '#c4161c'], ['musica', 'Música', IC.musica, '#ff5fa2', '#b0217a'], ['spotify', 'Spotify', IC.spotify, '#2fd36b', '#128a3e']];
@@ -1097,8 +1198,12 @@ function pintaSona() {
   for (i = 0; i < grans.length; i++) if (permesa(grans[i][0]))
     h += '<div class="gb" onclick="obre(\'' + grans[i][0] + '\')" style="background:' + grans[i][4] + ';background:-webkit-linear-gradient(135deg,' + grans[i][3] + ',' + grans[i][4] + ');background:linear-gradient(135deg,' + grans[i][3] + ',' + grans[i][4] + ')">' + svg(grans[i][2]) + esc(T(grans[i][1])) + '</div>';
   s.innerHTML = h + '</div></div>';
-  if (espaiSona() < 110) s.style.display = 'none';
+  if (espaiSona() < 110) {
+    if (COMPACTE < 3) { COMPACTE++; $('dash').className = 'c' + COMPACTE; pintaSona(true); return; }
+    s.style.display = 'none';
+  }
   ajustaMig();
+  desbordDespres();
 }
 function ajustaMig() {
   var m = $('mig').clientHeight;
@@ -1149,12 +1254,21 @@ function continua(i) {
   else obre('pelis', 'v:' + x.p);
 }
 function tocaRadio(i) { repInicia([radioItem(A.radios[i])], 0); }
+/* iOS 9 o anterior: el reproductor no s'entén bé amb la ràdio en directe "clàssica" (Icecast/Shoutcast) */
+var IOS_VELL = /(iPad|iPhone|iPod).* OS [4-9]_/.test(navigator.userAgent);
 function radioItem(s) {
-  /* http: directe a l'iPad (el més ràpid); https: via el servidor (el Safari 9 no té els certificats nous); m3u8: HLS reescrit */
-  var u = s.u, d = { t: s.t, s: s.s || T('Ràdio'), art: s.img ? imgx(s.img, 200) : '', k: 'radio', id: s.u };
-  if (/\.m3u8(\?|$)/i.test(u)) d.u = api('hls', { u: u });
-  else if (/^http:/i.test(u)) { d.u = u; d.alt = api('x', { u: u, directe: 1 }); }
-  else d.u = api('x', { u: u, directe: 1 });
+  /* Vies possibles, per ordre: iOS vell -> HLS fet pel servidor (com la TV, que sí que va bé);
+     http -> directe (el més ràpid); https -> via el servidor; m3u8 -> HLS reescrit */
+  var u = s.u, d = { t: s.t, s: s.s || T('Ràdio'), art: s.img ? imgx(s.img, 200) : '', k: 'radio', id: s.u }, vies = [];
+  if (/\.m3u8(\?|$)/i.test(u)) vies.push(api('hls', { u: u }));
+  else {
+    if (IOS_VELL) vies.push(api('radio/hls', { u: u }));
+    if (/^http:/i.test(u)) vies.push(u);
+    vies.push(api('x', { u: u, directe: 1 }));
+    if (!IOS_VELL) vies.push(api('radio/hls', { u: u }));
+  }
+  d.u = vies.shift();
+  d.alt = vies;
   return d;
 }
 function carregaSuggeriments() {
@@ -1270,8 +1384,10 @@ function pintaAgenda() {
       h += '<div class="ag"><i style="background:' + esc(x.color) + '"></i><b>' + (x.dia ? T('Tot el dia') : hi.getHours() + ':' + dos(hi.getMinutes())) + '</b>' + esc(x.t) + '</div>';
     }
   }
-  $('agenda').innerHTML = h;
-  $('agenda').style.display = h ? '' : 'none';
+  var ag = $('agenda');
+  ag.innerHTML = h;
+  ag.style.display = h && m.clientHeight > 44 ? '' : 'none';
+  ag.style.maxHeight = Math.max(0, m.clientHeight - 10) + 'px';
   var s = '';
   if (seguent) { var si = dataDe(seguent.ini); s = '<i style="background:' + esc(seguent.color) + '"></i>' + (si.getDate() == ara.getDate() ? '' : esc(DIESC[si.getDay()]) + ' ') + si.getHours() + ':' + dos(si.getMinutes()) + ' · ' + esc(seguent.t); }
   $('mc-ag').innerHTML = s;
@@ -1283,7 +1399,10 @@ var NF = { des: Date.now(), t: null, actual: null, para: true };
 function vigilaMissatges() {
   clearTimeout(NF.t);
   if (NF.para || !A.ajustos.whatsapp) return;
-  getJson(api('admin/wa/nous', { des: NF.des }), function (l) {
+  getJson(api('admin/wa/nous', { des: NF.des }), function (d) {
+    var l = d && d.llista ? d.llista : (d && d.length ? d : []);
+    NF.total = d && d.total ? d.total : 0;
+    puntMissatges();
     if (l && l.length) {
       for (var i = 0; i < l.length; i++) if (l[i].ts > NF.des) NF.des = l[i].ts;
       var n = l[l.length - 1];
@@ -1291,6 +1410,15 @@ function vigilaMissatges() {
     }
     NF.t = setTimeout(vigilaMissatges, 15000);
   }, function (st) { if (st == 401) NF.para = true; else NF.t = setTimeout(vigilaMissatges, 60000); });
+}
+/* Punt vermell a la icona de Missatges quan hi ha missatges sense llegir */
+function puntMissatges() {
+  var els = [$('dk-missatges'), $('nv-missatges')];
+  for (var i = 0; i < els.length; i++) if (els[i]) {
+    var c = els[i].className.replace(/\s*punt/g, '');
+    els[i].className = c + (NF.total > 0 ? ' punt' : '');
+    els[i].setAttribute('data-n', NF.total > 99 ? '99+' : NF.total || '');
+  }
 }
 function mostraNotif(n) {
   NF.actual = n;
@@ -1400,7 +1528,7 @@ window.Casa = {
   var rt = null;
   window.addEventListener('resize', function () {
     clearTimeout(rt);
-    rt = setTimeout(function () { if (A.vista == 'dash') pintaSona(); tvLloc(); marcSona(); }, 120);
+    rt = setTimeout(function () { if (A.vista == 'dash') pintaSona(); else if (FR[A.vista]) desperta(FR[A.vista]); tvLloc(); marcSona(); }, 120);
   });
   var h = decodeURIComponent(location.hash.replace('#', '')), hp = h.split(':');
   if (h) {

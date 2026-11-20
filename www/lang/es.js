@@ -529,3 +529,8 @@ TR.es["WhatsApp (llegir i respondre missatges)"] = "WhatsApp (leer y responder m
 TR.es["Mode infantil"] = "Modo infantil";
 TR.es["YouTube"] = "YouTube";
 TR.es["Avisos"] = "Avisos";
+TR.es["Targetes"] = "Tarjetas";
+TR.es["Rellotge"] = "Reloj";
+TR.es["Foscor del fons"] = "Oscuridad del fondo";
+TR.es["més fosc = el text es llegeix millor"] = "más oscuro = el texto se lee mejor";
+TR.es["Aquesta emissora no respon. Prova'n una altra."] = "Esta emisora no responde. Prueba otra.";

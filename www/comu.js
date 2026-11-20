@@ -241,6 +241,19 @@ function dinsCasa(app) {
   return true;
 }
 document.addEventListener('touchstart', function () { if (Casa) Casa.toc(); }, true);
+/* Safari 9: les zones amb desplaçament tàctil a vegades queden «mortes»; tornar-les a crear ho arregla */
+window.casaDesperta = function () {
+  var ids = ['pag', 'area', 'esq', 'msgs'];
+  for (var i = 0; i < ids.length; i++) (function (p) {
+    if (!p) return;
+    var y = p.scrollTop;
+    p.style.webkitOverflowScrolling = 'auto';
+    p.style.overflowY = 'hidden';
+    void p.offsetHeight;
+    setTimeout(function () { p.style.overflowY = ''; p.style.webkitOverflowScrolling = ''; p.scrollTop = y; }, 30);
+  })($(ids[i]));
+};
+window.addEventListener('orientationchange', function () { setTimeout(window.casaDesperta, 300); });
 document.addEventListener('mousedown', function () { if (Casa) Casa.toc(); }, true);
 
 /* ---------- Imatges mandroses: només es carreguen les visibles, 4 alhora ---------- */

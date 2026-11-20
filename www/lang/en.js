@@ -529,3 +529,8 @@ TR.en["WhatsApp (llegir i respondre missatges)"] = "WhatsApp (read and reply to 
 TR.en["Mode infantil"] = "Kids mode";
 TR.en["YouTube"] = "YouTube";
 TR.en["Avisos"] = "Notifications";
+TR.en["Targetes"] = "Cards";
+TR.en["Rellotge"] = "Clock";
+TR.en["Foscor del fons"] = "Background darkness";
+TR.en["més fosc = el text es llegeix millor"] = "darker = text is easier to read";
+TR.en["Aquesta emissora no respon. Prova'n una altra."] = "This station isn't responding. Try another one.";

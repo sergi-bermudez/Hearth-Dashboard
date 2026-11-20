@@ -40,7 +40,7 @@
 #ex-llista{-webkit-flex:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:10px 0}
 #ex-ruta{font-size:14px;color:#8d95a1;word-break:break-all}
 .estils{display:-webkit-flex;display:flex;margin-bottom:14px}
-.estil{-webkit-flex:1;flex:1;margin-right:10px;border-radius:14px;height:96px;position:relative;cursor:pointer;border:3px solid transparent;overflow:hidden;background:#333 center/cover}
+.estil{-webkit-flex:1;flex:1;margin-right:8px;border-radius:14px;height:86px;position:relative;cursor:pointer;border:3px solid transparent;overflow:hidden;background:#333 center/cover}
 .estil:last-child{margin-right:0}
 .estil.on{border-color:#7fb0ff}
 .estil span{position:absolute;left:8px;bottom:6px;font-size:14px;font-weight:600;text-shadow:0 1px 4px #000}
@@ -91,6 +91,7 @@
     <div class="fila"><label>Nom (salutació)</label><input type="text" id="aj-nom" placeholder="p. ex. família"></div>
     <div class="fila"><label>Ciutat del temps</label><input type="text" id="aj-ciutat"><button onclick="cercaCiutat()">Cercar</button></div>
     <div class="llista" id="ciutats" style="margin:-4px 0 12px 150px"></div>
+    <div class="fila"><label>Foscor del fons</label><input type="range" id="aj-foscor" min="0" max="80" step="5" style="width:220px" oninput="$('aj-foscor-v').textContent=this.value+'%'"><span id="aj-foscor-v" class="gris" style="margin-left:10px"></span><span class="gris petit" style="margin-left:12px">més fosc = el text es llegeix millor</span></div>
     <div class="fila"><label>Fons: segons</label><input type="number" id="aj-fons" min="8" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto del fons</span></div>
     <div class="fila"><label>Marc: segons</label><input type="number" id="aj-seg" min="5" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto</span></div>
     <div class="fila"><label>Marc automàtic</label><input type="number" id="aj-min" min="0" max="240" style="width:120px"><span class="gris petit" style="margin-left:12px">minuts sense tocar la pantalla (0 = mai)</span></div>
@@ -250,6 +251,7 @@ function carrega() {
     $('aj-seg').value = C.aj.marcSeg || 15;
     $('aj-min').value = C.aj.marcMin || 0;
     $('aj-fons').value = C.aj.fonsSeg || 20;
+    $('aj-foscor').value = C.aj.foscor == null ? 25 : C.aj.foscor; $('aj-foscor-v').textContent = $('aj-foscor').value + '%';
     $('fn-spotify').checked = !!C.aj.spotify; $('fn-whatsapp').checked = !!C.aj.whatsapp;
     pintaEstils();
     pintaTargeta();
@@ -334,6 +336,7 @@ function desaInici() {
   a.marcSeg = Math.max(5, parseInt($('aj-seg').value, 10) || 15);
   a.marcMin = Math.max(0, parseInt($('aj-min').value, 10) || 0);
   a.fonsSeg = Math.max(8, parseInt($('aj-fons').value, 10) || 20);
+  a.foscor = parseInt($('aj-foscor').value, 10) || 0;
   a.estil = a.estil || 'fotos';
   a.targeta = $('aj-targeta').value;
   desaDades('ajustos', a, function () { avis('Desat'); if (Casa) Casa.recarrega(); });
@@ -341,7 +344,7 @@ function desaInici() {
 
 
 /* Idioma, país i estil */
-var ESTILS = [['fotos', 'Fotos', 'linear-gradient(135deg,#6a8f5a,#2c4a6b)'], ['vidre', 'Vidre', 'linear-gradient(135deg,#4a5a8a,#7a4a7a)'], ['fosc', 'Fosc', '#000']];
+var ESTILS = [['fotos', 'Fotos', 'linear-gradient(135deg,#6a8f5a,#2c4a6b)'], ['targetes', 'Targetes', 'linear-gradient(135deg,#8a6a3a,#3a5a7a)'], ['rellotge', 'Rellotge', 'linear-gradient(135deg,#3a3a5a,#1a1a2a)'], ['vidre', 'Vidre', 'linear-gradient(135deg,#4a5a8a,#7a4a7a)'], ['fosc', 'Fosc', '#000']];
 function pintaLlengua() {
   var h = '', i;
   for (i = 0; i < LLENGUES.length; i++) h += '<option value="' + LLENGUES[i][0] + '"' + (LLENGUES[i][0] == LANG ? ' selected' : '') + '>' + esc(LLENGUES[i][1]) + '</option>';

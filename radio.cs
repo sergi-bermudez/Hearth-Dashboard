@@ -9,6 +9,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 public static class Radios
 {
@@ -168,5 +170,125 @@ public static class Radios
             CasaServidor.Text(ctx.Response, r, "application/json; charset=utf-8");
         }
         catch (Exception e) { CasaServidor.Error(ctx.Response, 500, e.Message); }
+    }
+}
+
+// R\u00e0dio en HLS per als iPad antics: ffmpeg llegeix l'emissora i en fa trossos AAC de 4 s,
+// el mateix format que fa servir la TV (que a iOS 9 funciona be). Una sessio per emissora;
+// s'atura sola quan ningu l'escolta.
+public static class RadioHls
+{
+    class Sessio { public Process P; public string Dir; public DateTime Darrer; public string Url; }
+    static readonly Dictionary<string, Sessio> sessions = new Dictionary<string, Sessio>();
+    static readonly object lk = new object();
+    static Timer neteja;
+
+    static string Id(string u)
+    {
+        using (MD5 m = MD5.Create())
+        {
+            byte[] h = m.ComputeHash(Encoding.UTF8.GetBytes(u));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 8; i++) sb.Append(h[i].ToString("x2"));
+            return sb.ToString();
+        }
+    }
+
+    static string Cometes(string s) { return "\"" + s.Replace("\"", "") + "\""; }
+
+    static Sessio Assegura(string url)
+    {
+        string id = Id(url);
+        lock (lk)
+        {
+            if (neteja == null) neteja = new Timer(delegate { Neteja(); }, null, 15000, 15000);
+            Sessio s;
+            if (sessions.TryGetValue(id, out s) && s.P != null && !s.P.HasExited) { s.Darrer = DateTime.Now; return s; }
+            string ff = SoPC.RutaFfmpeg();
+            if (ff == null) throw new Exception("Falta ffmpeg.exe");
+            string dir = Path.Combine(Path.Combine(CasaServidor.DirDades, "radio-hls"), id);
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch { }
+            Directory.CreateDirectory(dir);
+            string args = "-nostdin -loglevel error -user_agent \"Mozilla/5.0 Hearth\" " +
+                (url.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 " : "") +
+                "-i " + Cometes(url) + " -vn -c:a aac -b:a 96k -ac 2 -ar 44100 -f hls -hls_time 4 -hls_list_size 6 " +
+                "-hls_flags delete_segments+omit_endlist -hls_segment_filename " + Cometes(Path.Combine(dir, "s%05d.ts")) + " " + Cometes(Path.Combine(dir, "index.m3u8"));
+            ProcessStartInfo si = new ProcessStartInfo(ff, args);
+            si.UseShellExecute = false; si.CreateNoWindow = true; si.RedirectStandardError = true;
+            Process p = Process.Start(si);
+            p.ErrorDataReceived += delegate { };
+            p.BeginErrorReadLine();
+            s = new Sessio { P = p, Dir = dir, Darrer = DateTime.Now, Url = url };
+            sessions[id] = s;
+            return s;
+        }
+    }
+
+    static void Neteja()
+    {
+        List<Sessio> mortes = new List<Sessio>();
+        lock (lk)
+        {
+            List<string> treure = new List<string>();
+            foreach (KeyValuePair<string, Sessio> kv in sessions)
+                if ((DateTime.Now - kv.Value.Darrer).TotalSeconds > 45 || kv.Value.P.HasExited) { treure.Add(kv.Key); mortes.Add(kv.Value); }
+            foreach (string k in treure) sessions.Remove(k);
+        }
+        foreach (Sessio s in mortes)
+        {
+            try { if (!s.P.HasExited) s.P.Kill(); } catch { }
+            try { s.P.WaitForExit(3000); Directory.Delete(s.Dir, true); } catch { }
+        }
+    }
+
+    public static void Api(string nom, Dictionary<string, string> q, HttpListenerContext ctx)
+    {
+        HttpListenerResponse res = ctx.Response;
+        try
+        {
+            if (nom == "hls")
+            {
+                string u = CasaServidor.Q(q, "u");
+                if (!Regex.IsMatch(u, "^https?://", RegexOptions.IgnoreCase)) { CasaServidor.Error(res, 400, "URL"); return; }
+                Sessio s = Assegura(u);
+                string llista = Path.Combine(s.Dir, "index.m3u8");
+                // La primera vegada cal esperar que hi hagi un parell de trossos
+                for (int i = 0; i < 80; i++)
+                {
+                    if (File.Exists(llista))
+                    {
+                        string t0 = "";
+                        try { t0 = File.ReadAllText(llista); } catch { }
+                        if (Regex.Matches(t0, @"\.ts").Count >= 2) break;
+                    }
+                    if (s.P.HasExited) { CasaServidor.Error(res, 502, "L'emissora no respon"); return; }
+                    Thread.Sleep(250);
+                }
+                string t;
+                try { t = File.ReadAllText(llista); } catch { CasaServidor.Error(res, 504, "L'emissora triga massa"); return; }
+                string id = Path.GetFileName(s.Dir);
+                t = Regex.Replace(t, @"^(s\d+\.ts)\s*$", delegate (Match m) { return "/api/radio/seg?id=" + id + "&f=" + m.Groups[1].Value; }, RegexOptions.Multiline);
+                res.AddHeader("Cache-Control", "no-cache");
+                CasaServidor.Text(res, t, "application/vnd.apple.mpegurl");
+                return;
+            }
+            if (nom == "seg")
+            {
+                string id = CasaServidor.Q(q, "id"), f = CasaServidor.Q(q, "f");
+                if (!Regex.IsMatch(id, "^[0-9a-f]{16}$") || !Regex.IsMatch(f, @"^s\d+\.ts$")) { CasaServidor.Error(res, 400, "Nom"); return; }
+                lock (lk) { Sessio s; if (sessions.TryGetValue(id, out s)) s.Darrer = DateTime.Now; }
+                string ruta = Path.Combine(Path.Combine(Path.Combine(CasaServidor.DirDades, "radio-hls"), id), f);
+                if (!File.Exists(ruta)) { CasaServidor.Error(res, 404, "Tros"); return; }
+                byte[] b;
+                try { b = File.ReadAllBytes(ruta); } catch { CasaServidor.Error(res, 404, "Tros"); return; }
+                res.ContentType = "video/mp2t";
+                res.ContentLength64 = b.Length;
+                res.OutputStream.Write(b, 0, b.Length);
+                res.Close();
+                return;
+            }
+            CasaServidor.Error(res, 404, "API");
+        }
+        catch (Exception e) { try { CasaServidor.Error(res, 500, e.Message); } catch { } }
     }
 }

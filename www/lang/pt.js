@@ -529,3 +529,8 @@ TR.pt["WhatsApp (llegir i respondre missatges)"] = "WhatsApp (ler e responder a 
 TR.pt["Mode infantil"] = "Modo infantil";
 TR.pt["YouTube"] = "YouTube";
 TR.pt["Avisos"] = "Avisos";
+TR.pt["Targetes"] = "Cartões";
+TR.pt["Rellotge"] = "Relógio";
+TR.pt["Foscor del fons"] = "Escurecimento do fundo";
+TR.pt["més fosc = el text es llegeix millor"] = "mais escuro = o texto lê-se melhor";
+TR.pt["Aquesta emissora no respon. Prova'n una altra."] = "Esta rádio não responde. Experimenta outra.";
