@@ -1,0 +1,28 @@
+# Crea una release amb el zip de Hearth cada vegada que canvia el fitxer VERSION
+name: Release
+on:
+  push:
+    branches: [main]
+    paths: [VERSION]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Versio
+        id: v
+        run: echo "versio=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+      - name: Crea el zip i la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.v.outputs.versio }}
+        run: |
+          if gh release view "v$V" >/dev/null 2>&1; then echo "La v$V ja existeix"; exit 0; fi
+          git archive --format=zip --prefix=Hearth/ -o "Hearth-$V.zip" HEAD
+          NOTES=$(git log -1 --pretty=%B | grep -v '^Co-Authored-By\|^Claude-Session')
+          gh release create "v$V" "Hearth-$V.zip" --title "Hearth $V" --notes "$NOTES
+
+          Instal·lació: descomprimeix el zip, copia la carpeta Hearth a c:\Hearth i executa «Instal-la Hearth.bat». Si ja tens Hearth 3.5 o més nou, s'actualitza sol."
