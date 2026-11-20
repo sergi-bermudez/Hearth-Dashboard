@@ -1950,6 +1950,22 @@ function instalApp() {
   if (!INST.ev) return false;
   INST.ev.prompt(); INST.ev = null; return true;
 }
+/* Android: el navegador no deixa instal·lar l'app des d'http, però sí posar la pàgina a pantalla completa.
+   Ho fem al primer toc (cal un gest) i cada vegada que se'n surt, al toc següent. */
+var ANDROID = /Android/i.test(navigator.userAgent);
+function maximitza() {
+  if (!ANDROID || esInstallada() || ls('noMaxim')) return;
+  var d = document, e = d.documentElement;
+  if (d.fullscreenElement || d.webkitFullscreenElement) return;
+  try {
+    var r = e.requestFullscreen ? e.requestFullscreen({ navigationUI: 'hide' }) : e.webkitRequestFullscreen ? e.webkitRequestFullscreen() : null;
+    if (r && r.catch) r.catch(function () { });
+  } catch (x) { }
+}
+if (ANDROID) {
+  document.addEventListener('touchend', maximitza, true);
+  document.addEventListener('click', maximitza, true);
+}
 function esInstallada() { return !!(navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); }
 
 /* ---------- Enviar a la tele o a un altaveu (Chromecast, Google Nest, tele LG per DLNA) ---------- */
