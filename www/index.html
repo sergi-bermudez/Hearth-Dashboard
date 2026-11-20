@@ -423,6 +423,8 @@ body.aud-l #rapid,body.aud-l #agenda{display:none !important}
    del sistema que, quan la pantalla canvia (vídeo, caràtula, mida del reproductor), es queda on era
    i es menja els tocs. Als iPads antics fem servir el desplaçament normal. */
 html.ios-vell #rapid,html.ios-vell #tv .tv-canals,html.ios-vell #cast .card{-webkit-overflow-scrolling:auto}
+/* Fora de la pantalla quan no es fa servir (a més d'amagat) */
+body:not(.en-app) #apps{top:-30000px;bottom:auto;height:10px}
 </style>
 </head>
 <body class="e-ambient">
@@ -828,6 +830,9 @@ function inici() {
     var f = FR[A.vista];
     try { if (f && f.contentWindow.casaAmaga) f.contentWindow.casaAmaga(); } catch (e) { }
   }
+  /* iOS 9: l'app amagada (iframe) continuava "tapant" la pantalla d'inici i es menjava els tocs.
+     En tornar a l'inici, als iPads antics es tanquen les apps i es treu la capa fora de la pantalla. */
+  if (IOS_VELL) { for (var k in FR) if (FR.hasOwnProperty(k)) tancaApp(k); ORDRE = []; }
   A.vista = 'dash';
   estatCos();
   refresca();
