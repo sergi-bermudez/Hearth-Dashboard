@@ -393,6 +393,15 @@ body.lleu #tv .tv-ctl,body.lleu #tv .tv-canals,body.lleu #tv .tv-vod{-webkit-tra
 .s-aud.gran .s-ctl{margin:10px 0 0 -10px;-webkit-flex-wrap:wrap;flex-wrap:wrap}
 .s-aud.gran .s-ctl .vol{-webkit-flex:1;flex:1;max-width:220px;min-width:100px}
 @media (max-width:480px){ .s-aud.gran{display:block} .s-aud.gran .s-art{margin:0 auto 12px} .s-aud.gran .s-tit{font-size:24px} }
+/* Reproductor petit (S): els controls en dues línies, perquè el text tingui més lloc */
+.s-aud.petit .s-tit{font-size:24px;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:2.4em;margin:4px 0 2px}
+.s-aud.petit .s-ctl{width:236px;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-justify-content:center;justify-content:center;margin-left:10px}
+.s-aud.petit .s-ctl .gp{width:56px;height:56px}
+.s-aud.petit .s-ctl .vol{width:96px}
+.s-aud.petit .s-ctl .salt{-webkit-flex-basis:100%;flex-basis:100%;height:4px}
+.s-aud.petit .s-ctl button{padding:6px 8px}
+.s-aud.petit .s-ctl button .ic{width:28px;height:28px}
+.s-aud.petit .s-ctl .mida{width:40px;height:34px}
 </style>
 </head>
 <body class="e-ambient">
@@ -1327,11 +1336,12 @@ function pintaSona(intern) {
     var ctlA = '<div class="s-ctl">' + (radio ? '' : '<button onclick="repAnterior()">' + svg(pod ? IC.enrere : IC.ant) + '</button>') +
       '<button class="gp" id="s-play" onclick="repPlay()"></button>' +
       (radio ? '' : '<button onclick="repSeguent()">' + svg(pod ? IC.endavant : IC.seg) + '</button>') +
+      (gran ? '' : '<span class="salt"></span>') +
       htmlVolum() + '<button class="mida" onclick="audMidaCanvia()" title="' + esc(T('Mida')) + '">' + (am == 'p' ? 'S' : am == 'm' ? 'M' : 'L') + '</button>' +
       '<button onclick="castObre()">' + svg(IC_CAST) + '</button><button onclick="repAtura()">' + svg(IC.tanca) + '</button></div>';
-    h = '<div class="s-aud' + (gran ? ' gran ' + am : '') + '"><div class="s-art toc' + (radio && it.art ? ' logo' : '') + '" id="s-art" onclick="obre(\'' + app + '\')" style="background-image:' + bg(it.art) + '">' + (it.art ? '' : svg(iconaTipus(it))) + '</div>' +
+    h = '<div class="s-aud' + (gran ? ' gran ' + am : ' petit') + '"><div class="s-art toc' + (radio && it.art ? ' logo' : '') + '" id="s-art" onclick="obre(\'' + app + '\')" style="background-image:' + bg(it.art) + '">' + (it.art ? '' : svg(iconaTipus(it))) + '</div>' +
       '<div class="s-info"><div class="s-kick"><span class="eq" id="s-eq"><span></span><span></span><span></span></span>' + kick2 + '</div>' +
-      '<div class="s-tit' + (gran ? ' dues' : ' una') + '">' + esc(it.t) + '</div><div class="s-sub una">' + esc(it.s || '') + '</div>' +
+      '<div class="s-tit dues">' + esc(it.t) + '</div><div class="s-sub una">' + esc(it.s || '') + '</div>' +
       (radio ? '' : '<div class="s-prog" onclick="cercaPos(event,this)"><div><div id="s-prog"></div></div></div><div class="s-temps"><span id="s-t1"></span><span id="s-t2"></span></div>') +
       (gran ? ctlA : '') + '</div>' + (gran ? '' : ctlA) + '</div>';
     s.innerHTML = h;
@@ -1340,7 +1350,7 @@ function pintaSona(intern) {
     var maxA = am == 'p' ? (window.innerWidth > window.innerHeight ? 110 : 130) : am == 'm' ? 180 : 260;
     var mida = Math.max(64, Math.min(esp, maxA, Math.round(s.clientWidth * (gran ? 0.36 : 0.3))));
     art.style.width = mida + 'px'; art.style.height = mida + 'px';
-    if (!gran && s.clientWidth < 620) { var ctl2 = s.firstChild.lastChild; s.firstChild.style.webkitFlexWrap = 'wrap'; s.firstChild.style.flexWrap = 'wrap'; ctl2.style.width = '100%'; ctl2.style.margin = '10px 0 0'; ctl2.style.webkitJustifyContent = 'center'; ctl2.style.justifyContent = 'center'; }
+    if (!gran && s.clientWidth < 480) { var ctl2 = s.firstChild.lastChild; s.firstChild.style.webkitFlexWrap = 'wrap'; s.firstChild.style.flexWrap = 'wrap'; ctl2.style.width = '100%'; ctl2.style.margin = '10px 0 0'; ctl2.style.webkitJustifyContent = 'center'; ctl2.style.justifyContent = 'center'; }
     iconesPlay(); progres();
     ajustaMig();
     desbordDespres();
