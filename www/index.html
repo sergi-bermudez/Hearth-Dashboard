@@ -117,7 +117,7 @@ html.sa #dash{top:20px}
 .s-prog{margin-top:10px;height:20px;position:relative;cursor:pointer;max-width:520px}
 .s-prog div{position:absolute;left:0;right:0;top:8px;height:4px;border-radius:2px;background:rgba(255,255,255,.3)}
 .s-prog div div{top:0;right:auto;width:0;background:#fff}
-.s-temps{display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;font-size:12px;opacity:.8;max-width:520px}
+.s-temps{min-height:15px;display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;font-size:12px;opacity:.8;max-width:520px}
 .s-ctl{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex:none;flex:none;margin-left:14px}
 .s-ctl button{background:none;padding:8px 10px}
 .s-ctl button .ic{width:32px;height:32px}
@@ -1350,6 +1350,14 @@ function pintaSona(intern) {
     var maxA = am == 'p' ? (window.innerWidth > window.innerHeight ? 110 : 130) : am == 'm' ? 180 : 260;
     var mida = Math.max(64, Math.min(esp, maxA, Math.round(s.clientWidth * (gran ? 0.36 : 0.3))));
     art.style.width = mida + 'px'; art.style.height = mida + 'px';
+    /* M i L: la caràtula fa la mateixa alçada que el bloc de text i controls del costat */
+    if (gran && window.innerWidth > 480) {
+      var inf = s.querySelector('.s-info');
+      for (var k = 0; k < 2; k++) {
+        var hi = inf.offsetHeight, m2 = Math.max(80, Math.min(hi, Math.round(s.clientWidth * 0.42), am == 'm' ? 250 : 320));
+        art.style.width = m2 + 'px'; art.style.height = m2 + 'px';
+      }
+    }
     if (!gran && s.clientWidth < 480) { var ctl2 = s.firstChild.lastChild; s.firstChild.style.webkitFlexWrap = 'wrap'; s.firstChild.style.flexWrap = 'wrap'; ctl2.style.width = '100%'; ctl2.style.margin = '10px 0 0'; ctl2.style.webkitJustifyContent = 'center'; ctl2.style.justifyContent = 'center'; }
     iconesPlay(); progres();
     ajustaMig();
