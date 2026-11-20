@@ -1931,7 +1931,9 @@ function pcmInicia(params) {
 function pcmSegueix(g) {
   if (g != PCM.gen || !PCM.actiu) return;
   var c = PCM.ctx, davant = PCM.fi - c.currentTime;
-  if (davant > 3) { setTimeout(function () { pcmSegueix(g); }, 700); return; }
+  /* Directe (Spotify, ràdio): poc marge per anar a prop del PC; fitxers: més marge */
+  var marge = esPcmFitxer() ? 3 : PCM.params.font == 'spotify' ? 1.2 : 2;
+  if (davant > marge) { setTimeout(function () { pcmSegueix(g); }, 250); return; }
   var x = new XMLHttpRequest();
   x.open('GET', mitja(api('pcm/tros', { id: PCM.id, n: PCM.n })), true);
   x.responseType = 'arraybuffer';
@@ -1948,7 +1950,7 @@ function pcmSegueix(g) {
       var src = c.createBufferSource();
       src.buffer = buf; src.connect(PCM.gain);
       var ara = c.currentTime;
-      if (PCM.fi < ara + 0.05) { PCM.fi = ara + 0.25; if (!PCM.sona) PCM.primer = PCM.fi; else PCM.primer += PCM.fi - Math.max(PCM.fiAnt || ara, ara); }   /* primer tros o s'ha buidat: deixa un marge */
+      if (PCM.fi < ara + 0.05) { PCM.fi = ara + 0.15; if (!PCM.sona) PCM.primer = PCM.fi; else PCM.primer += PCM.fi - Math.max(PCM.fiAnt || ara, ara); }   /* primer tros o s'ha buidat: deixa un marge */
       if (src.start) src.start(PCM.fi); else src.noteOn(PCM.fi);
       PCM.fi += buf.duration; PCM.fiAnt = PCM.fi;
       PCM.fonts.push(src); if (PCM.fonts.length > 8) PCM.fonts.shift();

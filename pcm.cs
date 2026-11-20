@@ -10,8 +10,8 @@ using System.Threading;
 
 public static class Pcm
 {
-    const int Rate = 32000, Canals = 2, Tros = Rate * Canals * 2;   // 1 s de so
-    const int Anell = 20;
+    const int Rate = 32000, Canals = 2, Tros = Rate * Canals * 2 / 2;   // mig segon de so
+    const int Anell = 40;
 
     class Font
     {
@@ -40,7 +40,7 @@ public static class Pcm
         {
             string disp = Spotify.Ajuda("dispositiu", "CABLE Output (VB-Audio Virtual Cable)");
             // Si Windows t\u00e9 ffmpeg molt baix al mesclador de volum, el so arriba gaireb\u00e9 mut: dynaudnorm el torna a pujar
-            return "-hide_banner -loglevel error -nostdin -f dshow -audio_buffer_size 50 -i audio=\"" + disp.Replace("\"", "") + "\" -af dynaudnorm=f=200:g=11:p=0.9:m=100" + sortida;
+            return "-hide_banner -loglevel error -nostdin -f dshow -audio_buffer_size 30 -i audio=\"" + disp.Replace("\"", "") + "\"" + sortida;
         }
         if (font == "fitxer")
         {

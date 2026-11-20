@@ -362,7 +362,7 @@ public static class SoPC
         if (exe == null) throw new Exception("No trobo ffmpeg.exe. Posa'l a la carpeta del servidor.");
         string disp = Spotify.Ajuda("dispositiu", "CABLE Output (VB-Audio Virtual Cable)");
         string args = "-hide_banner -loglevel error -f dshow -audio_buffer_size 80 -i audio=\"" + disp.Replace("\"", "") + "\" " +
-            "-af dynaudnorm=f=200:g=11:p=0.9:m=100 -ac 2 -ar 44100 -c:a libmp3lame -b:a 192k -f mp3 -flush_packets 1 -";
+            "-ac 2 -ar 44100 -c:a libmp3lame -b:a 192k -f mp3 -flush_packets 1 -";
         ProcessStartInfo psi = new ProcessStartInfo(exe, args);
         psi.UseShellExecute = false; psi.CreateNoWindow = true;
         psi.RedirectStandardOutput = true; psi.RedirectStandardError = true;
