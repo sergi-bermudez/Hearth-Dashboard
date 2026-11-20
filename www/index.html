@@ -743,18 +743,34 @@ function obre(id, arg) {
   var g = grupDe(id), nid = 'nv-' + (g ? g.id : id), navs = $('nav').getElementsByTagName('div');
   for (i = 0; i < navs.length; i++) navs[i].className = (navs[i].id == nid ? 'activa' : '') + (navs[i].id == 'nv-config' ? ' nv-cfg' : '');
   try { if (f.contentWindow.casaMostra) f.contentWindow.casaMostra(); } catch (e) { }
-  desperta(f);
+  desperta(f); setTimeout(function () { desperta(f); }, 500);
   pintaWebDash();
   if (TV.mode != 'gran') tvLloc();
 }
 /* Força el Safari 9 a tornar a calcular on es pot tocar dins la pàgina incrustada */
+/* iOS 9: un iframe que s'ha mogut o amagat de vegades deixa de rebre els tocs.
+   Canviar-ne la mida un moment obliga el Safari a tornar-lo a situar. */
 function desperta(f) {
   try {
     f.style.webkitTransform = 'translateZ(0)';
+    var h = f.offsetHeight;
+    if (h > 2) f.style.height = (h - 1) + 'px';
     void f.offsetHeight;
-    setTimeout(function () { f.style.webkitTransform = ''; try { if (f.contentWindow.casaDesperta) f.contentWindow.casaDesperta(); } catch (e) { } }, 60);
+    setTimeout(function () {
+      f.style.webkitTransform = ''; f.style.height = '';
+      try { var w = f.contentWindow; w.scrollBy(0, 1); w.scrollBy(0, -1); if (w.casaDesperta) w.casaDesperta(); } catch (e) { }
+    }, 60);
   } catch (e) { }
 }
+/* En tornar a l'iPad (desbloquejar, canviar d'app), es desperta l'app oberta */
+document.addEventListener('visibilitychange', function () { if (!document.hidden && A.vista != 'dash' && FR[A.vista]) desperta(FR[A.vista]); });
+window.addEventListener('pageshow', function () { if (A.vista != 'dash' && FR[A.vista]) desperta(FR[A.vista]); });
+/* Si un toc arriba al marc de l'app (i no a dins), és que l'iframe s'ha "adormit": el despertem */
+document.addEventListener('touchstart', function (e) {
+  if (A.vista == 'dash') return;
+  var t = e.target;
+  if (t && (t.id == 'apps' || t.tagName == 'IFRAME')) { var f = FR[A.vista]; if (f) desperta(f); }
+}, true);
 function tancaApp(id) {
   var f = FR[id];
   if (!f) return;
