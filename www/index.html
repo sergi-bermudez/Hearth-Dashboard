@@ -1868,7 +1868,7 @@ window.Casa = {
   instal: function () { return instalApp(); }, potInstal: function () { return !!INST.ev; }, installada: esInstallada,
   toca: repInicia, play: repPlay, atura: repAtura, seguent: repSeguent, anterior: repAnterior,
   radioItem: radioItem,
-  spotify: spEscolta, spotifyOrdre: spOrdre, spotifyEstat: function () { return SP.estat; },
+  spotify: spEscolta, spNomesPC: function () { return SP.nomesPC; }, spotifyOrdre: spOrdre, spotifyEstat: function () { return SP.estat; },
   tv: tvObre, tvActual: function () { return TV.canal; }, tvAtura: tvAtura,
   video: videoObre, videoActual: function () { return TV.canal && TV.canal.vod ? TV.canal : null; },
   obre: obre, inici: inici, avis: avis, toc: function () { toc(); desbloqueja(); }, marc: obreMarc,

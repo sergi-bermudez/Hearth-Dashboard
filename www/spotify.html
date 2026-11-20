@@ -42,11 +42,11 @@ function pintaAra() {
   if (!d) { $('ara').innerHTML = '<div class="gris">Connectant amb el Spotify del PC…</div>'; return; }
   var escolta = Casa && Casa.R.cua.length && Casa.R.cua[Casa.R.pos].k == 'spotify';
   h = '<div class="im" style="background-image:' + bg(d.art ? imgx(d.art, 300) : '') + '">' + (d.art ? '' : svg(IC.spotify)) + '</div><div class="flex1">' +
-    '<div class="gris petit">' + (d.anunci ? 'ANUNCI' : d.sona ? 'SONANT AL PC' : 'EN PAUSA') + '</div>' +
+    '<div class="gris petit">' + (d.anunci ? 'ANUNCI' : d.sona ? (escolta ? 'SONANT' : 'SONANT AL PC') : 'EN PAUSA') + '</div>' +
     '<div class="t">' + esc(d.titol || 'No sona res') + '</div><div class="a">' + esc(d.artista || 'Busca alguna cosa aquí sota') + '</div>' +
     '<div class="ctl"><button onclick="ordre(\'ant\')">' + svg(IC.ant) + '</button><button class="gp" onclick="ordre(\'playpausa\')">' + svg(d.sona ? IC.pausa : IC.play) + '</button>' +
     '<button onclick="ordre(\'seg\')">' + svg(IC.seg) + '</button><button class="' + (d.aleatori ? 'on' : '') + '" onclick="ordre(\'aleatori\')">' + svg(IC.aleatori) + '</button>' +
-    (escolta ? '' : '<button onclick="escolta()">' + svg(IC.musica) + ' Escoltar a l\'iPad</button>') + '</div></div>';
+    '</div></div>';
   $('ara').innerHTML = h;
 }
 function estat() {
@@ -55,6 +55,9 @@ function estat() {
     var a = $('ajuda');
     if (!d.sessio) { a.className = 'ajuda'; a.innerHTML = '<b>Cal iniciar sessió a Spotify</b> (només un cop).<br>Ves a <a href="#" onclick="Casa.obre(\'config\',\'spotify\');return false">Configuració ▸ Spotify</a> i prem «Iniciar sessió al PC».'; }
     else a.className = 'ajuda amagat';
+    /* Si l'Spotify del PC ja sona (p. ex. engegat des del mòbil), la tauleta s'hi connecta sola */
+    var escoltant = Casa && Casa.R.cua.length && Casa.R.cua[Casa.R.pos].k == 'spotify';
+    if (d.sona && !escoltant && Casa && !(Casa.spNomesPC && Casa.spNomesPC()) && !S.auto) { S.auto = true; Casa.spotify(); }
     pintaAra();
     if (d.sessio && !S.bib) biblioteca();
   }, function (st, txt) {
@@ -67,6 +70,8 @@ function estat() {
   });
 }
 function ordre(o) {
+  var escoltant = Casa && Casa.R.cua.length && Casa.R.cua[Casa.R.pos].k == 'spotify';
+  if (Casa && o == 'playpausa' && !escoltant && !Casa.spNomesPC()) { Casa.spotify(); if (S.estat && S.estat.sona) { setTimeout(estat, 600); return; } }
   if (Casa) Casa.spotifyOrdre(o);
   setTimeout(estat, 600);
 }
