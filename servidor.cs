@@ -339,6 +339,7 @@ public static class CasaServidor
         if (nom.StartsWith("web/")) { Webs.Api(nom.Substring(4), q, ctx); return; }
         if (nom == "ip") { Text(res, "{\"ip\":\"" + ((IPEndPoint)ctx.Request.LocalEndPoint).Address + "\"}", "application/json; charset=utf-8"); return; }
         if (nom == "radios") { Radios.Api(q, ctx); return; }
+        if (nom.StartsWith("pcm/")) { Pcm.Api(nom.Substring(4), q, ctx); return; }
         if (nom.StartsWith("cast/")) { Cast.Api(nom, q, ctx, Port); return; }
         if (nom.StartsWith("radio/")) { RadioHls.Api(nom.Substring(6), q, ctx); return; }
         if (nom.StartsWith("tuya/")) { Tuya.Api(nom.Substring(5), q, ctx); return; }

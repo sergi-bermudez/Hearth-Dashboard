@@ -766,8 +766,13 @@ function repToca() {
   var it = R.cua[R.pos];
   if (!it) return;
   R.represa = it.k == 'podcast' ? ((ls('pod') || {})[it.ep] || null) : null;
-  if (it.u) { au.src = mitja(it.u); au.play(); }
-  else { au.pause(); au.removeAttribute('src'); }
+  PCM.params = null; PCM.pausat = false;
+  if (it.pcm && USA_PCM) { au.pause(); au.removeAttribute('src'); pcmInicia(it.pcm); }
+  else {
+    if (PCM.actiu) pcmAtura(true);
+    if (it.u) { au.src = mitja(it.u); au.play(); }
+    else { au.pause(); au.removeAttribute('src'); }
+  }
   vigilaRadio();
   estatCos();
   pintaMini();
@@ -778,7 +783,8 @@ function repToca() {
 function repPlay() {
   if (TV.canal) { var v = $('tv-v'); if (v.paused) v.play(); else v.pause(); return; }
   if (!R.cua.length) return;
-  if (R.cua[R.pos].k == 'spotify') { spOrdre('playpausa'); if (au.paused && R.cua[R.pos].u) au.play(); return; }
+  if (R.cua[R.pos].pcm && USA_PCM && R.cua[R.pos].k != 'spotify') { pcmCommuta(); return; }
+  if (R.cua[R.pos].k == 'spotify') { spOrdre('playpausa'); if (!R.cua[R.pos].pcm && au.paused && R.cua[R.pos].u) au.play(); return; }
   if (au.paused) {
     if (R.cua[R.pos].k == 'radio') au.src = mitja(R.cua[R.pos].u);
     au.play();
@@ -803,6 +809,7 @@ function repAtura() {
   poDesaPos();
   if (R.cua.length && R.cua[R.pos].k == 'spotify') { spOrdre('pausa'); spAtura(); }
   au.pause(); au.removeAttribute('src'); try { au.load(); } catch (e) { }
+  pcmAtura(true); PCM.params = null; PCM.pausat = false;
   R.cua = []; R.pos = -1;
   estatCos(); if (A.vista == 'dash') pintaSona();  notifica();
 }
@@ -852,7 +859,7 @@ function vigilaRadio() {
   clearTimeout(RW.t);
   RW.sonant = false;
   var it = R.cua[R.pos];
-  if (!it || it.k != 'radio') return;
+  if (!it || it.k != 'radio' || (it.pcm && USA_PCM)) return;
   RW.t = setTimeout(function () {
     if (R.cua[R.pos] !== it || RW.sonant) return;
     if (!provaAlternativa(it)) avis(T('Aquesta emissora no respon. Prova\'n una altra.'), 5000);
@@ -866,7 +873,7 @@ function provaAlternativa(it) {
   return true;
 }
 function iconesPlay() {
-  var it = R.cua[R.pos], aturat = TV.canal ? $('tv-v').paused : it && it.k == 'spotify' ? !(SP.estat && SP.estat.sona) : au.paused;
+  var it = R.cua[R.pos], aturat = TV.canal ? $('tv-v').paused : it && it.k == 'spotify' ? !(SP.estat && SP.estat.sona) : sonaPausat();
   var p = aturat ? svg(IC.play) : svg(IC.pausa);
   $('mini-play').innerHTML = p;
   var g = $('s-play');
@@ -921,7 +928,7 @@ function spEscolta() {
   var actual = R.cua[R.pos];
   if (actual && actual.k == 'spotify') { spPoll(); return; }
   poDesaPos();
-  R.cua = [{ k: 'spotify', t: 'Spotify', s: T('Connectant…'), u: SP.nomesPC ? '' : api('spotify/so', { t: Date.now() }), art: '', id: 'spotify' }];
+  R.cua = [{ k: 'spotify', t: 'Spotify', s: T('Connectant…'), u: SP.nomesPC ? '' : api('spotify/so', { t: Date.now() }), pcm: SP.nomesPC || !USA_PCM ? null : { font: 'spotify' }, art: '', id: 'spotify' }];
   R.pos = 0;
   repToca();
   clearInterval(SP.t);
@@ -930,7 +937,7 @@ function spEscolta() {
 }
 function spReconnecta() {
   var it = R.cua[R.pos];
-  if (!it || it.k != 'spotify' || !it.u) return;
+  if (!it || it.k != 'spotify' || !it.u || (it.pcm && USA_PCM)) return;
   it.u = api('spotify/so', { t: Date.now() });
   au.src = mitja(it.u); au.play();
 }
@@ -947,14 +954,17 @@ function spPoll() {
     it.art = art;
     if (canvi) { pintaMini(); if (A.vista == 'dash') pintaSona();  notifica(); }
     iconesPlay(); progres();
-    if (it.u && au.paused && d.sona) { au.play(); }
+    if (it.u && !it.pcm && au.paused && d.sona) { au.play(); }
   }, function () { var it = R.cua[R.pos]; if (it && it.k == 'spotify') { it.s = T('Spotify no respon'); pintaMini(); } });
 }
 setInterval(function () { var it = R.cua[R.pos]; if (it && it.k == 'spotify') progres(); }, 1000);
 /* ---------- Volum (a l'iPad només es pot canviar amb els botons del costat) ---------- */
+var AC = window.AudioContext || window.webkitAudioContext;
+var USA_PCM = !!AC && /(iPad|iPhone|iPod)/.test(navigator.userAgent) || (!!AC && /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 var VOL = { ok: false, v: 100 };
 function provaVolum() {
   try { au.volume = 0.5; VOL.ok = Math.abs(au.volume - 0.5) < 0.01; au.volume = 1; } catch (e) { VOL.ok = false; }
+  if (USA_PCM) VOL.ok = true;   /* a l'iPad, el volum de la ràdio i l'Spotify es controla amb Web Audio */
   var d = document.documentElement;
   if (!VOL.ok) d.className += ' no-vol';
   else { var v = ls('volum'); posaVolum(v == null ? 100 : v); }
@@ -963,6 +973,7 @@ function posaVolum(v) {
   v = Math.max(0, Math.min(100, +v || 0));
   VOL.v = v;
   try { au.volume = v / 100; $('tv-v').volume = v / 100; } catch (e) { }
+  try { if (PCM.gain) PCM.gain.gain.value = v / 100; } catch (e) { }
   ls('volum', v);
   var l = document.querySelectorAll('.vol');
   for (var i = 0; i < l.length; i++) if (+l[i].value != v) l[i].value = v;
@@ -1349,6 +1360,7 @@ function radioItem(s) {
   }
   d.u = vies.shift();
   d.alt = vies;
+  if (USA_PCM && !/\.m3u8(\?|$)/i.test(u)) d.pcm = { font: 'radio', u: u };
   return d;
 }
 function carregaSuggeriments() {
@@ -1765,7 +1777,7 @@ function nitPinta() {
   $('nit-h').textContent = ara.getHours() + ':' + ('0' + ara.getMinutes()).slice(-2);
   $('nit-d').textContent = DIES[ara.getDay()] + ', ' + ara.getDate() + ' ' + MESOS[ara.getMonth()];
   var it = R.cua[R.pos];
-  $('nit-a').textContent = it && !au.paused ? '♪ ' + it.t : '';
+  $('nit-a').textContent = it && !sonaPausat() ? '♪ ' + it.t : '';
 }
 function nitComprova() {
   var vol = nitHora() && Date.now() > NIT.fins && !(TV.canal && TV.mode == 'gran') && Date.now() - darrerToc > 60000;
@@ -1800,6 +1812,92 @@ function mitja(u) { return MEDIA.base && u && u.charAt(0) == '/' && u.indexOf('/
   if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) prova('hearth.local');
   else getJson(api('ip'), function (d) { if (d && d.ip && d.ip != h) prova(d.ip); }, function () { });
 })();
+
+/* ---------- So a trossos amb Web Audio (ràdio i Spotify a l'iPad) ----------
+   El PC passa el so a trossos WAV d'1 segon; aquí es van demanant i encadenant.
+   No depèn de com Safari tracta els streams en directe, i permet canviar el volum. */
+var PCM = { ctx: null, gain: null, actiu: false, sona: false, id: '', n: 0, fi: 0, gen: 0, fonts: [], params: null, errors: 0 };
+function pcmCtx() {
+  if (!PCM.ctx && AC) {
+    try {
+      PCM.ctx = new AC();
+      PCM.gain = PCM.ctx.createGain ? PCM.ctx.createGain() : PCM.ctx.createGainNode();
+      PCM.gain.connect(PCM.ctx.destination);
+      PCM.gain.gain.value = VOL.v / 100;
+    } catch (e) { PCM.ctx = null; }
+  }
+  return PCM.ctx;
+}
+/* iOS només deixa sonar Web Audio si s'engega durant un toc */
+function pcmDesbloqueja() {
+  var c = pcmCtx(); if (!c) return;
+  try {
+    var b = c.createBuffer(1, 1, 22050), s = c.createBufferSource();
+    s.buffer = b; s.connect(c.destination);
+    if (s.start) s.start(0); else s.noteOn(0);
+    if (c.resume && c.state == 'suspended') c.resume();
+  } catch (e) { }
+}
+document.addEventListener('touchend', pcmDesbloqueja, true);
+function pcmInicia(params) {
+  pcmAtura(true);
+  var c = pcmCtx(); if (!c) return false;
+  var g = ++PCM.gen;
+  PCM.actiu = true; PCM.sona = false; PCM.params = params; PCM.errors = 0;
+  iconesPlay();
+  getJson(api('pcm/obre', params), function (d) {
+    if (g != PCM.gen) return;
+    PCM.id = d.id; PCM.n = Math.max(0, d.seq - 1); PCM.fi = 0;
+    pcmSegueix(g);
+  }, function (st, txt) {
+    if (g != PCM.gen) return;
+    var e = ''; try { e = JSON.parse(txt).error; } catch (x) { }
+    PCM.actiu = false; iconesPlay();
+    avis(T('Aquesta emissora no respon. Prova\'n una altra.') + (e ? ' (' + e + ')' : ''), 6000);
+  });
+  return true;
+}
+function pcmSegueix(g) {
+  if (g != PCM.gen || !PCM.actiu) return;
+  var c = PCM.ctx, davant = PCM.fi - c.currentTime;
+  if (davant > 3) { setTimeout(function () { pcmSegueix(g); }, 700); return; }
+  var x = new XMLHttpRequest();
+  x.open('GET', mitja(api('pcm/tros', { id: PCM.id, n: PCM.n })), true);
+  x.responseType = 'arraybuffer';
+  x.timeout = 9000;
+  x.onload = function () {
+    if (g != PCM.gen) return;
+    if (x.status == 410) { pcmInicia(PCM.params); return; }
+    if (x.status != 200) { PCM.errors++; setTimeout(function () { pcmSegueix(g); }, 500); return; }
+    var sq = +(x.getResponseHeader('X-Seq') || PCM.n);
+    PCM.n = sq + 1; PCM.errors = 0;
+    c.decodeAudioData(x.response, function (buf) {
+      if (g != PCM.gen) return;
+      var src = c.createBufferSource();
+      src.buffer = buf; src.connect(PCM.gain);
+      var ara = c.currentTime;
+      if (PCM.fi < ara + 0.05) PCM.fi = ara + 0.25;   /* primer tros o s'ha buidat: deixa un marge */
+      if (src.start) src.start(PCM.fi); else src.noteOn(PCM.fi);
+      PCM.fi += buf.duration;
+      PCM.fonts.push(src); if (PCM.fonts.length > 8) PCM.fonts.shift();
+      if (!PCM.sona) { PCM.sona = true; RW.sonant = true; iconesPlay(); notifica(); }
+      pcmSegueix(g);
+    }, function () { setTimeout(function () { pcmSegueix(g); }, 300); });
+  };
+  x.onerror = x.ontimeout = function () { if (g != PCM.gen) return; PCM.errors++; setTimeout(function () { pcmSegueix(g); }, PCM.errors > 5 ? 3000 : 800); };
+  x.send();
+}
+function pcmAtura(silenci) {
+  PCM.gen++;
+  for (var i = 0; i < PCM.fonts.length; i++) { try { if (PCM.fonts[i].stop) PCM.fonts[i].stop(0); else PCM.fonts[i].noteOff(0); } catch (e) { } }
+  PCM.fonts = [];
+  if (PCM.id) { getJson(api('pcm/atura', { id: PCM.id }), function () { }, function () { }); }
+  PCM.id = ''; PCM.actiu = false; PCM.sona = false; PCM.fi = 0;
+  if (!silenci) iconesPlay();
+}
+/* Pausa = deixar d'escoltar; en tornar, es reprèn el directe */
+function pcmCommuta() { if (PCM.sona || PCM.actiu) { var p = PCM.params; pcmAtura(); PCM.params = p; PCM.pausat = true; } else if (PCM.params) { PCM.pausat = false; pcmInicia(PCM.params); } iconesPlay(); notifica(); }
+function sonaPausat() { return PCM.params && (PCM.actiu || PCM.pausat) ? !PCM.sona : au.paused; }
 </script>
 </body>
 </html>
