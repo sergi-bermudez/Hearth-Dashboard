@@ -209,7 +209,10 @@ public static class Spotify
     {
         HttpListenerResponse res = ctx.Response;
         // Mentre l'app de Spotify esta oberta, el so del PC ja es prepara (aixi a l'iPad comenca de seguida)
-        if (nom != "so") ThreadPool.QueueUserWorkItem(delegate { SoPC.Escalfa(); });
+        // Les tauletes amb Web Audio (galeta hearthpcm) escolten a trossos; la resta, en MP3
+        Cookie gc = ctx.Request.Cookies["hearthpcm"];
+        bool aTrossos = gc != null && gc.Value == "1";
+        if (nom != "so") ThreadPool.QueueUserWorkItem(delegate { if (aTrossos) Pcm.EscalfaSpotify(); else SoPC.Escalfa(); });
         try
         {
             switch (nom)

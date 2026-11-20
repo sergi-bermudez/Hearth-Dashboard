@@ -1006,6 +1006,8 @@ setInterval(function () { var it = R.cua[R.pos]; if (it && it.k == 'spotify') pr
 var AC = window.AudioContext || window.webkitAudioContext;
 var USA_PCM = !!AC && /(iPad|iPhone|iPod)/.test(navigator.userAgent) || (!!AC && /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 var VOL = { ok: false, v: 100 };
+/* Perquè el PC sàpiga que aquesta tauleta escolta l'Spotify a trossos (i el prepari abans) */
+try { document.cookie = 'hearthpcm=' + (USA_PCM ? '1' : '0') + '; path=/; max-age=31536000'; } catch (e) { }
 function provaVolum() {
   try { au.volume = 0.5; VOL.ok = Math.abs(au.volume - 0.5) < 0.01; au.volume = 1; } catch (e) { VOL.ok = false; }
   if (USA_PCM) VOL.ok = true;   /* a l'iPad, el volum de la ràdio i l'Spotify es controla amb Web Audio */
@@ -1915,7 +1917,7 @@ function pcmInicia(params) {
   iconesPlay();
   getJson(api('pcm/obre', params), function (d) {
     if (g != PCM.gen) return;
-    PCM.id = d.id; PCM.n = d.fitxer ? 0 : Math.max(0, d.seq - 1); PCM.fi = 0;
+    PCM.id = d.id; PCM.n = d.fitxer ? 0 : Math.max(0, d.seq - (params.font == 'spotify' ? 0 : 1)); PCM.fi = 0;
     if (d.durada) { PCM.durada = d.durada; PCM.uDur = params.u; }
     pcmSegueix(g);
   }, function (st, txt) {

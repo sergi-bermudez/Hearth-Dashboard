@@ -76,6 +76,13 @@ public static class Pcm
         return -1;
     }
 
+    // Prepara la captura de l'Spotify abans que l'iPad la demani (mentre l'app de Spotify esta oberta)
+    public static void EscalfaSpotify()
+    {
+        try { Font f = Obre("spotify", "", 0); f.Vist = DateTime.Now; }
+        catch (Exception e) { Console.WriteLine("  So (spotify): " + e.Message); }
+    }
+
     public static bool SpotifyViu()
     {
         lock (lk) foreach (Font f in fonts.Values) if (f.Spotify && f.Viu) return true;
