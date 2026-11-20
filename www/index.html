@@ -462,7 +462,7 @@ body.aud-l #rapid,body.aud-l #agenda{display:none !important}
   <div class="tv-capa" id="tv-capa" onclick="tvToc()"></div>
   <div class="tv-estat" id="tv-estat"></div>
   <div class="tv-ctl"><span class="directe" id="tv-directe" data-t>DIRECTE</span><div class="nm una" id="tv-nom"></div>
-    <input type="range" class="vol" min="0" max="100" value="100" oninput="posaVolum(this.value)"><button onclick="castObre()" id="tv-b-cast"></button><button onclick="tvNatiu()" id="tv-b-natiu"></button><button onclick="tvMode('normal')" id="tv-b-petit"></button><button onclick="tvAtura()" id="tv-b-x"></button></div>
+    <span id="tv-vol"></span><button onclick="castObre()" id="tv-b-cast"></button><button onclick="tvNatiu()" id="tv-b-natiu"></button><button onclick="tvMode('normal')" id="tv-b-petit"></button><button onclick="tvAtura()" id="tv-b-x"></button></div>
   <div class="tv-vod"><button onclick="vodSalta(-15)" id="tv-b-enr"></button><button class="gp" onclick="repPlay()" id="tv-b-play"></button><button onclick="vodSalta(30)" id="tv-b-end"></button>
     <span class="tm" id="tv-t1"></span><div class="barra-v" onclick="vodCerca(event,this)"><div><div id="tv-prog"></div></div></div><span class="tm" id="tv-t2"></span></div>
   <div class="tv-canals" id="tv-canals"></div>
@@ -1061,6 +1061,7 @@ var VOL = { ok: false, v: 100 };
 try { document.cookie = 'hearthpcm=' + (USA_PCM ? '1' : '0') + '; path=/; max-age=31536000'; } catch (e) { }
 function provaVolum() {
   try { au.volume = 0.5; VOL.ok = Math.abs(au.volume - 0.5) < 0.01; au.volume = 1; } catch (e) { VOL.ok = false; }
+  VOL.media = VOL.ok;   /* el volum dels <audio>/<video> es pot canviar (a iOS, no) */
   if (USA_PCM) VOL.ok = true;   /* a l'iPad, el volum de la ràdio i l'Spotify es controla amb Web Audio */
   var d = document.documentElement;
   if (!VOL.ok) d.className += ' no-vol';
@@ -1074,6 +1075,19 @@ function posaVolum(v) {
   ls('volum', v);
   var l = document.querySelectorAll('.vol');
   for (var i = 0; i < l.length; i++) if (+l[i].value != v) l[i].value = v;
+}
+/* TV i vídeos: a iOS el volum d'un vídeo no es pot canviar des de la pàgina; hi posem un botó de silenci */
+var IC_SO = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06a7 7 0 010 13.42v2.06A9 9 0 0014 3.23z';
+var IC_MUT = 'M16.5 12A4.5 4.5 0 0014 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0021 12a9 9 0 00-7-8.77v2.06A7 7 0 0119 12zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 003.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z';
+function htmlVolumTv() {
+  if (VOL.media) return '<input type="range" class="vol" min="0" max="100" value="' + VOL.v + '" oninput="posaVolum(this.value)">';
+  return '<button class="tv-mut" onclick="tvSilencia()">' + svg($('tv-v').muted ? IC_MUT : IC_SO) + '</button>';
+}
+function tvSilencia() {
+  var v = $('tv-v'); v.muted = !v.muted;
+  var l = document.querySelectorAll('.tv-mut');
+  for (var i = 0; i < l.length; i++) l[i].innerHTML = svg(v.muted ? IC_MUT : IC_SO);
+  if (v.muted) avis(T('Silenciat. El volum es canvia amb els botons de l\'iPad.'), 3000);
 }
 function htmlVolum() { return VOL.ok ? '<input type="range" class="vol" min="0" max="100" value="' + VOL.v + '" oninput="posaVolum(this.value)">' : ''; }
 
@@ -1176,6 +1190,7 @@ function tvVideoNou() {
   if (!vell || !IOS_VELL) return;
   var nou = document.createElement('video');
   for (var i = 0; i < vell.attributes.length; i++) { var at = vell.attributes[i]; if (at.name != 'src') nou.setAttribute(at.name, at.value); }
+  nou.muted = vell.muted;
   vell.parentNode.replaceChild(nou, vell);
   tvEscoltes(nou);
 }
@@ -1371,7 +1386,7 @@ function pintaSona(intern) {
     var ctl = '<div class="s-ctl"><button class="mida" onclick="tvMidaCanvia()" title="' + esc(T('Mida')) + '">' + (TV.mida == 'p' ? 'S' : TV.mida == 'm' ? 'M' : 'L') + '</button>' +
       (vod ? '<button onclick="vodSalta(-15)">' + svg(IC.enrere) + '</button><button onclick="repPlay()" id="s-play"></button><button onclick="vodSalta(30)">' + svg(IC.endavant) + '</button>'
         : '<button onclick="tvCanvia(-1)">' + svg(IC.ant) + '</button><button onclick="tvCanvia(1)">' + svg(IC.seg) + '</button>') +
-      '<button onclick="tvMode(\'gran\')">' + svg(IC.gran) + '</button><button onclick="castObre()">' + svg(IC_CAST) + '</button><button onclick="tvAtura()">' + svg(IC.tanca) + '</button>' + htmlVolum() + '</div>';
+      '<button onclick="tvMode(\'gran\')">' + svg(IC.gran) + '</button><button onclick="castObre()">' + svg(IC_CAST) + '</button><button onclick="tvAtura()">' + svg(IC.tanca) + '</button>' + htmlVolumTv() + '</div>';
     h = '<div class="s-tvw' + (pila ? ' pila' : '') + '"><div id="sona-tv" style="width:' + Wt + 'px;height:' + Ht + 'px' + (pila ? ';margin:0 auto' : '') + '"></div><div class="s-info">' +
       '<div class="s-kick">' + kick + '</div><div class="s-tit una">' + esc(c.nom) + '</div><div class="s-sub una" id="s-tvestat">' + esc(TV.estat || (vod ? (c.s || '') : T('En directe'))) + '</div>' +
       (vod && !pila ? '<div class="s-prog" onclick="vodCerca(event,this)"><div><div id="s-prog"></div></div></div><div class="s-temps"><span id="s-t1"></span><span id="s-t2"></span></div>' : '') +
@@ -1829,6 +1844,7 @@ window.Casa = {
   $('mini-x').innerHTML = svg(IC.tanca);
   $('tv-b-natiu').innerHTML = svg(IC.gran); $('tv-b-natiu').title = T('Pantalla completa');
   $('tv-b-petit').innerHTML = svg(IC.petit); $('tv-b-gran').innerHTML = svg(IC.gran);
+  $('tv-vol').innerHTML = htmlVolumTv();
   $('tv-b-cast').innerHTML = svg(IC_CAST); $('mini-cast').innerHTML = svg(IC_CAST);
   $('tv-b-x').innerHTML = svg(IC.tanca); $('tv-b-x2').innerHTML = svg(IC.tanca);
   $('tv-b-enr').innerHTML = svg(IC.enrere); $('tv-b-end').innerHTML = svg(IC.endavant);

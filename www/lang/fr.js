@@ -698,3 +698,4 @@ TR.fr["Treu animacions i ombres, fa servir fotos de fons més petites i les canv
 TR.fr["adhesiu"]="autocollant";
 TR.fr["No arriba el so de l'Spotify des del PC. Mira Configuració ▸ Diagnòstic."]="Le son de Spotify n'arrive pas du PC. Regarde Réglages ▸ Diagnostic.";
 TR.fr["Arriba silenci del PC: l'Spotify sona, però no pel cable d'àudio (CABLE Input). Mira Configuració ▸ Diagnòstic."]="Seul du silence arrive du PC : Spotify joue, mais pas par le câble audio (CABLE Input). Regarde Réglages ▸ Diagnostic.";
+TR.fr["Silenciat. El volum es canvia amb els botons de l'iPad."]="Son coupé. Le volume se règle avec les boutons de l'iPad.";

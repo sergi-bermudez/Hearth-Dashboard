@@ -698,3 +698,4 @@ TR.en["Treu animacions i ombres, fa servir fotos de fons més petites i les canv
 TR.en["adhesiu"]="sticker";
 TR.en["No arriba el so de l'Spotify des del PC. Mira Configuració ▸ Diagnòstic."]="Spotify sound isn't coming from the PC. Check Settings ▸ Diagnostics.";
 TR.en["Arriba silenci del PC: l'Spotify sona, però no pel cable d'àudio (CABLE Input). Mira Configuració ▸ Diagnòstic."]="Only silence is coming from the PC: Spotify is playing, but not through the audio cable (CABLE Input). Check Settings ▸ Diagnostics.";
+TR.en["Silenciat. El volum es canvia amb els botons de l'iPad."]="Muted. Change the volume with the iPad's buttons.";
