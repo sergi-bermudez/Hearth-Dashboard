@@ -750,6 +750,9 @@ var FR = {}, ORDRE = [];
 function obre(id, arg) {
   if (!permesa(id)) { if (id == 'config') obreConfig(); return; }
   var f = FR[id];
+  /* iOS 9: una app que s'ha amagat i es torna a mostrar sovint ja no rep els tocs.
+     Als iPads antics es torna a obrir de nou cada vegada (es desa el que calgui en tancar-la). */
+  if (IOS_VELL && f && A.vista != id) { tancaApp(id); f = null; }
   if (!f) {
     f = document.createElement('iframe');
     f.setAttribute('scrolling', 'no');
@@ -764,7 +767,7 @@ function obre(id, arg) {
   var i = ORDRE.indexOf(id);
   if (i >= 0) ORDRE.splice(i, 1);
   ORDRE.push(id);
-  while (ORDRE.length > 2) tancaApp(ORDRE.shift());
+  while (ORDRE.length > (IOS_VELL ? 1 : 2)) { var fora = ORDRE.shift(); if (FR[fora]) tancaApp(fora); }
   A.vista = id;
   A.pest = pintaPestanyes(id);
   estatCos();
