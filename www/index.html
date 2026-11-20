@@ -417,6 +417,8 @@ body.aud-l #rapid,body.aud-l #agenda{display:none !important}
 .s-aud.gran.g.vert .s-art{margin:0 auto 16px}
 .s-aud.gran.g.vert .s-ctl{-webkit-justify-content:center;justify-content:center;margin-left:0;-webkit-flex-wrap:nowrap;flex-wrap:nowrap}
 .s-aud.gran.g.vert .s-temps{text-align:left}
+#fons .fimg.on.kb{-webkit-animation:kb 24s linear forwards;animation:kb 24s linear forwards}
+#fons .fimg.sencera{background-size:contain}
 </style>
 </head>
 <body class="e-ambient">
@@ -673,11 +675,18 @@ function posaFons(u) {
   var im = new Image();
   im.onload = function () {
     if (fonsUrl != u) return;
-    a.style.backgroundImage = bg(u); a.className = 'fimg on'; b.className = 'fimg';
+    a.style.backgroundImage = bg(u); a.className = 'fimg on' + fonsEstil(); b.className = 'fimg' + fonsEstil();
+    if (fonsEstil() == ' kb') { var dd = Math.max(8, A.ajustos.fonsSeg || 20) + 4; a.style.webkitAnimationDuration = dd + 's'; a.style.animationDuration = dd + 's'; var o = ['0% 0%', '100% 0%', '0% 100%', '100% 100%', '50% 50%'][Math.floor(Math.random() * 5)]; a.style.webkitTransformOrigin = o; a.style.transformOrigin = o; }
     fonsCapa = 1 - fonsCapa;
     setTimeout(function () { if (b.className == 'fimg') b.style.backgroundImage = 'none'; }, 2500);
   };
   im.src = u;
+}
+/* El fons de la pantalla d'inici segueix l'estil del passi de fotos (si està activat) */
+function fonsEstil() {
+  if (A.ajustos.fonsPassi === false || estil() == 'widgets') return '';
+  var e = estilPassi();
+  return e == 'kenburns' ? ' kb' : e == 'marc' ? ' sencera' : '';
 }
 function clicMig(e) {
   if (e.target.id == 'fweb') { var w = targetaWeb(); if (w) obre('webs', w.id); return; }

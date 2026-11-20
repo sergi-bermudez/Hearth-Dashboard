@@ -150,7 +150,7 @@ body{background:#000}
 
   <div class="sec" id="s-inici">
     <h2>Pantalla d'inici</h2>
-    <div class="desc">L'estil, el temps, la salutació i el passi de fotos.</div>
+    <div class="desc">L'estil, el temps, la salutació, el fons i els modes lleuger i nit.</div>
     <div class="disp">
       <div class="fila"><label>Aquest dispositiu</label><input type="text" id="dp-nom" style="width:220px"><button onclick="dpDesaNom()">Canviar el nom</button></div>
       <label class="check"><input type="checkbox" id="dp-propi" onchange="dpPropi(this.checked)"> <span>Configuració pròpia per a aquest dispositiu</span></label>
@@ -169,10 +169,16 @@ body{background:#000}
     <h2>Mode nit</h2>
     <label class="check"><input type="checkbox" id="aj-nit"> <span>De nit, només un rellotge fosc i tènue (es desperta tocant la pantalla)</span></label>
     <div class="fila"><label>De</label><input type="time" id="aj-nit-des" style="width:130px"><span style="margin:0 10px">a</span><input type="time" id="aj-nit-fins" style="width:130px"></div>
+    <div class="peu"><button class="pri" onclick="desaInici()">Desar</button></div>
+  </div>
+
+  <div class="sec" id="s-passi">
     <h2>Passi de fotos</h2>
+    <div class="desc">El mateix passi s'obre des de la pantalla d'inici (tocant la foto), des de Fotos o sol, al cap d'una estona sense tocar la tauleta. També decideix com canvien les fotos del fons de la pantalla d'inici.</div>
     <div class="estils" id="passis"></div>
-    <div class="fila"><label>Marc: segons</label><input type="number" id="aj-seg" min="5" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto</span></div>
-    <div class="fila"><label>Marc automàtic</label><input type="number" id="aj-min" min="0" max="240" style="width:120px"><span class="gris petit" style="margin-left:12px">minuts sense tocar la pantalla (0 = mai)</span></div>
+    <div class="fila"><label>Segons per foto</label><input type="number" id="aj-seg" min="5" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto</span></div>
+    <div class="fila"><label>S'obre sol després de</label><input type="number" id="aj-min" min="0" max="240" style="width:120px"><span class="gris petit" style="margin-left:12px">minuts sense tocar la pantalla (0 = mai)</span></div>
+    <label class="check"><input type="checkbox" id="aj-fonspassi"> <span>Les fotos del fons de la pantalla d'inici fan servir el mateix estil (Ken Burns o foto sencera)</span></label>
     <div class="peu"><button class="pri" onclick="desaInici()">Desar</button></div>
   </div>
 
@@ -468,6 +474,7 @@ function desaInici() {
   v.foscor = parseInt($('aj-foscor').value, 10) || 0;
   v.estil = v.estil || 'ambient';
   v.lleuger = $('aj-lleuger').value;
+  v.fonsPassi = $('aj-fonspassi').checked;
   v.nit = $('aj-nit').checked; v.nitDes = $('aj-nit-des').value || '22:00'; v.nitFins = $('aj-nit-fins').value || '07:00';
   desaDades('ajustos', a, function () {
     desaDades('disp_' + DISP.id, C.dp, function () { avis(T('Desat')); if (Casa) Casa.recarrega(); });
@@ -931,7 +938,7 @@ var ICM = {
   imatge: 'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z'
 };
 var MENU = [
-  ['General', [['llengua', 'Idioma i país', ICM.globus, '#0a84ff'], ['inici', 'Pantalla d\'inici', ICM.pantalla, '#5e5ce6'], ['agenda', 'Agenda', ICM.agenda, '#ff453a'], ['funcions', 'Funcions opcionals', ICM.interruptor, '#30d158']]],
+  ['General', [['llengua', 'Idioma i país', ICM.globus, '#0a84ff'], ['inici', 'Pantalla d\'inici', ICM.pantalla, '#5e5ce6'], ['passi', 'Passi de fotos', ICM.imatge, '#ff375f'], ['agenda', 'Agenda', ICM.agenda, '#ff453a'], ['funcions', 'Funcions opcionals', ICM.interruptor, '#30d158']]],
   ['Contingut', [['carpetes', 'Carpetes del PC', IC.carpeta, '#0a84ff'], ['gfotos', 'Google Fotos', ICM.imatge, '#ff9f0a'], ['media', 'Caràtules i fitxes', IC.pelis, '#bf5af2'], ['tv', 'Canals de TV', IC.tv, '#64d2ff'], ['youtube', 'YouTube', IC.video, '#ff3b30'], ['webs', 'Webs', IC.web, '#5ac8fa']]],
   ['Connexions', [['casa', 'Casa (Tuya / Smart Life)', ICM.casa, '#ff9f0a'], ['spotify', 'Spotify', IC.spotify, '#1db954'], ['whatsapp', 'WhatsApp', IC.missatges, '#25d366']]],
   ['Família', [['infantil', 'Mode infantil', ICM.nen, '#ffd60a']]],
@@ -956,6 +963,7 @@ function pintaMenu() {
 function valorsMenu() {
   var v = {};
   try { v.spotify = C.aj && C.aj.spotify ? T('Activat') : T('Desactivat'); v.whatsapp = C.aj && C.aj.whatsapp ? T('Activat') : T('Desactivat'); v.casa = C.aj && C.aj.tuya ? T('Connectat') : ''; } catch (e) { }
+  try { var pa = ajV().passi || 'fos'; for (var j = 0; j < PASSIS.length; j++) if (PASSIS[j][0] == pa) v.passi = T(PASSIS[j][1]); } catch (e) { }
   try { var est = ajV().estil || 'ambient'; est = ESTIL_VELL[est] || est; for (var i = 0; i < ESTILS.length; i++) if (ESTILS[i][0] == est) v.inici = T(ESTILS[i][1]); } catch (e) { }
   try { v.llengua = $('cf-llengua').options[$('cf-llengua').selectedIndex].text; } catch (e) { }
   for (var k in v) if (v.hasOwnProperty(k) && $('mv-' + k)) $('mv-' + k).textContent = v[k] || '';
@@ -1004,6 +1012,7 @@ function omplInici() {
   $('aj-min').value = v.marcMin || 0;
   $('aj-fons').value = v.fonsSeg || 20;
   $('aj-lleuger').value = v.lleuger === true ? 'si' : v.lleuger === false ? '' : (v.lleuger || '');
+  $('aj-fonspassi').checked = v.fonsPassi !== false;
   $('aj-nit').checked = !!v.nit; $('aj-nit-des').value = v.nitDes || '22:00'; $('aj-nit-fins').value = v.nitFins || '07:00';
   $('aj-foscor').value = v.foscor == null ? 25 : v.foscor; $('aj-foscor-v').textContent = $('aj-foscor').value + '%';
   pintaEstils();
@@ -1101,7 +1110,7 @@ var PASSIS = [['fos', 'Clàssic', 'linear-gradient(135deg,#3a4a5a,#1a2430)'], ['
 function pintaPassis() {
   var h = '', e = (C.aj && ajV().passi) || 'fos';
   for (var i = 0; i < PASSIS.length; i++)
-    h += '<div class="estil' + (PASSIS[i][0] == e ? ' on' : '') + '" style="background:' + PASSIS[i][2] + '" onclick="ajV().passi=\'' + PASSIS[i][0] + '\';pintaPassis()"><span>' + esc(T(PASSIS[i][1])) + '</span></div>';
+    h += '<div class="estil' + (PASSIS[i][0] == e ? ' on' : '') + '" style="background:' + PASSIS[i][2] + '" onclick="ajV().passi=\'' + PASSIS[i][0] + '\';pintaPassis();valorsMenu()"><span>' + esc(T(PASSIS[i][1])) + '</span></div>';
   h += '<div class="estil" style="background:#2c2c2e;-webkit-flex:none;flex:none;width:86px;text-align:center;line-height:80px;font-size:15px" onclick="provaPassi()">' + esc(T('Prova')) + '</div>';
   $('passis').innerHTML = h;
 }
