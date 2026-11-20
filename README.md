@@ -1,60 +1,91 @@
 <p align="center"><img src="docs/icon.png" width="128" alt="Hearth"></p>
 
-# Hearth
+<h1 align="center">Hearth</h1>
 
-**A home dashboard that gives old iPads (and other old tablets) a second life.**
+<p align="center"><b>Give your old iPad a second life as a home dashboard.</b><br>
+Photos, YouTube, radio, TV, Spotify, movies, music, calendar and football, served from a Windows PC at home.<br>
+Runs on <b>Safari 9 (iOS 9.3.5)</b>: iPad 2, iPad 3, iPad mini 1 and any newer tablet or phone.</p>
 
-Hearth turns a Windows PC into a small home server and an old iPad into a beautiful wall/kitchen dashboard: clock, weather, family calendar, a photo slideshow, and your media — movies, music, radio, TV, YouTube, Spotify, Google Photos, podcasts and even WhatsApp — all in plain, lightweight HTML that runs on **Safari 9 (iOS 9.3.5, iPad 2/3/mini 1)**.
+<p align="center">
+  <a href="https://github.com/sergi-bermudez/Hearth-Dashboard/releases/latest"><b>⬇ Download the latest release</b></a>
+</p>
 
-No app store, no subscriptions, no cloud of ours. Everything runs on your own PC.
+<p align="center">
+  <img src="docs/screens/home-dark.png" width="49%" alt="Home screen, Dark style">
+  <img src="docs/screens/home-standby.png" width="49%" alt="Home screen, StandBy style">
+</p>
+
+## Why
+
+Millions of perfectly good iPads are stuck on iOS 9 or 10: the App Store no longer has apps for them and most websites don't load. Hearth moves the heavy work to a PC you already have, and gives the tablet a fast, simple interface written in plain HTML and ES5 that old Safari handles well.
+
+No app store, no subscription, no account with us, no cloud. Everything runs on your own PC and your home Wi-Fi.
 
 ## Features
 
 | | |
 |---|---|
-| **Home screen** | Big clock, weather and 5-day forecast, today/tomorrow agenda, full-screen photo slideshow background, "on this day" memories. Three styles: *Photos*, *Glass* and *Dark*. |
-| **Now playing** | One player for everything: radio, music, podcasts, Spotify, live TV and video. TV/video can be embedded on the home screen (S/M/L), as a mini window, or full screen. |
-| **Watch** | *Movies* (Plex-like library: each folder is analysed, the real movie file is picked and samples/trailers/junk are ignored; posters & details from iTunes, Wikipedia, optionally TMDB/OMDb), *TV* (free channels from iptv-org by country and language) and *YouTube* (search, channels, 360p instantly or HD prepared on the PC with yt-dlp). |
-| **Listen** | *Music* (reads MP3/M4A tags: artists, albums, genres, decades, songs, folders), *Spotify* (free account, played in a hidden Edge on the PC and streamed to the tablet), *Radio* (radio-browser.info, by country, language and genre; fast server-side cache), *Podcasts*. |
-| **Photos** | Your PC photo folders as a timeline, viewer and uploads from the iPad. Nightly sync of recent photos and chosen albums from **Google Photos** (uses the PC's Edge session). |
-| **Calendar** | Your Google calendars (read through the PC's Google session, no setup) or any iCal/public calendar link, each with its own colour. |
-| **Messages** | Read and reply to **WhatsApp** chats (WhatsApp Web in the PC's Edge), with new-message toasts on the home screen. |
-| **Documents** | A simple WordPad-like word processor (great for kids learning to type): fonts, colours, lists, tables, images from the iPad's camera roll, print, save as .html/.doc/.txt. |
-| **Web** | Show any web page (or part of it) from the PC on the tablet as a live image you can tap — e.g. **Google Home** to control lights and cameras. |
-| **Kids mode** | A PIN-protected mode that only shows the apps you choose. |
-| **Languages** | Català, Español, English, Português, Français (easy to add more: copy `www/lang/en.js`). |
+| **Home screen** | Big clock, weather and forecast, today's agenda, a photo background with "on this day" memories, and what's playing. Four styles inspired by the best: **Ambient** (Nest Hub), **Widgets** (iPadOS), **StandBy** (iPhone) and **Dark**. |
+| **Slideshow** | Full-screen photo frame when nobody touches the tablet: **Classic**, **Ken Burns**, **Magazine** (three photos from the same day or trip) and **Whole photo** (no cropping, blurred background). |
+| **Watch** | **Movies**: a Plex-like library that finds every video in every folder, skips samples and short extras, and organises by genre and decade, with covers and details from the internet and a file browser for anything not recognised. **TV**: free-to-air channels by country and language. **YouTube**: search, channels and HD, converted by the PC so even iOS 9 can play it. |
+| **Football** | Live scores, fixtures and results for your leagues and teams (LaLiga, Liga Portugal, Champions League, Premier League…), with a radio button to listen to the match commentary on Catalunya Ràdio, RAC1, SER, COPE, Antena 1, TSF… |
+| **Listen** | **Music** (your MP3/M4A library by artist, album, genre and decade), **Radio** (thousands of stations from radio-browser.info), **Podcasts**, and **Spotify** (optional: plays in Edge on the PC and streams to the tablet). |
+| **Cast** | Send whatever is playing to a **Chromecast, Google TV, Google Nest** speaker or a **DLNA TV (LG, Samsung, Sony…)**. The tablet becomes the remote. |
+| **Photos** | Your PC photo folders as a timeline, plus a nightly sync of recent photos and chosen albums from **Google Photos**. |
+| **Calendar** | Your Google calendars or any iCal link, each in its own colour. |
+| **Smart home** | Tuya / Smart Life lights, plugs and scenes, and any web page from the PC (e.g. Google Home or a camera) shown live on the tablet. |
+| **Messages** | Optional WhatsApp reading and replying, with a red badge for new messages. |
+| **Documents** | A simple WordPad-style editor, great for kids learning to type, with photos from the tablet's camera roll. |
+| **Family** | **Kids mode** with a PIN and only the apps you choose. **Per-device settings**: every tablet can have its own style, slideshow and kids mode. |
+| **Installable** | Add to Home Screen on iPad/iPhone for full screen; installable PWA on Android and desktop. Five languages: English, Català, Español, Português, Français. |
+| **Auto-update** | Checks GitHub every hour and updates itself at night. Before switching it checks that the new version compiles, and if it doesn't start it rolls back. |
+
+<p align="center">
+  <img src="docs/screens/football.png" width="49%" alt="Football">
+  <img src="docs/screens/cast.png" width="49%" alt="Send to a TV or speaker">
+</p>
+<p align="center">
+  <img src="docs/screens/settings.png" width="60%" alt="Settings">
+</p>
 
 ## Requirements
 
-- A Windows 10/11 PC that stays on (uses the PowerShell and .NET Framework already included in Windows — nothing to install).
-- Microsoft Edge (already in Windows) for Spotify, Google Photos/Calendar/Home and WhatsApp.
-- Optional: **ffmpeg** and **yt-dlp** (the installer downloads them for you), **VB-Cable** (free virtual audio cable) to hear Spotify on the tablet.
-- Any tablet/phone browser on the same Wi-Fi. Designed for and tested against iOS 9 Safari (ES5 only, no modern CSS).
+- A **Windows 10/11 PC** that stays on. Hearth uses the PowerShell and .NET Framework that Windows already includes, so there is nothing to install.
+- **Microsoft Edge**, which comes with Windows, for Google Photos/Calendar, Spotify and WhatsApp.
+- Hearth downloads the optional tools for you: the installer fetches **ffmpeg** and **yt-dlp**, and **Deno** is fetched the first time you use YouTube. They are used for YouTube and video conversion. For Spotify you also need **VB-Cable**, a free virtual audio cable.
+- Any tablet or phone browser on the same Wi-Fi.
 
 ## Install
 
-1. Download this repository (green **Code** button ▸ *Download ZIP*) and unzip it somewhere permanent, e.g. `C:\Hearth`.
-2. Double-click **`Instal-la Hearth.bat`** and accept the Windows prompt. It sets up the network permission and firewall, starts Hearth automatically when you log in, creates desktop icons and downloads the optional tools.
-3. A welcome page opens with a **QR code** and the address **`http://hearth.local:8080`**. Open it on the iPad (Safari ▸ Share ▸ *Add to Home Screen*). The `hearth.local` name keeps working even if the PC's IP address changes.
-4. Choose your folders, city and language in **Settings**.
+1. Download the zip from the [latest release](https://github.com/sergi-bermudez/Hearth-Dashboard/releases/latest) and unzip it somewhere permanent, e.g. `C:\Hearth`.
+2. Double-click **`Instal-la Hearth.bat`** and accept the Windows prompt. It sets up the firewall, starts Hearth when you log in and downloads the optional tools.
+3. A welcome page opens with a **QR code** and the address **`http://hearth.local:8080`**. Open it on the tablet, then in Safari tap Share ▸ *Add to Home Screen*. The `hearth.local` address keeps working even if the PC's IP changes.
+4. Pick your folders, city and language in **Settings**.
 
-To remove it, run **`Desinstal-la Hearth.bat`** (your photos, music and data are not touched).
+Updates install themselves from then on. You can also update by hand in Settings ▸ Updates. To remove Hearth, run **`Desinstal-la Hearth.bat`**: your photos, music and data are not touched.
 
 ## How it works
 
 ```
-iPad (Safari 9)  ──HTTP──▶  Windows PC: servidor.ps1 compiles the C# server (*.cs) with Add-Type
-                                ├── www/            the HTML apps (shell + one page per app, iframes)
-                                ├── dades/          your settings, caches and indexes (not in git)
-                                └── hidden Edge     Spotify / Google / WhatsApp via the DevTools protocol
+Tablet (Safari 9+) ──HTTP──▶ Windows PC: servidor.ps1 compiles the C# server (*.cs) with Add-Type
+                               ├── www/          the HTML apps (one shell + one page per app)
+                               ├── dades/        your settings, caches and indexes (not in git)
+                               ├── eines/        installer, updater, ffmpeg / yt-dlp / Deno
+                               └── hidden Edge   Google, Spotify and WhatsApp via the DevTools protocol
 ```
 
-- Pure HTML/CSS/ES5 on the client, no frameworks, no build step. Only two app pages are kept in memory at a time.
-- The C# server is a few files compiled at start-up by PowerShell (`HttpListener`, no external dependencies). It also announces itself on the LAN as `hearth.local` (mDNS).
+- **Client:** plain HTML, CSS and ES5, with no framework and no build step. It is tested against iOS 9 Safari.
+- **Server:** a few C# 5 files compiled at start-up by PowerShell (`HttpListener`, no NuGet packages). It announces itself as `hearth.local` over mDNS.
+- **Video:** the PC converts video and radio to HLS with ffmpeg, so old iPads can play almost anything.
+- **Casting:** Chromecast devices use the Cast v2 protocol (mDNS discovery, TLS on port 8009); TVs use UPnP/DLNA (SSDP discovery and AVTransport).
+
+## Contributing
+
+Issues and pull requests are welcome, especially from people reviving other old devices. To add a language, copy `www/lang/en.js` and translate the values.
 
 ## Disclaimer
 
-Hearth is a personal hobby project for use **at home with your own accounts**. It is not affiliated with Apple, Google, YouTube, Spotify, Meta/WhatsApp or any broadcaster. Some features automate the web versions of third-party services or use tools like yt-dlp; this may go against those services' terms of use, and you are responsible for how you use it. Spotify and WhatsApp only start when you open them. TV and radio streams come from public directories of free-to-air streams (iptv-org, radio-browser.info).
+Hearth is a personal hobby project for use **at home with your own accounts**. It is not affiliated with Apple, Google, YouTube, Spotify, Meta/WhatsApp, ESPN or any broadcaster. Some features automate the web versions of third-party services or use tools such as yt-dlp. This may go against those services' terms of use, and you are responsible for how you use it. Spotify and WhatsApp are off by default. TV and radio streams come from public directories of free-to-air streams (iptv-org, radio-browser.info).
 
 ## License
 
