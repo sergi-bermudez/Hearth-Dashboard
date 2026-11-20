@@ -1141,8 +1141,7 @@ function tvProva() {
   v.play();
   if (!TV.canal.vod) TV.t = setTimeout(function () { TV.i++; tvProva(); }, 15000);
 }
-(function () {
-  var v = $('tv-v');
+function tvEscoltes(v) {
   v.addEventListener('playing', function () {
     clearTimeout(TV.t);
     tvEstat('');
@@ -1168,7 +1167,18 @@ function tvProva() {
   v.addEventListener('ended', function () { if (TV.canal && TV.canal.vod) { vodDesa(true); tvAtura(); } });
   v.addEventListener('play', function () { iconesPlay(); notifica(); });
   v.addEventListener('pause', function () { iconesPlay(); if (TV.canal && TV.canal.vod) vodDesa(); notifica(); });
-})();
+}
+tvEscoltes($('tv-v'));
+/* iOS 9: en tancar la TV es fa un <video> nou; així desapareix qualsevol capa nativa
+   que s'hagi quedat penjada i que bloquejava els tocs de la pantalla d'inici */
+function tvVideoNou() {
+  var vell = $('tv-v');
+  if (!vell || !IOS_VELL) return;
+  var nou = document.createElement('video');
+  for (var i = 0; i < vell.attributes.length; i++) { var at = vell.attributes[i]; if (at.name != 'src') nou.setAttribute(at.name, at.value); }
+  vell.parentNode.replaceChild(nou, vell);
+  tvEscoltes(nou);
+}
 function vodDesa(acabat) {
   var c = TV.canal, v = $('tv-v');
   if (!c || !c.vod || !v.duration || !isFinite(v.duration)) return;
@@ -1212,6 +1222,7 @@ function tvAtura(silenci) {
   while (tr.length) v.removeChild(tr[0]);
   TV.canal = null; TV.estat = '';
   $('tv').style.display = 'none';
+  tvVideoNou();
   TV.mode = 'normal';
   if (!silenci) { estatCos(); if (A.vista == 'dash') { pintaSona(); pintaRapid(); } notifica(); }
 }
