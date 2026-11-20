@@ -1,4 +1,4 @@
-\ufeff// Servidor Casa - servidor HTTP lleuger per al dashboard de l'iPad.
+// Servidor Casa - servidor HTTP lleuger per al dashboard de l'iPad.
 // Es compila sol amb Add-Type des de servidor.ps1 (.NET Framework, C# 5).
 using System;
 using System.Collections.Generic;
