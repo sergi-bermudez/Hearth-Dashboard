@@ -4,7 +4,8 @@
 if (!window.__casa) (function () {
   const media = new Set();
   let sinkId = null;
-  const aplica = (el) => { if (sinkId !== null && el.setSinkId && el.sinkId !== sinkId) el.setSinkId(sinkId).catch(() => {}); };
+  let darrerError = '';
+  const aplica = (el) => { if (sinkId !== null && el.setSinkId && el.sinkId !== sinkId) el.setSinkId(sinkId).catch((e) => { darrerError = String(e && e.message || e); }); };
   const playOriginal = HTMLMediaElement.prototype.play;
   HTMLMediaElement.prototype.play = function () { media.add(this); aplica(this); return playOriginal.apply(this, arguments); };
   // L'Spotify també pot sonar amb Web Audio: cal desviar també els AudioContext
@@ -269,16 +270,16 @@ if (!window.__casa) (function () {
       let l = await navigator.mediaDevices.enumerateDevices();
       // Sense permís, els noms dels aparells surten buits: el demanem un moment
       if (!l.some((x) => x.kind === 'audiooutput' && x.label)) {
-        try { const st = await navigator.mediaDevices.getUserMedia({ audio: true }); st.getTracks().forEach((t) => t.stop()); } catch (e) {}
+        try { const st = await Promise.race([navigator.mediaDevices.getUserMedia({ audio: true }), espera(3000).then(() => null)]); if (st) st.getTracks().forEach((t) => t.stop()); } catch (e) {}
         l = await navigator.mediaDevices.enumerateDevices();
       }
       const d = l.find((x) => x.kind === 'audiooutput' && x.label.toLowerCase().indexOf(nom.toLowerCase()) >= 0);
       if (!d) return { ok: false, error: 'No trobo la sortida «' + nom + '». Has instal·lat el cable d\'àudio virtual?', aparells: l.filter((x) => x.kind === 'audiooutput').map((x) => x.label || '(sense nom)') };
       sinkId = d.deviceId;
       totsMedia().forEach(aplica); ctxs.forEach(aplicaCtx);
-      await espera(300);
+      await espera(600);
       const fet = [...media].filter((e) => e.sinkId === sinkId).length;
-      return { ok: true, sortida: d.label, media: media.size, desviats: fet, contexts: ctxs.size };
+      return { ok: !darrerError, sortida: d.label, media: media.size, desviats: fet, contexts: ctxs.size, error: darrerError };
     }
   };
   try {

@@ -91,7 +91,7 @@ public static class Spotify
             else c.Envia("Page.reload", null, 10000);
             sessio = c;
             Thread.Sleep(2500);
-            ThreadPool.QueueUserWorkItem(delegate { try { AplicaSortida(); } catch { } });
+            ThreadPool.QueueUserWorkItem(delegate { Sortida(); });
             return c;
         }
     }
@@ -173,7 +173,7 @@ public static class Spotify
         finally { try { if (b != null) b.Tanca(); } catch { } }
     }
 
-    public static void Sortida() { try { AplicaSortida(); } catch { } }
+    public static void Sortida() { try { AplicaSortida(); } catch (Exception e) { UltimaSortida = "{\"ok\":false,\"error\":" + Js(e.Message) + "}"; Console.WriteLine("  Spotify: sortida de so: " + e.Message); } }
 
     static void AplicaSortida()
     {
