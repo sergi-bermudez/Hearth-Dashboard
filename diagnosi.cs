@@ -116,7 +116,7 @@ public static class Diagnosi
             Afegeix(l, "Serveis", "Sortida de l'Edge", so.Contains("\"ok\":true") ? ok : err, so != "" ? so : "No s'ha pogut aplicar");
         }
         int niv = Pcm.NivellSpotify();
-        if (niv >= 0) Afegeix(l, "Serveis", "So de l'Spotify", niv > 0 ? ok : avis, niv > 0 ? "Arriba so del cable (" + niv + "%)" : "Arriba silenci: l'Spotify no sona pel cable, o est\u00e0 en pausa");
+        if (niv >= 0) Afegeix(l, "Serveis", "So de l'Spotify", niv > 0 ? ok : avis, niv > 0 ? "Arriba so del cable (" + niv + "%)" : "Arriba silenci: l'Spotify no sona pel cable, est\u00e0 en pausa, o ffmpeg.exe est\u00e0 molt baix al mesclador de volum de Windows (posa'l a 100)");
         Afegeix(l, "Serveis", "WhatsApp", Activa("whatsapp") ? ok : off, Activa("whatsapp") ? "Activat" : "Desactivat");
         bool ty = File.Exists(Path.Combine(CasaServidor.DirDades, "tuya.json"));
         Afegeix(l, "Serveis", "Casa (Tuya)", ty ? ok : off, ty ? "Configurat" : "No configurat");

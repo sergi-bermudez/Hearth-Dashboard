@@ -39,7 +39,8 @@ public static class Pcm
         if (font == "spotify")
         {
             string disp = Spotify.Ajuda("dispositiu", "CABLE Output (VB-Audio Virtual Cable)");
-            return "-hide_banner -loglevel error -nostdin -f dshow -audio_buffer_size 50 -i audio=\"" + disp.Replace("\"", "") + "\"" + sortida;
+            // Si Windows t\u00e9 ffmpeg molt baix al mesclador de volum, el so arriba gaireb\u00e9 mut: dynaudnorm el torna a pujar
+            return "-hide_banner -loglevel error -nostdin -f dshow -audio_buffer_size 50 -i audio=\"" + disp.Replace("\"", "") + "\" -af dynaudnorm=f=200:g=11:p=0.9:m=100" + sortida;
         }
         if (font == "fitxer")
         {
