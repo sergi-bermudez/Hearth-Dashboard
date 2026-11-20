@@ -383,6 +383,16 @@ body.lleu #tv .tv-ctl,body.lleu #tv .tv-canals,body.lleu #tv .tv-vod{-webkit-tra
   #mini .art{width:44px;height:44px}
   #mini .art .ic{left:8px;top:8px}
 }
+/* Reproductor de so gran (M / L): controls sota el títol, títol en dues línies */
+.s-aud.gran{-webkit-align-items:flex-end;align-items:flex-end}
+.s-aud.gran .s-art{margin-right:26px;border-radius:18px}
+.s-aud.gran .s-tit{font-size:34px;margin:8px 0 6px;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:2.3em}
+.s-aud.gran.m .s-tit{font-size:28px}
+.s-aud.gran .s-sub{font-size:19px}
+.s-aud.gran .s-prog,.s-aud.gran .s-temps{max-width:none}
+.s-aud.gran .s-ctl{margin:10px 0 0 -10px;-webkit-flex-wrap:wrap;flex-wrap:wrap}
+.s-aud.gran .s-ctl .vol{-webkit-flex:1;flex:1;max-width:220px;min-width:100px}
+@media (max-width:480px){ .s-aud.gran{display:block} .s-aud.gran .s-art{margin:0 auto 12px} .s-aud.gran .s-tit{font-size:24px} }
 </style>
 </head>
 <body class="e-ambient">
@@ -1240,6 +1250,13 @@ function tvMiniMida() {
   ls('tvMiniMida', TV.miniMida);
   tvLloc();
 }
+/* Mida del reproductor de so a la pantalla d'inici: S / M / L */
+var AUD = { mida: ls('auMida') || 'g' };
+function audMidaCanvia() {
+  AUD.mida = AUD.mida == 'p' ? 'm' : AUD.mida == 'm' ? 'g' : 'p';
+  ls('auMida', AUD.mida);
+  pintaSona();
+}
 function tvMidaCanvia() {
   TV.mida = TV.mida == 'p' ? 'm' : TV.mida == 'm' ? 'g' : 'p';
   ls('tvMida', TV.mida);
@@ -1306,18 +1323,24 @@ function pintaSona(intern) {
     var pod = it.k == 'podcast', radio = it.k == 'radio';
     var kick2 = radio ? T('Ràdio en directe') : pod ? T('Pòdcast') : it.k == 'spotify' ? 'Spotify' + (SP.nomesPC ? ' · ' + T('sona al PC') : '') : T('Música');
     var app = radio ? 'radio' : pod ? 'podcasts' : it.k == 'spotify' ? 'spotify' : 'musica';
-    h = '<div class="s-aud"><div class="s-art toc' + (radio && it.art ? ' logo' : '') + '" id="s-art" onclick="obre(\'' + app + '\')" style="background-image:' + bg(it.art) + '">' + (it.art ? '' : svg(iconaTipus(it))) + '</div>' +
-      '<div class="s-info"><div class="s-kick"><span class="eq" id="s-eq"><span></span><span></span><span></span></span>' + kick2 + '</div>' +
-      '<div class="s-tit una">' + esc(it.t) + '</div><div class="s-sub una">' + esc(it.s || '') + '</div>' +
-      (radio ? '' : '<div class="s-prog" onclick="cercaPos(event,this)"><div><div id="s-prog"></div></div></div><div class="s-temps"><span id="s-t1"></span><span id="s-t2"></span></div>') + '</div>' +
-      '<div class="s-ctl">' + (radio ? '' : '<button onclick="repAnterior()">' + svg(pod ? IC.enrere : IC.ant) + '</button>') +
+    var am = AUD.mida, gran = am != 'p';
+    var ctlA = '<div class="s-ctl">' + (radio ? '' : '<button onclick="repAnterior()">' + svg(pod ? IC.enrere : IC.ant) + '</button>') +
       '<button class="gp" id="s-play" onclick="repPlay()"></button>' +
       (radio ? '' : '<button onclick="repSeguent()">' + svg(pod ? IC.endavant : IC.seg) + '</button>') +
-      htmlVolum() + '<button onclick="castObre()">' + svg(IC_CAST) + '</button><button onclick="repAtura()">' + svg(IC.tanca) + '</button></div></div>';
+      htmlVolum() + '<button class="mida" onclick="audMidaCanvia()" title="' + esc(T('Mida')) + '">' + (am == 'p' ? 'S' : am == 'm' ? 'M' : 'L') + '</button>' +
+      '<button onclick="castObre()">' + svg(IC_CAST) + '</button><button onclick="repAtura()">' + svg(IC.tanca) + '</button></div>';
+    h = '<div class="s-aud' + (gran ? ' gran ' + am : '') + '"><div class="s-art toc' + (radio && it.art ? ' logo' : '') + '" id="s-art" onclick="obre(\'' + app + '\')" style="background-image:' + bg(it.art) + '">' + (it.art ? '' : svg(iconaTipus(it))) + '</div>' +
+      '<div class="s-info"><div class="s-kick"><span class="eq" id="s-eq"><span></span><span></span><span></span></span>' + kick2 + '</div>' +
+      '<div class="s-tit' + (gran ? ' dues' : ' una') + '">' + esc(it.t) + '</div><div class="s-sub una">' + esc(it.s || '') + '</div>' +
+      (radio ? '' : '<div class="s-prog" onclick="cercaPos(event,this)"><div><div id="s-prog"></div></div></div><div class="s-temps"><span id="s-t1"></span><span id="s-t2"></span></div>') +
+      (gran ? ctlA : '') + '</div>' + (gran ? '' : ctlA) + '</div>';
     s.innerHTML = h;
-    var art = $('s-art'), mida = Math.max(64, Math.min(espaiSona(), window.innerWidth > window.innerHeight ? 130 : 150));
+    /* La caràtula creix segons la mida triada i l'espai que queda */
+    var esp = espaiSona(), art = $('s-art');
+    var maxA = am == 'p' ? (window.innerWidth > window.innerHeight ? 110 : 130) : am == 'm' ? 180 : 260;
+    var mida = Math.max(64, Math.min(esp, maxA, Math.round(s.clientWidth * (gran ? 0.36 : 0.3))));
     art.style.width = mida + 'px'; art.style.height = mida + 'px';
-    if (s.clientWidth < 620) { var ctl2 = s.firstChild.lastChild; s.firstChild.style.webkitFlexWrap = 'wrap'; s.firstChild.style.flexWrap = 'wrap'; ctl2.style.width = '100%'; ctl2.style.margin = '10px 0 0'; ctl2.style.webkitJustifyContent = 'center'; ctl2.style.justifyContent = 'center'; }
+    if (!gran && s.clientWidth < 620) { var ctl2 = s.firstChild.lastChild; s.firstChild.style.webkitFlexWrap = 'wrap'; s.firstChild.style.flexWrap = 'wrap'; ctl2.style.width = '100%'; ctl2.style.margin = '10px 0 0'; ctl2.style.webkitJustifyContent = 'center'; ctl2.style.justifyContent = 'center'; }
     iconesPlay(); progres();
     ajustaMig();
     desbordDespres();
