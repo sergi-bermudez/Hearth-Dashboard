@@ -26,6 +26,7 @@ public static class Cast
     static DateTime cercat = DateTime.MinValue;
     static int cercant = 0;
     static readonly Dictionary<string, Sessio> sessions = new Dictionary<string, Sessio>();
+    public static int Coneguts() { lock (lk) return disps.Count; }
 
     // ---------------------------------------------------------------- Descobriment
     static List<IPAddress> LocalsIp()

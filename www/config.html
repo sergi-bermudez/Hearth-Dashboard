@@ -103,6 +103,14 @@ body{background:#000}
   .m-el.on .mv{color:#8d8d93}
   #pag{padding:16px 18px 60px}
 }
+.dg-g{font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:#8d8d93;margin:14px 0 6px}
+.dg-g:first-child{margin-top:0}
+.dg-e{display:-webkit-flex;display:flex;-webkit-align-items:flex-start;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.dg-e i{width:12px;height:12px;border-radius:6px;margin:5px 12px 0 2px;-webkit-flex:none;flex:none}
+.dg-e i.ok{background:#30d158}.dg-e i.avis{background:#ffd60a}.dg-e i.error{background:#ff453a}.dg-e i.off{background:#48484a}
+.dg-e b{font-weight:600;width:170px;-webkit-flex:none;flex:none}
+.dg-e span{color:#aeb4bd;font-size:14px;-webkit-flex:1;flex:1;min-width:0;word-break:break-word}
+.dg-err{font:12px Menlo,monospace;color:#ff9f8a;background:#140b0b;border-radius:8px;padding:8px 10px;white-space:pre-wrap;word-break:break-all}
 </style>
 </head>
 <body>
@@ -155,6 +163,9 @@ body{background:#000}
     <div class="llista" id="ciutats" style="margin:-4px 0 12px 150px"></div>
     <div class="fila"><label>Foscor del fons</label><input type="range" id="aj-foscor" min="0" max="80" step="5" style="width:220px" oninput="$('aj-foscor-v').textContent=this.value+'%'"><span id="aj-foscor-v" class="gris" style="margin-left:10px"></span><span class="gris petit" style="margin-left:12px">més fosc = el text es llegeix millor</span></div>
     <div class="fila"><label>Fons: segons</label><input type="number" id="aj-fons" min="8" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto del fons</span></div>
+    <h2>Mode nit</h2>
+    <label class="check"><input type="checkbox" id="aj-nit"> <span>De nit, només un rellotge fosc i tènue (es desperta tocant la pantalla)</span></label>
+    <div class="fila"><label>De</label><input type="time" id="aj-nit-des" style="width:130px"><span style="margin:0 10px">a</span><input type="time" id="aj-nit-fins" style="width:130px"></div>
     <h2>Passi de fotos</h2>
     <div class="estils" id="passis"></div>
     <div class="fila"><label>Marc: segons</label><input type="number" id="aj-seg" min="5" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto</span></div>
@@ -285,6 +296,14 @@ body{background:#000}
     <h2>Servidor</h2>
     <div class="desc">Adreça per obrir a l'iPad, al mòbil o a l'ordinador:</div>
     <div id="ips"></div>
+  </div>
+
+  <div class="sec" id="s-diagnosi">
+    <h2>Diagnòstic</h2>
+    <div class="desc">L'estat de cada peça de Hearth. Si alguna cosa no va, toca «Copia l'informe» i envia-ho a qui t'ajudi.</div>
+    <div id="dg-llista" class="dg"><div class="gris">…</div></div>
+    <div class="peu" style="text-align:left;margin-top:12px"><button onclick="dgCarrega()">Torna a comprovar</button> <button class="pri" onclick="dgCopia()">Copia l'informe</button></div>
+    <textarea id="dg-text" readonly style="display:none;width:100%;height:160px;margin-top:12px;font:12px Menlo,monospace;background:#111;color:#ddd;border-radius:10px;padding:10px;border:0"></textarea>
   </div>
 
   <div class="sec" id="s-actualitza">
@@ -445,6 +464,7 @@ function desaInici() {
   v.fonsSeg = Math.max(8, parseInt($('aj-fons').value, 10) || 20);
   v.foscor = parseInt($('aj-foscor').value, 10) || 0;
   v.estil = v.estil || 'ambient';
+  v.nit = $('aj-nit').checked; v.nitDes = $('aj-nit-des').value || '22:00'; v.nitFins = $('aj-nit-fins').value || '07:00';
   desaDades('ajustos', a, function () {
     desaDades('disp_' + DISP.id, C.dp, function () { avis(T('Desat')); if (Casa) Casa.recarrega(); });
   });
@@ -911,7 +931,7 @@ var MENU = [
   ['Contingut', [['carpetes', 'Carpetes del PC', IC.carpeta, '#0a84ff'], ['gfotos', 'Google Fotos', ICM.imatge, '#ff9f0a'], ['media', 'Caràtules i fitxes', IC.pelis, '#bf5af2'], ['tv', 'Canals de TV', IC.tv, '#64d2ff'], ['youtube', 'YouTube', IC.video, '#ff3b30'], ['webs', 'Webs', IC.web, '#5ac8fa']]],
   ['Connexions', [['casa', 'Casa (Tuya / Smart Life)', ICM.casa, '#ff9f0a'], ['spotify', 'Spotify', IC.spotify, '#1db954'], ['whatsapp', 'WhatsApp', IC.missatges, '#25d366']]],
   ['Família', [['infantil', 'Mode infantil', ICM.nen, '#ffd60a']]],
-  ['Sistema', [['sistema', 'Servidor', ICM.servidor, '#8e8e93'], ['actualitza', 'Actualitzacions', ICM.refresca, '#636366'], ['app', 'Instal·lar com a app', ICM.baixa, '#0a84ff'], ['fotosidx', 'Índex de fotos', IC.fotos, '#8e8e93'], ['clau', 'Contrasenya', ICM.cadenat, '#636366']]]
+  ['Sistema', [['diagnosi', 'Diagnòstic', 'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z', '#30d158'], ['sistema', 'Servidor', ICM.servidor, '#8e8e93'], ['actualitza', 'Actualitzacions', ICM.refresca, '#636366'], ['app', 'Instal·lar com a app', ICM.baixa, '#0a84ff'], ['fotosidx', 'Índex de fotos', IC.fotos, '#8e8e93'], ['clau', 'Contrasenya', ICM.cadenat, '#636366']]]
 ];
 function estret() { return window.innerWidth <= 760; }
 function pintaMenu() {
@@ -979,6 +999,7 @@ function omplInici() {
   $('aj-seg').value = v.marcSeg || 15;
   $('aj-min').value = v.marcMin || 0;
   $('aj-fons').value = v.fonsSeg || 20;
+  $('aj-nit').checked = !!v.nit; $('aj-nit-des').value = v.nitDes || '22:00'; $('aj-nit-fins').value = v.nitFins || '07:00';
   $('aj-foscor').value = v.foscor == null ? 25 : v.foscor; $('aj-foscor-v').textContent = $('aj-foscor').value + '%';
   pintaEstils();
   pintaPassis();
@@ -1080,6 +1101,36 @@ function pintaPassis() {
   $('passis').innerHTML = h;
 }
 function provaPassi() { desaInici(); setTimeout(function () { try { parent.Casa.marc(); } catch (e) { } }, 900); }
+
+/* Diagnòstic */
+var DG = null;
+function dgCarrega() {
+  $('dg-llista').innerHTML = '<div class="gris">' + T('Comprovant…') + '</div>';
+  getJson(api('admin/diagnosi'), function (d) {
+    DG = d;
+    var h = '', g = '', l = d.comprovacions || [], mal = 0;
+    for (var i = 0; i < l.length; i++) {
+      if (l[i].grup != g) { g = l[i].grup; h += '<div class="dg-g">' + esc(T(g)) + '</div>'; }
+      if (l[i].estat == 'error') mal++;
+      h += '<div class="dg-e"><i class="' + l[i].estat + '"></i><b>' + esc(T(l[i].nom)) + '</b><span>' + esc(l[i].detall) + '</span></div>';
+    }
+    h += '<div class="dg-g">' + esc(T('Darrers errors del registre')) + '</div>';
+    h += d.errors && d.errors.length ? '<div class="dg-err">' + esc(d.errors.slice(-12).join('\n')) + '</div>' : '<div class="gris">' + T('Cap error recent.') + '</div>';
+    $('dg-llista').innerHTML = h;
+    if ($('mv-diagnosi')) $('mv-diagnosi').textContent = mal ? Tf('{1} problemes', mal) : T('Tot bé');
+  }, function (st) { $('dg-llista').innerHTML = '<div class="gris">' + T('No s\'ha pogut consultar.') + ' (' + st + ')</div>'; });
+}
+function dgCopia() {
+  if (!DG) return;
+  var t = 'Hearth · ' + DG.hora + '\n', l = DG.comprovacions || [];
+  for (var i = 0; i < l.length; i++) t += '[' + l[i].estat + '] ' + l[i].grup + ' / ' + l[i].nom + ': ' + l[i].detall + '\n';
+  t += '\nErrors:\n' + (DG.errors || []).join('\n') + '\n\nNavegador: ' + navigator.userAgent;
+  var a = $('dg-text'); a.style.display = 'block'; a.value = t;
+  a.focus(); a.select(); try { a.setSelectionRange(0, t.length); } catch (e) { }
+  var ok = false; try { ok = document.execCommand('copy'); } catch (e) { }
+  avis(ok ? T('Copiat. Ara enganxa-ho on vulguis.') : T('Selecciona el text i copia\'l.'), 4000);
+}
+setTimeout(dgCarrega, 900);
 </script>
 </body>
 </html>

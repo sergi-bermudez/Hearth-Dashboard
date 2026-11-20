@@ -335,6 +335,13 @@ html.sa #castbar{top:30px}
 #castbar button{background:rgba(255,255,255,.18);width:40px;height:40px;border-radius:20px;padding:0;margin-left:6px;font-size:20px;font-weight:700}
 #castbar button .ic{width:22px;height:22px}
 @media (max-width:600px){ #cast .card{left:12px;right:12px;width:auto;margin-left:0} #castbar{left:8px;right:8px;width:auto;margin-left:0} }
+/* Mode nit: només un rellotge fosc i tènue */
+#nit{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;z-index:96;display:none;text-align:center;cursor:pointer}
+#nit .h{position:absolute;left:0;right:0;top:50%;margin-top:-110px;font-size:170px;font-weight:200;letter-spacing:-4px;color:#7a5a32;line-height:1}
+#nit .d{position:absolute;left:0;right:0;top:50%;margin-top:80px;font-size:22px;color:#4d3a22}
+#nit .a{position:absolute;left:0;right:0;top:50%;margin-top:118px;font-size:17px;color:#3f3020}
+@media (orientation:portrait){ #nit .h{font-size:130px;margin-top:-90px} }
+#tv .tv-minictl .mmida{font-size:13px;font-weight:700;color:#fff}
 </style>
 </head>
 <body class="e-ambient">
@@ -384,7 +391,7 @@ html.sa #castbar{top:30px}
   <div class="tv-vod"><button onclick="vodSalta(-15)" id="tv-b-enr"></button><button class="gp" onclick="repPlay()" id="tv-b-play"></button><button onclick="vodSalta(30)" id="tv-b-end"></button>
     <span class="tm" id="tv-t1"></span><div class="barra-v" onclick="vodCerca(event,this)"><div><div id="tv-prog"></div></div></div><span class="tm" id="tv-t2"></span></div>
   <div class="tv-canals" id="tv-canals"></div>
-  <div class="tv-minictl"><button onclick="tvMode('gran')" id="tv-b-gran"></button><button onclick="tvAtura()" id="tv-b-x2"></button></div>
+  <div class="tv-minictl"><button onclick="tvMiniMida()" id="tv-b-mmida" class="mmida"></button><button onclick="tvMode('gran')" id="tv-b-gran"></button><button onclick="tvAtura()" id="tv-b-x2"></button></div>
 </div>
 
 <div id="marc" onclick="tancaMarc()">
@@ -394,6 +401,7 @@ html.sa #castbar{top:30px}
 </div>
 <div id="cast" onclick="if(event.target==this)castTanca()"><div class="card" id="cast-c"></div></div>
 <div id="castbar"><div class="nm"><b id="cb-t"></b><span id="cb-d"></span></div><button onclick="castOrdre('vol',-0.1)">−</button><button onclick="castOrdre('vol',0.1)">+</button><button onclick="castPausa()" id="cb-play"></button><button onclick="castAtura()" id="cb-x"></button></div>
+<div id="nit" onclick="nitDesperta()"><div class="h" id="nit-h"></div><div class="d" id="nit-d"></div><div class="a" id="nit-a"></div></div>
 <div id="avis"></div>
 <div id="notif" onclick="clicNotif()"><div class="av" id="nf-av"></div><div class="flex1" style="min-width:0"><b id="nf-nom"></b><span id="nf-text"></span></div></div>
 <div id="pin"><h2 id="pin-t"></h2><div class="pt" id="pin-v"></div><div class="tec" id="pin-tec"></div><div><button onclick="tancaPin()" style="margin-top:10px" id="pin-cancel"></button></div></div>
@@ -955,7 +963,7 @@ function posaVolum(v) {
 function htmlVolum() { return VOL.ok ? '<input type="range" class="vol" min="0" max="100" value="' + VOL.v + '" oninput="posaVolum(this.value)">' : ''; }
 
 /* ---------- TV en directe i vídeo (pel·lícules, YouTube) al mateix reproductor ---------- */
-var TV = { canal: null, cands: [], i: 0, t: null, mode: 'normal', estat: '', amagaT: null, mida: ls('tvMida') || 'm', desT: 0, represa: null };
+var TV = { canal: null, cands: [], i: 0, t: null, mode: 'normal', estat: '', amagaT: null, mida: ls('tvMida') || 'm', miniMida: ls('tvMiniMida') || 'm', desT: 0, represa: null };
 function tvObre(canal, gran) {
   if (R.cua.length) repAtura();
   if (TV.canal && TV.canal.vod) vodDesa();
@@ -1154,10 +1162,18 @@ function tvLloc() {
     st.left = r.left + 'px'; st.top = r.top + 'px'; st.width = r.width + 'px'; st.height = r.height + 'px';
     return;
   }
-  w = W > 900 ? 360 : 300; h = Math.round(w * 9 / 16);
+  w = TV.miniMida == 'p' ? Math.round(W * 0.26) : TV.miniMida == 'g' ? Math.round(W * 0.5) : (W > 900 ? 360 : 300); h = Math.round(w * 9 / 16);
+  if (h > H - 66 - 74 - 14 - 30) { h = H - 66 - 74 - 14 - 30; w = Math.round(h * 16 / 9); }
+  $('tv-b-mmida').textContent = TV.miniMida == 'p' ? 'S' : TV.miniMida == 'g' ? 'L' : 'M';
   t.className = 'mini' + vod;
   st.width = w + 'px'; st.height = h + 'px';
   st.left = (W - w - 16) + 'px'; st.top = (H - h - 66 - 74 - 14) + 'px';
+}
+/* Mida del vídeo flotant (quan es miren altres apps): S / M / L */
+function tvMiniMida() {
+  TV.miniMida = TV.miniMida == 'p' ? 'm' : TV.miniMida == 'm' ? 'g' : 'p';
+  ls('tvMiniMida', TV.miniMida);
+  tvLloc();
 }
 function tvMidaCanvia() {
   TV.mida = TV.mida == 'p' ? 'm' : TV.mida == 'm' ? 'g' : 'p';
@@ -1439,7 +1455,7 @@ document.addEventListener('touchstart', toc, true);
 document.addEventListener('mousedown', toc, true);
 setInterval(function () {
   var m = A.ajustos.marcMin;
-  if (!m || marcObert() || (TV.canal && TV.mode == 'gran')) return;
+  if (!m || marcObert() || (TV.canal && TV.mode == 'gran') || nitHora()) return;
   if (A.vista == 'docs' || A.vista == 'pelis' || A.vista == 'config' || A.vista == 'youtube') return;
   if (Date.now() - darrerToc > m * 60000) obreMarc();
 }, 20000);
@@ -1728,6 +1744,32 @@ function castBarra() {
 function castOrdre(o, v) { if (CAST.dev) getJson(api('cast/ordre', { id: CAST.dev, o: o, v: v || 0 }), function () { }, function () { avis(T('L\'aparell no respon')); }); }
 function castPausa() { CAST.pausa = !CAST.pausa; castOrdre(CAST.pausa ? 'pausa' : 'play'); castBarra(); }
 function castAtura() { if (CAST.dev) castOrdre('atura'); CAST.dev = null; castBarra(); }
+
+/* ---------- Mode nit ---------- */
+var NIT = { fins: 0 };
+function minutsDe(t, def) { var m = /^(\d{1,2}):(\d\d)/.exec(t || def); return m ? +m[1] * 60 + +m[2] : 0; }
+function nitHora() {
+  if (!A.ajustos.nit) return false;
+  var ara = new Date(), m = ara.getHours() * 60 + ara.getMinutes(), d = minutsDe(A.ajustos.nitDes, '22:00'), f = minutsDe(A.ajustos.nitFins, '07:00');
+  return d <= f ? (m >= d && m < f) : (m >= d || m < f);
+}
+function nitPinta() {
+  var ara = new Date();
+  $('nit-h').textContent = ara.getHours() + ':' + ('0' + ara.getMinutes()).slice(-2);
+  $('nit-d').textContent = DIES[ara.getDay()] + ', ' + ara.getDate() + ' ' + MESOS[ara.getMonth()];
+  var it = R.cua[R.pos];
+  $('nit-a').textContent = it && !au.paused ? '♪ ' + it.t : '';
+}
+function nitComprova() {
+  var vol = nitHora() && Date.now() > NIT.fins && !(TV.canal && TV.mode == 'gran') && Date.now() - darrerToc > 60000;
+  var n = $('nit');
+  if (vol) {
+    if (n.style.display != 'block') { if (marcObert()) tancaMarc(); n.style.display = 'block'; }
+    nitPinta();
+  } else if (n.style.display == 'block' && !nitHora()) n.style.display = 'none';
+}
+function nitDesperta() { $('nit').style.display = 'none'; NIT.fins = Date.now() + 3 * 60000; toc(); }
+setInterval(nitComprova, 20000);
 </script>
 </body>
 </html>

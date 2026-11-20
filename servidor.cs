@@ -362,6 +362,7 @@ public static class CasaServidor
         if (nom == "youtube/instal-la") { YouTube.Api("instal-la", q, ctx); return; }
         if (nom == "tuya/ajustos") { Tuya.Ajusta(ctx); return; }
         if (nom.StartsWith("actualitza/")) { Actualitza.Api(nom, q, ctx); return; }
+        if (nom == "diagnosi") { Diagnosi.Api(ctx); return; }
         if (nom.StartsWith("wa/")) { if (nom != "wa/atura" && !FuncioActiva("whatsapp")) { Error(ctx.Response, 403, "WhatsApp est\u00e0 desactivat (Configuraci\u00f3 \u25b8 Funcions opcionals)"); return; } WhatsApp.Api(nom.Substring(3), q, ctx); return; }
         switch (nom)
         {
