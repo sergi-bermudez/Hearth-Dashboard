@@ -562,3 +562,5 @@ TR.en["No s'ha pogut connectar"] = "Couldn't connect";
 TR.en["Revisa que hagis vinculat l'app Smart Life al projecte i triat el centre de dades correcte."] = "Check that you linked the Smart Life app to the project and chose the right data center.";
 TR.en["Falta l'Access ID"] = "Access ID is missing";
 TR.en["(desat)"] = "(saved)";
+TR.en["Mira-ho en HD (720p)"] = "Watch in HD (720p)";
+TR.en["Qualitat baixa (360p, si la xarxa va lenta)"] = "Low quality (360p, for a slow network)";

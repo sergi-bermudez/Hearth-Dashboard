@@ -87,7 +87,6 @@ function carrega(url, titol) {
     $('cont').innerHTML = '<h2 style="margin-top:6px">' + esc(titol) + ' <button onclick="inici()" style="float:right;font-size:14px">' + T('Inici') + '</button></h2><div class="yt">' + cartes(l) + '</div>' +
       (l.length ? '' : '<div class="gris">' + T('Cap resultat.') + '</div>');
     setTimeout(mandros, 30);
-    sondejaHd();
   }, function (st, txt) {
     var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
     $('cont').innerHTML = '<div class="ajuda">' + T('No s\'ha pogut carregar.') + ' ' + esc(m || '') + '</div>';
@@ -99,7 +98,7 @@ function cartes(l) {
     var v = l[i], s = vt[v.id], hd = Y.hd[v.id];
     h += '<div class="yv" onclick="toca(' + i + ')"><div class="im" data-bg="' + esc(imgx(v.img, 320)) + '">' +
       (v.directe ? '<span class="dur dir">' + T('DIRECTE') + '</span>' : v.d ? '<span class="dur">' + durada(v.d) + '</span>' : '') +
-      (hd ? '<span class="hd' + (hd == 'fet' ? ' fet' : '') + '" id="hd-' + v.id + '">' + (hd == 'fet' ? 'HD' : /%$/.test(hd) ? 'HD ' + hd : '') + '</span>' : '') +
+
       (s && s.d ? '<div class="prog"><div style="width:' + Math.round(100 * s.t / s.d) + '%"></div></div>' : '') +
       '</div><button class="bt" onclick="event.stopPropagation();mes(' + i + ')">' + svg('M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z') + '</button>' +
       '<div class="t">' + esc(v.t) + '</div><div class="c">' + esc(v.c || '') + '</div></div>';
@@ -109,15 +108,15 @@ function cartes(l) {
 function toca(i, qualitat) {
   var v = Y.llista[i];
   if (!v || !Casa) return;
-  var hd = qualitat == '720' || (qualitat == null && Y.hd[v.id] == 'fet');
-  Casa.video({ id: v.id, nom: v.t, s: v.c || 'YouTube', u: api('youtube/video', { id: v.id, q: hd ? '720' : '360' }), poster: imgx(v.img, 320), k: 'yt', desa: 'ytveient' });
+  /* El PC prepara el vídeo en HLS (com la TV): comença en uns segons, també en HD i a iOS 9 */
+  var q = qualitat || ls('yt.q') || '720';
+  Casa.video({ id: v.id, nom: v.t, s: v.c || 'YouTube', u: api('youtube/hls', { id: v.id, q: q }), poster: imgx(v.img, 320), k: 'yt', desa: 'ytveient' });
 }
 function mes(i) {
-  var v = Y.llista[i], hd = Y.hd[v.id], h = '<div class="im" style="background-image:' + bg(imgx(v.img, 480)) + '"></div><h3>' + esc(v.t) + '</h3><div class="gris">' + esc(v.c || '') + '</div>';
-  h += '<button class="pri" onclick="tancaFull();toca(' + i + ',\'360\')">' + svg(IC.play) + ' ' + T('Mira-ho ara') + '</button>';
-  if (hd == 'fet') h += '<button onclick="tancaFull();toca(' + i + ',\'720\')">' + svg(IC.play) + ' ' + T('Mira-ho en HD') + '</button>';
-  else if (!v.directe) h += '<button onclick="tancaFull();preparaHd(' + i + ')">' + (hd && /%$/.test(hd) ? Tf('Preparant en HD… {1}', hd) : T('Prepara-ho en HD (cal esperar una mica)')) + '</button>';
-  if (v.c && v.cu !== false) h += '<button onclick="tancaFull();segueix(' + i + ')">' + T('Seguir el canal') + '</button>';
+  var v = Y.llista[i], h = '<div class="im" style="background-image:' + bg(imgx(v.img, 480)) + '"></div><h3>' + esc(v.t) + '</h3><div class="gris">' + esc(v.c || '') + '</div>';
+  h += '<button class="pri" onclick="tancaFull();ls(\'yt.q\',\'720\');toca(' + i + ',\'720\')">' + svg(IC.play) + ' ' + T('Mira-ho en HD (720p)') + '</button>';
+  h += '<button onclick="tancaFull();ls(\'yt.q\',\'360\');toca(' + i + ',\'360\')">' + svg(IC.play) + ' ' + T('Qualitat baixa (360p, si la xarxa va lenta)') + '</button>';
+  if (v.c) h += '<button onclick="tancaFull();segueix(' + i + ')">' + T('Seguir el canal') + '</button>';
   h += '<button onclick="tancaFull()">' + T('Tanca') + '</button>';
   $('full-c').innerHTML = h;
   $('full').style.display = 'block';

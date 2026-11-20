@@ -562,3 +562,5 @@ TR.fr["No s'ha pogut connectar"] = "Connexion impossible";
 TR.fr["Revisa que hagis vinculat l'app Smart Life al projecte i triat el centre de dades correcte."] = "Vérifiez que vous avez associé l'app Smart Life au projet et choisi le bon centre de données.";
 TR.fr["Falta l'Access ID"] = "Access ID manquant";
 TR.fr["(desat)"] = "(enregistré)";
+TR.fr["Mira-ho en HD (720p)"] = "Regarder en HD (720p)";
+TR.fr["Qualitat baixa (360p, si la xarxa va lenta)"] = "Basse qualité (360p, si le réseau est lent)";

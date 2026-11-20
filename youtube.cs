@@ -180,6 +180,85 @@ public static class YouTube
         ThreadPool.QueueUserWorkItem(delegate { try { Executa("-U", 120000); } catch { } });
     }
 
+    // ---------- Reproduccio en HLS: yt-dlp troba els fluxos i ffmpeg els ajunta en trossos .ts ----------
+    // Es el format que l'iPad (fins i tot amb iOS 9) reprodueix millor, comenca en pocs segons i permet 720p.
+    class Sessio { public Process P; public string Dir; public DateTime Darrer; public string Error; }
+    static readonly Dictionary<string, Sessio> sessions = new Dictionary<string, Sessio>();
+    static System.Threading.Timer netejaHls;
+
+    // googlevideo vol el mateix User-Agent que ha fet servir yt-dlp
+    static string Capcaleres(Dictionary<string, object> f)
+    {
+        Dictionary<string, object> h = f != null && f.ContainsKey("http_headers") ? f["http_headers"] as Dictionary<string, object> : null;
+        string ua = h != null ? S(h, "User-Agent") : "";
+        return ua != "" ? "-user_agent " + Cometes(ua) + " " : "";
+    }
+
+    static Sessio IniciaHls(string id, string qualitat)
+    {
+        string clau = id + "-" + qualitat;
+        lock (lk)
+        {
+            if (netejaHls == null) netejaHls = new System.Threading.Timer(delegate { NetejaHls(); }, null, 60000, 60000);
+            Sessio s;
+            if (sessions.TryGetValue(clau, out s) && (s.Error == null)) { s.Darrer = DateTime.Now; return s; }
+            s = new Sessio { Dir = Path.Combine(Path.Combine(Dir(), "hls"), clau), Darrer = DateTime.Now };
+            sessions[clau] = s;
+            try { if (Directory.Exists(s.Dir)) Directory.Delete(s.Dir, true); } catch { }
+            Directory.CreateDirectory(s.Dir);
+            Sessio ses = s;
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                try
+                {
+                    string ff = SoPC.RutaFfmpeg();
+                    if (ff == null) throw new Exception("Falta ffmpeg.exe");
+                    string h = qualitat == "360" ? "360" : "720";
+                    string json = Executa("-j --no-warnings --no-playlist -f \"bv*[height<=" + h + "][vcodec^=avc1]+ba[ext=m4a]/b[height<=" + h + "][ext=mp4]/18/b\" " + Cometes("https://www.youtube.com/watch?v=" + id), 90000);
+                    JavaScriptSerializer js = new JavaScriptSerializer(); js.MaxJsonLength = int.MaxValue;
+                    Dictionary<string, object> d = js.DeserializeObject(json.Trim().Split('\n')[0]) as Dictionary<string, object>;
+                    if (d == null) throw new Exception("yt-dlp no ha tornat res");
+                    List<Dictionary<string, object>> fs = new List<Dictionary<string, object>>();
+                    object[] rf = d.ContainsKey("requested_formats") ? d["requested_formats"] as object[] : null;
+                    if (rf != null) foreach (object o in rf) fs.Add(o as Dictionary<string, object>);
+                    else fs.Add(d);
+                    StringBuilder a = new StringBuilder("-nostdin -loglevel error ");
+                    foreach (Dictionary<string, object> f in fs) a.Append(Capcaleres(f)).Append("-i ").Append(Cometes(S(f, "url"))).Append(" ");
+                    if (fs.Count > 1) a.Append("-map 0:v:0 -map 1:a:0 ");
+                    a.Append("-c:v copy -c:a aac -b:a 128k -ac 2 -f hls -hls_time 4 -hls_list_size 0 -hls_playlist_type event ");
+                    a.Append("-hls_segment_filename ").Append(Cometes(Path.Combine(ses.Dir, "s%05d.ts"))).Append(" ").Append(Cometes(Path.Combine(ses.Dir, "index.m3u8")));
+                    ProcessStartInfo si = new ProcessStartInfo(ff, a.ToString());
+                    si.UseShellExecute = false; si.CreateNoWindow = true; si.RedirectStandardError = true;
+                    Process p = Process.Start(si);
+                    StringBuilder err = new StringBuilder();
+                    p.ErrorDataReceived += delegate (object o2, DataReceivedEventArgs e2) { if (e2.Data != null) lock (err) { if (err.Length < 2000) err.AppendLine(e2.Data); } };
+                    p.BeginErrorReadLine();
+                    ses.P = p;
+                    p.WaitForExit();
+                    if (p.ExitCode != 0 && !File.Exists(Path.Combine(ses.Dir, "s00001.ts"))) ses.Error = "ffmpeg: " + err.ToString().Trim();
+                }
+                catch (Exception e) { ses.Error = e.Message; }
+            });
+            return s;
+        }
+    }
+
+    static void NetejaHls()
+    {
+        List<Sessio> velles = new List<Sessio>();
+        lock (lk)
+        {
+            List<string> treure = new List<string>();
+            foreach (KeyValuePair<string, Sessio> kv in sessions) if ((DateTime.Now - kv.Value.Darrer).TotalMinutes > 15) { treure.Add(kv.Key); velles.Add(kv.Value); }
+            foreach (string k in treure) sessions.Remove(k);
+        }
+        foreach (Sessio s in velles)
+        {
+            try { if (s.P != null && !s.P.HasExited) s.P.Kill(); } catch { }
+            try { if (s.P != null) s.P.WaitForExit(3000); Directory.Delete(s.Dir, true); } catch { }
+        }
+    }
+
     public static void Api(string nom, Dictionary<string, string> q, HttpListenerContext ctx)
     {
         HttpListenerResponse res = ctx.Response;
@@ -201,6 +280,41 @@ public static class YouTube
                         if (!Regex.IsMatch(u, @"^https://(www\.|m\.)?youtube\.com/")) { CasaServidor.Error(res, 400, "Enlla\u00e7 no v\u00e0lid"); return; }
                         if (!u.Contains("/videos") && Regex.IsMatch(u, @"/(@[^/]+|channel/[^/]+|c/[^/]+)/?$")) u = u.TrimEnd('/') + "/videos";
                         CasaServidor.Text(res, AmbCau("l:" + u, 30, delegate { return Llista(u, 30); }), "application/json; charset=utf-8");
+                        return;
+                    }
+                case "hls":
+                    {
+                        string id = CasaServidor.Q(q, "id"), qu = CasaServidor.Q(q, "q") == "360" ? "360" : "720";
+                        if (!IdValid(id)) { CasaServidor.Error(res, 400, "Id"); return; }
+                        Sessio s = IniciaHls(id, qu);
+                        string llista = Path.Combine(s.Dir, "index.m3u8");
+                        for (int i = 0; i < 240; i++)
+                        {
+                            if (s.Error != null) { string e = s.Error; lock (lk) sessions.Remove(id + "-" + qu); CasaServidor.Error(res, 502, e); return; }
+                            if (File.Exists(llista)) { string t0 = ""; try { t0 = File.ReadAllText(llista); } catch { } if (Regex.Matches(t0, @"\.ts").Count >= 2 || t0.Contains("#EXT-X-ENDLIST")) break; }
+                            Thread.Sleep(250);
+                        }
+                        string t;
+                        try { t = File.ReadAllText(llista); } catch { CasaServidor.Error(res, 504, "El v\u00eddeo triga massa a comen\u00e7ar"); return; }
+                        string k = id + "-" + qu;
+                        t = Regex.Replace(t, @"^(s\d+\.ts)\s*$", delegate (Match m) { return "/api/youtube/seg?k=" + k + "&f=" + m.Groups[1].Value; }, RegexOptions.Multiline);
+                        res.AddHeader("Cache-Control", "no-cache");
+                        CasaServidor.Text(res, t, "application/vnd.apple.mpegurl");
+                        return;
+                    }
+                case "seg":
+                    {
+                        string k = CasaServidor.Q(q, "k"), f = CasaServidor.Q(q, "f");
+                        if (!Regex.IsMatch(k, "^[A-Za-z0-9_-]{11}-(360|720)$") || !Regex.IsMatch(f, @"^s\d+\.ts$")) { CasaServidor.Error(res, 400, "Nom"); return; }
+                        lock (lk) { Sessio s; if (sessions.TryGetValue(k, out s)) s.Darrer = DateTime.Now; }
+                        string ruta = Path.Combine(Path.Combine(Path.Combine(Dir(), "hls"), k), f);
+                        if (!File.Exists(ruta)) { CasaServidor.Error(res, 404, "Tros"); return; }
+                        byte[] b;
+                        try { b = File.ReadAllBytes(ruta); } catch { CasaServidor.Error(res, 404, "Tros"); return; }
+                        res.ContentType = "video/mp2t";
+                        res.ContentLength64 = b.Length;
+                        res.OutputStream.Write(b, 0, b.Length);
+                        res.Close();
                         return;
                     }
                 case "video":
