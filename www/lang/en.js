@@ -695,3 +695,4 @@ TR.en["Mode lleuger"]="Light mode";
 TR.en["Automàtic (iPads amb iOS 9 o anterior)"]="Automatic (iPads on iOS 9 or older)";
 TR.en["Sempre activat"]="Always on";
 TR.en["Treu animacions i ombres, fa servir fotos de fons més petites i les canvia menys sovint. Ajuda els iPads antics a anar més fluids i a no tancar Safari."]="Removes animations and shadows, uses smaller background photos and changes them less often. Helps old iPads run smoother and keeps Safari from crashing.";
+TR.en["adhesiu"]="sticker";

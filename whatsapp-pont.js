@@ -1,6 +1,6 @@
 // Pont entre Hearth i WhatsApp Web (s'executa dins l'Edge del servidor).
 // Si WhatsApp canvia la web, normalment n'hi ha prou d'ajustar els selectors d'aquest fitxer.
-if (!window.__wa || window.__wa.v !== 4) (function () {
+if (!window.__wa || window.__wa.v !== 5) (function () {
   const q = (s, a) => (a || document).querySelector(s);
   const qa = (s, a) => Array.from((a || document).querySelectorAll(s));
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -24,8 +24,7 @@ if (!window.__wa || window.__wa.v !== 4) (function () {
     if (!n) return false;
     const c = nomsCapcalera();
     for (const x of c) if (norm(x) === n) return true;
-    const h = capcalera();
-    return !!(h && n.length > 2 && norm(txt(h)).indexOf(n) === 0);
+    return false;
   };
   const caixaCerca = () => q('#side div[contenteditable="true"]') || q('div[contenteditable="true"][data-tab="3"]') || q('#side input[type="text"]') || q('#side [role="textbox"]');
   const escriuCerca = async (nom) => {
@@ -65,7 +64,7 @@ if (!window.__wa || window.__wa.v !== 4) (function () {
   let primer = true;
 
   window.__wa = {
-    v: 4,
+    v: 5,
     estat() {
       const qr = q('canvas[aria-label]') || q('div[data-ref] canvas') || q('[data-testid="qrcode"] canvas');
       return { sessio: !!panell(), qr: !panell() && !!qr, carregant: !panell() && !qr };
@@ -161,36 +160,56 @@ if (!window.__wa || window.__wa.v !== 4) (function () {
 
     async missatges(nom) {
       if (nom && !esActual(nom) && !(await this.obre(nom))) return { error: 'No trobo el xat', diag: this.diag(nom) };
-      await espera(400);
       const m = q('#main');
       if (!m) return { error: 'No hi ha cap xat obert' };
+      // Baixa fins al final perquè WhatsApp dibuixi els missatges més nous
+      const baixa = () => {
+        const darrer = qa('[data-id]', m).pop();
+        let el = darrer ? darrer.parentElement : null;
+        while (el && el !== m && !(el.scrollHeight > el.clientHeight + 20 && /auto|scroll/.test(getComputedStyle(el).overflowY))) el = el.parentElement;
+        if (el && el !== m) el.scrollTop = el.scrollHeight;
+      };
+      baixa(); await espera(500); baixa(); await espera(400);
       const r = [];
-      let rows = qa('[role="row"]', m);
-      if (!rows.length) rows = qa('[data-id]', m).filter((x) => x.querySelector('.message-in, .message-out') || /message-(in|out)/.test(x.className));
-      if (!rows.length) rows = qa('.message-in, .message-out', m);
-      for (const row of rows.slice(-60)) {
-        const surt = !!(q('.message-out', row) || row.classList.contains('message-out'));
-        const entra = !!(q('.message-in', row) || row.classList.contains('message-in'));
-        if (!surt && !entra) {
-          const s = txt(row);
-          if (s && s.length < 60) r.push({ tipus: 'sistema', text: s });
-          continue;
+      // Cada missatge té data-id "true_..." (enviat) o "false_..." (rebut)
+      const ids = qa('[data-id]', m).filter((x) => /^(true|false)_/.test(x.getAttribute('data-id') || '') && !x.parentElement.closest('[data-id^="true_"],[data-id^="false_"]'));
+      if (ids.length) {
+        // Separadors de data ("AVUI", "AHIR"...) entre missatges
+        for (const el of ids.slice(-60)) {
+          const fila = el.closest('[role="row"]') || el;
+          const ant = fila.previousElementSibling;
+          if (ant && !ant.querySelector('[data-id]') && txt(ant) && txt(ant).length < 40) r.push({ tipus: 'sistema', text: txt(ant) });
+          r.push(this.unMissatge(el, el.getAttribute('data-id').indexOf('true_') === 0));
         }
-        const ct = q('[data-pre-plain-text]', row);
-        const pre = ct ? ct.getAttribute('data-pre-plain-text') || '' : '';
-        const mm = /\[([^\]]+)\]\s*([^:]*):/.exec(pre);
-        const cos = q('span.selectable-text', row) || q('.copyable-text span', row);
-        let text = cos ? txt(cos) : '';
-        let media = '';
-        if (q('img[src^="blob:"]', row) && !text) media = 'foto';
-        else if (q('img[src^="blob:"]', row)) media = 'foto';
-        if (q('[data-icon="audio-play"], [data-icon="ptt-play"], audio', row)) media = 'àudio';
-        if (q('video', row)) media = 'vídeo';
-        if (q('[data-icon="document"], [data-icon*="doc"]', row) && !media) media = 'document';
-        if (!text && !media) { const s = txt(row); text = s.replace(/\d{1,2}:\d\d\s*$/, '').trim(); }
-        r.push({ tipus: surt ? 'surt' : 'entra', text: text, media: media, qui: mm ? mm[2].trim() : '', hora: mm ? mm[1].split(',')[0].trim() : '' });
+      } else {
+        let rows = qa('[role="row"]', m);
+        if (!rows.length) rows = qa('.message-in, .message-out', m);
+        for (const row of rows.slice(-60)) {
+          const surt = !!(q('.message-out', row) || row.classList.contains('message-out'));
+          const entra = !!(q('.message-in', row) || row.classList.contains('message-in'));
+          if (!surt && !entra) { const s = txt(row); if (s && s.length < 40) r.push({ tipus: 'sistema', text: s }); continue; }
+          r.push(this.unMissatge(row, surt));
+        }
       }
       return { nom: this.actual(), missatges: r };
+    },
+
+    unMissatge(row, surt) {
+      const ct = q('[data-pre-plain-text]', row);
+      const pre = ct ? ct.getAttribute('data-pre-plain-text') || '' : '';
+      const mm = /\[([^\]]+)\]\s*([^:]*):/.exec(pre);
+      const cos = (ct && (q('span.selectable-text', ct) || q('.selectable-text', ct))) || q('span.selectable-text', row) || q('.copyable-text span', row);
+      let text = cos ? txt(cos) : '';
+      let media = '';
+      if (q('img[src^="blob:"]', row) || q('img[src^="data:image"]', row) && !text) media = 'foto';
+      if (q('[data-icon="audio-play"], [data-icon="ptt-play"], [data-icon*="ptt"], audio', row)) media = 'àudio';
+      if (q('video, [data-icon="media-play"]', row)) media = 'vídeo';
+      if (q('[data-icon="document"], [data-icon*="doc"]', row) && !media) media = 'document';
+      if (q('[data-icon="sticker"], img[alt*="sticker" i]', row) && !text) media = 'adhesiu';
+      let hora = mm ? mm[1].split(',')[0].trim() : '';
+      if (!hora) { const h = /(\d{1,2}:\d\d)(?:\s*[ap]\.?m\.?)?\s*$/i.exec(txt(row)); if (h) hora = h[1]; }
+      if (!text && !media) text = txt(row).replace(/\d{1,2}:\d\d(\s*[ap]\.?m\.?)?\s*$/i, '').trim();
+      return { tipus: surt ? 'surt' : 'entra', text: text, media: media, qui: mm ? mm[2].trim() : '', hora: hora };
     },
 
     async envia(nom, text) {

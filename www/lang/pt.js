@@ -695,3 +695,4 @@ TR.pt["Mode lleuger"]="Modo leve";
 TR.pt["Automàtic (iPads amb iOS 9 o anterior)"]="Automático (iPads com iOS 9 ou anterior)";
 TR.pt["Sempre activat"]="Sempre ativado";
 TR.pt["Treu animacions i ombres, fa servir fotos de fons més petites i les canvia menys sovint. Ajuda els iPads antics a anar més fluids i a no tancar Safari."]="Tira animações e sombras, usa fotos de fundo mais pequenas e muda-as menos vezes. Ajuda os iPads antigos a ficarem mais fluidos e o Safari a não fechar.";
+TR.pt["adhesiu"]="autocolante";
