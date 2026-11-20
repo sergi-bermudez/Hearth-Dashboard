@@ -221,9 +221,12 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 #tv .tv-ctl button{width:50px;height:50px;padding:0;margin-left:10px;border-radius:25px;background:rgba(255,255,255,.18);-webkit-flex:none;flex:none}
 #tv .tv-ctl button .ic{width:28px;height:28px}
 #tv .tv-ctl .vol{margin-left:10px}
-.vol{-webkit-appearance:none;width:130px;height:30px;background:transparent;vertical-align:middle}
-.vol::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
-.vol::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:11px;background:#fff;margin-top:-9px;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.vol{-webkit-appearance:none;width:130px;height:30px;background:transparent linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,.35)) no-repeat center;background-size:100% 4px;vertical-align:middle;margin:0 6px}
+.vol::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:transparent}
+.vol::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:9px;background:#fff;margin-top:-7px;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+.s-ctl .volw{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex:1;flex:1;min-width:120px;max-width:240px;margin:0 8px 0 4px}
+.s-ctl .volw .ic{width:20px;height:20px;opacity:.6;-webkit-flex:none;flex:none}
+.s-ctl .volw .vol{-webkit-flex:1;flex:1;width:auto;min-width:60px;max-width:none}
 .no-vol .vol{display:none !important}
 /* Vídeo (pel·lícules, YouTube) */
 #tv .tv-vod{position:absolute;left:0;right:0;bottom:0;padding:12px 18px 18px;background:-webkit-linear-gradient(transparent,rgba(0,0,0,.85));background:linear-gradient(transparent,rgba(0,0,0,.85));z-index:3;display:none;-webkit-align-items:center;align-items:center;-webkit-transition:opacity .4s;transition:opacity .4s}
@@ -246,7 +249,8 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 .s-tvw.pila .s-info{margin-top:10px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
 .s-tvw.pila .s-tit{font-size:20px;margin:0 10px 0 0;-webkit-flex:1;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .s-tvw.pila .s-kick,.s-tvw.pila .s-sub{display:none}
-.s-ctl .mida{font-size:13px;font-weight:700;width:46px;height:40px;border-radius:12px;background:rgba(255,255,255,.18);padding:0}
+.s-ctl .mida{font-size:12px;font-weight:700;width:34px;height:28px;border-radius:8px;background:transparent;border:1.5px solid rgba(255,255,255,.45);color:rgba(255,255,255,.85);padding:0;margin:0 6px}
+.s-ctl .sec .ic{opacity:.8}
 .s-buit h2{font-size:22px;font-weight:600;margin:0 0 4px}
 .s-buit .grans{margin-top:12px}
 .rsep{display:inline-block;width:1px;height:78px;background:rgba(255,255,255,.25);margin:0 14px 0 2px;vertical-align:top}
@@ -391,17 +395,17 @@ body.lleu #tv .tv-ctl,body.lleu #tv .tv-canals,body.lleu #tv .tv-vod{-webkit-tra
 .s-aud.gran .s-sub{font-size:19px}
 .s-aud.gran .s-prog,.s-aud.gran .s-temps{max-width:none}
 .s-aud.gran .s-ctl{margin:10px 0 0 -10px;-webkit-flex-wrap:wrap;flex-wrap:wrap}
-.s-aud.gran .s-ctl .vol{-webkit-flex:1;flex:1;max-width:220px;min-width:100px}
+.s-aud.gran .s-ctl .volw{max-width:240px}
 @media (max-width:480px){ .s-aud.gran{display:block} .s-aud.gran .s-art{margin:0 auto 12px} .s-aud.gran .s-tit{font-size:24px} }
 /* Reproductor petit (S): els controls en dues línies, perquè el text tingui més lloc */
 .s-aud.petit .s-tit{font-size:24px;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:2.4em;margin:4px 0 2px}
-.s-aud.petit .s-ctl{width:236px;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-justify-content:center;justify-content:center;margin-left:10px}
+.s-aud.petit .s-ctl{width:280px;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-justify-content:center;justify-content:center;margin-left:10px}
 .s-aud.petit .s-ctl .gp{width:56px;height:56px}
-.s-aud.petit .s-ctl .vol{width:96px}
+.s-aud.petit .s-ctl .volw{min-width:0;margin:0 4px 0 0}
 .s-aud.petit .s-ctl .salt{-webkit-flex-basis:100%;flex-basis:100%;height:4px}
 .s-aud.petit .s-ctl button{padding:6px 8px}
 .s-aud.petit .s-ctl button .ic{width:28px;height:28px}
-.s-aud.petit .s-ctl .mida{width:40px;height:34px}
+.s-aud.petit .s-ctl .mida{width:30px;height:26px;margin:0 4px}
 /* L: el reproductor ocupa la pantalla d'inici */
 body.aud-l #rapid,body.aud-l #agenda{display:none !important}
 .s-aud.gran.g{-webkit-align-items:center;align-items:center}
@@ -1107,6 +1111,12 @@ function posaVolum(v) {
   ls('volum', v);
   var l = document.querySelectorAll('.vol');
   for (var i = 0; i < l.length; i++) if (+l[i].value != v) l[i].value = v;
+  pintaVolum();
+}
+/* Part plena de la barra de volum (iOS 9 no té ::-webkit-fill) */
+function pintaVolum() {
+  var l = document.querySelectorAll('.vol'), v = VOL.v;
+  for (var i = 0; i < l.length; i++) l[i].style.backgroundImage = 'linear-gradient(to right,#fff ' + v + '%,rgba(255,255,255,.3) ' + v + '%)';
 }
 /* TV i vídeos: a iOS el volum d'un vídeo no es pot canviar des de la pàgina; hi posem un botó de silenci */
 var IC_SO = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06a7 7 0 010 13.42v2.06A9 9 0 0014 3.23z';
@@ -1460,8 +1470,10 @@ function pintaSona(intern) {
       '<button class="gp" id="s-play" onclick="repPlay()"></button>' +
       (radio ? '' : '<button onclick="repSeguent()">' + svg(pod ? IC.endavant : IC.seg) + '</button>') +
       (gran ? '' : '<span class="salt"></span>') +
-      htmlVolum() + '<button class="mida" onclick="audMidaCanvia()" title="' + esc(T('Mida')) + '">' + (am == 'p' ? 'S' : am == 'm' ? 'M' : 'L') + '</button>' +
-      '<button onclick="castObre()">' + svg(IC_CAST) + '</button><button onclick="repAtura()">' + svg(IC.tanca) + '</button></div>';
+      (VOL.ok ? '<span class="volw">' + svg(IC_SO) + htmlVolum() + '</span>' : '') +
+      '<button class="mida" onclick="audMidaCanvia()" title="' + esc(T('Mida')) + '">' + (am == 'p' ? 'S' : am == 'm' ? 'M' : 'L') + '</button>' +
+      '<button class="sec" onclick="castObre()">' + svg(IC_CAST) + '</button><button class="sec" onclick="repAtura()">' + svg(IC.tanca) + '</button></div>';
+    setTimeout(pintaVolum, 0);
     h = '<div class="s-aud' + (gran ? ' gran ' + am : ' petit') + '"><div class="s-art toc' + (radio && it.art ? ' logo' : '') + '" id="s-art" onclick="obre(\'' + app + '\')" style="background-image:' + bg(it.art) + '">' + (it.art ? '' : svg(iconaTipus(it))) + '</div>' +
       '<div class="s-info"><div class="s-kick"><span class="eq" id="s-eq"><span></span><span></span><span></span></span>' + kick2 + '</div>' +
       '<div class="s-tit dues">' + esc(it.t) + '</div><div class="s-sub una">' + esc(it.s || '') + '</div>' +
@@ -1895,7 +1907,7 @@ window.Casa = {
   $('mini-x').innerHTML = svg(IC.tanca);
   $('tv-b-natiu').innerHTML = svg(IC.gran); $('tv-b-natiu').title = T('Pantalla completa');
   $('tv-b-petit').innerHTML = svg(IC.petit); $('tv-b-gran').innerHTML = svg(IC.gran);
-  $('tv-vol').innerHTML = htmlVolumTv();
+  $('tv-vol').innerHTML = htmlVolumTv(); pintaVolum();
   $('tv-b-cast').innerHTML = svg(IC_CAST); $('mini-cast').innerHTML = svg(IC_CAST);
   $('tv-b-x').innerHTML = svg(IC.tanca); $('tv-b-x2').innerHTML = svg(IC.tanca);
   $('tv-b-enr').innerHTML = svg(IC.enrere); $('tv-b-end').innerHTML = svg(IC.endavant);
