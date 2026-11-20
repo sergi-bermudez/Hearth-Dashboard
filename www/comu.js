@@ -343,3 +343,18 @@ function registraDispositiu(ok) {
 /* El mode infantil és de cada dispositiu (si encara no en té, es fa servir el general d'abans) */
 function dadesInf(ok) { dades('inf_' + DISP.id, function (d) { if (d) ok(d); else dades('infantil', ok); }); }
 function desaInf(v, ok) { desaDades('inf_' + DISP.id, v, ok); }
+/* A l'ordinador, la roda del ratolí desplaça de costat les files de pestanyes */
+(function () {
+  if (!document.addEventListener) return;
+  document.addEventListener('wheel', function (e) {
+    if (!e.deltaY || e.deltaX) return;
+    var el = e.target;
+    while (el && el.nodeType == 1) {
+      if (el.scrollWidth > el.clientWidth + 4 && el.scrollHeight <= el.clientHeight + 4) {
+        var s = getComputedStyle(el).overflowX;
+        if (s == 'auto' || s == 'scroll') { el.scrollLeft += e.deltaY; e.preventDefault(); return; }
+      }
+      el = el.parentNode;
+    }
+  }, { passive: false });
+})();
