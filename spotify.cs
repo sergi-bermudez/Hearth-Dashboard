@@ -180,8 +180,11 @@ public static class Spotify
         PermisSo();
         string s = Ajust("sortida", "CABLE Input");
         if (Ajust("sonaAlPC", "") == "True" || Ajust("sonaAlPC", "") == "true") s = "";
-        Crida("sortida(" + Js(s) + ")", 8000);
+        string r = Crida("sortida(" + Js(s) + ")", 8000);
+        UltimaSortida = r;
+        Console.WriteLine("  Spotify: sortida de so " + r);
     }
+    public static string UltimaSortida = "";
 
     // ---------- Finestra ----------
     static void Finestra(bool visible)

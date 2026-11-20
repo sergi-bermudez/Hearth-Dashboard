@@ -7,6 +7,17 @@ if (!window.__casa) (function () {
   const aplica = (el) => { if (sinkId !== null && el.setSinkId && el.sinkId !== sinkId) el.setSinkId(sinkId).catch(() => {}); };
   const playOriginal = HTMLMediaElement.prototype.play;
   HTMLMediaElement.prototype.play = function () { media.add(this); aplica(this); return playOriginal.apply(this, arguments); };
+  // L'Spotify també pot sonar amb Web Audio: cal desviar també els AudioContext
+  const ctxs = new Set();
+  const aplicaCtx = (c) => { if (sinkId !== null && c.setSinkId && c.sinkId !== sinkId) c.setSinkId(sinkId).catch(() => {}); };
+  ['AudioContext', 'webkitAudioContext'].forEach((n) => {
+    const Orig = window[n];
+    if (!Orig) return;
+    const Nou = function (...a) { const c = new Orig(...a); ctxs.add(c); aplicaCtx(c); return c; };
+    Nou.prototype = Orig.prototype;
+    try { window[n] = Nou; } catch (e) {}
+  });
+  const totsMedia = () => { document.querySelectorAll('audio,video').forEach((e) => media.add(e)); return media; };
 
   const q = (s) => document.querySelector(s);
   const txt = (s) => { const e = q(s); return e ? e.textContent.trim() : ''; };
@@ -254,7 +265,7 @@ if (!window.__casa) (function () {
 
     async sortida(nom) {
       try { localStorage.setItem('__casaSink', nom || '-'); } catch (e) {}
-      if (!nom) { sinkId = ''; media.forEach(aplica); return { ok: true, sortida: 'PC' }; }
+      if (!nom) { sinkId = ''; totsMedia().forEach(aplica); ctxs.forEach(aplicaCtx); return { ok: true, sortida: 'PC' }; }
       let l = await navigator.mediaDevices.enumerateDevices();
       // Sense permís, els noms dels aparells surten buits: el demanem un moment
       if (!l.some((x) => x.kind === 'audiooutput' && x.label)) {
@@ -262,10 +273,12 @@ if (!window.__casa) (function () {
         l = await navigator.mediaDevices.enumerateDevices();
       }
       const d = l.find((x) => x.kind === 'audiooutput' && x.label.toLowerCase().indexOf(nom.toLowerCase()) >= 0);
-      if (!d) return { ok: false, error: 'No trobo la sortida «' + nom + '». Has instal·lat el cable d\'àudio virtual?' };
+      if (!d) return { ok: false, error: 'No trobo la sortida «' + nom + '». Has instal·lat el cable d\'àudio virtual?', aparells: l.filter((x) => x.kind === 'audiooutput').map((x) => x.label || '(sense nom)') };
       sinkId = d.deviceId;
-      media.forEach(aplica);
-      return { ok: true, sortida: d.label };
+      totsMedia().forEach(aplica); ctxs.forEach(aplicaCtx);
+      await espera(300);
+      const fet = [...media].filter((e) => e.sinkId === sinkId).length;
+      return { ok: true, sortida: d.label, media: media.size, desviats: fet, contexts: ctxs.size };
     }
   };
   try {
