@@ -401,6 +401,7 @@ body.lleu #tv .tv-ctl,body.lleu #tv .tv-canals,body.lleu #tv .tv-vod{-webkit-tra
 .s-aud.gran .s-prog,.s-aud.gran .s-temps{max-width:none}
 .s-aud.gran .s-ctl{margin:10px 0 0 -10px;-webkit-flex-wrap:wrap;flex-wrap:wrap}
 .s-aud.gran .s-ctl .volw{max-width:240px}
+.s-aud.gran .s-ctl .salt{display:none}
 @media (max-width:480px){ .s-aud.gran{display:block} .s-aud.gran .s-art{margin:0 auto 12px} .s-aud.gran .s-tit{font-size:24px} }
 /* Reproductor petit (S): els controls en dues línies, perquè el text tingui més lloc */
 .s-aud.petit .s-tit{font-size:24px;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:2.4em;margin:4px 0 2px}
@@ -426,6 +427,25 @@ body.aud-l #rapid,body.aud-l #agenda{display:none !important}
 .s-aud.gran.g.vert .s-art{margin:0 auto 16px}
 .s-aud.gran.g.vert .s-ctl{-webkit-justify-content:center;justify-content:center;margin-left:0;-webkit-flex-wrap:nowrap;flex-wrap:nowrap}
 .s-aud.gran.g.vert .s-temps{text-align:left}
+/* Mòbil: M i L apilats i centrats, i tots els controls en una sola fila */
+@media (max-width:480px){
+  .s-aud.gran,.s-aud.gran.g{display:block;text-align:center}
+  .s-aud.gran .s-art,.s-aud.gran.g .s-art{margin:0 auto 14px}
+  .s-aud.gran .s-kick{-webkit-justify-content:center;justify-content:center}
+  .s-aud.gran .s-tit,.s-aud.gran.m .s-tit{font-size:26px}
+  .s-aud.gran.g .s-tit{font-size:32px}
+  .s-aud.gran .s-sub,.s-aud.gran.g .s-sub{font-size:17px}
+  .s-aud.gran .s-temps{text-align:left}
+  .s-aud.gran .s-ctl,.s-aud.gran.g .s-ctl{margin:12px 0 0;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-justify-content:center;justify-content:center}
+  .s-aud.gran .s-ctl .salt{display:block;-webkit-flex-basis:100%;flex-basis:100%;height:6px}
+  .s-aud.gran .s-ctl button{margin:0 6px}
+  .s-aud.gran .s-ctl button{padding:6px 5px}
+  .s-aud.gran .s-ctl button .ic,.s-aud.gran.g .s-ctl button .ic{width:26px;height:26px}
+  .s-aud.gran .s-ctl .gp,.s-aud.gran.g .s-ctl .gp{width:64px;height:64px;-webkit-flex:none;flex:none}
+  .s-aud.gran .s-ctl .gp .ic,.s-aud.gran.g .s-ctl .gp .ic{width:30px;height:30px}
+  .s-aud.gran .s-ctl .volw{min-width:60px;max-width:none;margin:0 4px 0 0}
+  .s-aud.gran .s-ctl .mida{width:30px;height:26px;margin:0 3px;-webkit-flex:none;flex:none}
+}
 #fons .fimg.on.kb{-webkit-animation:kb 24s linear forwards;animation:kb 24s linear forwards}
 #fons .fimg.sencera{background-size:contain}
 /* iOS 9: les zones amb desplaçament "natiu" (-webkit-overflow-scrolling:touch) creen una capa
@@ -1474,7 +1494,7 @@ function pintaSona(intern) {
     var ctlA = '<div class="s-ctl">' + (radio ? '' : '<button onclick="repAnterior()">' + svg(pod ? IC.enrere : IC.ant) + '</button>') +
       '<button class="gp" id="s-play" onclick="repPlay()"></button>' +
       (radio ? '' : '<button onclick="repSeguent()">' + svg(pod ? IC.endavant : IC.seg) + '</button>') +
-      (gran ? '' : '<span class="salt"></span>') +
+      '<span class="salt"></span>' +
       (VOL.ok ? '<span class="volw">' + svg(IC_SO) + htmlVolum() + '</span>' : '') +
       '<button class="mida" onclick="audMidaCanvia()" title="' + esc(T('Mida')) + '">' + (am == 'p' ? 'S' : am == 'm' ? 'M' : 'L') + '</button>' +
       '<button class="sec" onclick="castObre()">' + svg(IC_CAST) + '</button><button class="sec" onclick="repAtura()">' + svg(IC.tanca) + '</button></div>';
