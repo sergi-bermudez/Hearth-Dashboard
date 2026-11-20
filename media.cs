@@ -307,6 +307,8 @@ public static class Media
         catch { }
     }
 
+    static string S(Dictionary<string, object> d, string k) { object v; return d != null && d.TryGetValue(k, out v) && v != null ? v.ToString() : ""; }
+
     // Neteja el nom d'un fitxer o carpeta: "The.Matrix.1999.1080p.BluRay.x264-GRP" -> { "The Matrix", "1999" }
     static string[] TitolAny(string nom)
     {
