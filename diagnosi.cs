@@ -109,6 +109,8 @@ public static class Diagnosi
             Afegeix(l, "Serveis", "Spotify", hi ? ok : err, hi ? "So des de \u00ab" + disp + "\u00bb" + (SoPC.DarrerError != "" ? " \u00b7 " + SoPC.DarrerError : "") : "No trobo el dispositiu de so \u00ab" + disp + "\u00bb (cal VB-Cable)");
         }
         else Afegeix(l, "Serveis", "Spotify", off, "Desactivat");
+        int niv = Pcm.NivellSpotify();
+        if (niv >= 0) Afegeix(l, "Serveis", "So de l'Spotify", niv > 0 ? ok : avis, niv > 0 ? "Arriba so del cable (" + niv + "%)" : "Arriba silenci: l'Spotify no sona pel cable, o est\u00e0 en pausa");
         Afegeix(l, "Serveis", "WhatsApp", Activa("whatsapp") ? ok : off, Activa("whatsapp") ? "Activat" : "Desactivat");
         bool ty = File.Exists(Path.Combine(CasaServidor.DirDades, "tuya.json"));
         Afegeix(l, "Serveis", "Casa (Tuya)", ty ? ok : off, ty ? "Configurat" : "No configurat");

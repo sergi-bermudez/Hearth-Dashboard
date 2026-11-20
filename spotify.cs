@@ -156,8 +156,28 @@ public static class Spotify
         return "";
     }
 
+    // Perque l'Edge deixi triar la sortida de so (CABLE Input) cal el permis del micro
+    static void PermisSo()
+    {
+        Cdp b = null;
+        try
+        {
+            b = Edge.Navegador();
+            Dictionary<string, object> p = new Dictionary<string, object>();
+            p["origin"] = "https://open.spotify.com";
+            p["permissions"] = new object[] { "audioCapture", "speakerSelection" };
+            try { b.Envia("Browser.grantPermissions", p, 4000); }
+            catch { p["permissions"] = new object[] { "audioCapture" }; b.Envia("Browser.grantPermissions", p, 4000); }
+        }
+        catch (Exception e) { Console.WriteLine("  Spotify: permis de so: " + e.Message); }
+        finally { try { if (b != null) b.Tanca(); } catch { } }
+    }
+
+    public static void Sortida() { try { AplicaSortida(); } catch { } }
+
     static void AplicaSortida()
     {
+        PermisSo();
         string s = Ajust("sortida", "CABLE Input");
         if (Ajust("sonaAlPC", "") == "True" || Ajust("sonaAlPC", "") == "true") s = "";
         Crida("sortida(" + Js(s) + ")", 8000);

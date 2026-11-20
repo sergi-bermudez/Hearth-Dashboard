@@ -255,7 +255,12 @@ if (!window.__casa) (function () {
     async sortida(nom) {
       try { localStorage.setItem('__casaSink', nom || '-'); } catch (e) {}
       if (!nom) { sinkId = ''; media.forEach(aplica); return { ok: true, sortida: 'PC' }; }
-      const l = await navigator.mediaDevices.enumerateDevices();
+      let l = await navigator.mediaDevices.enumerateDevices();
+      // Sense permís, els noms dels aparells surten buits: el demanem un moment
+      if (!l.some((x) => x.kind === 'audiooutput' && x.label)) {
+        try { const st = await navigator.mediaDevices.getUserMedia({ audio: true }); st.getTracks().forEach((t) => t.stop()); } catch (e) {}
+        l = await navigator.mediaDevices.enumerateDevices();
+      }
       const d = l.find((x) => x.kind === 'audiooutput' && x.label.toLowerCase().indexOf(nom.toLowerCase()) >= 0);
       if (!d) return { ok: false, error: 'No trobo la sortida «' + nom + '». Has instal·lat el cable d\'àudio virtual?' };
       sinkId = d.deviceId;

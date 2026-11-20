@@ -348,6 +348,41 @@ body.lleu .eq span,body.lleu #marc .capa .kb{-webkit-animation:none;animation:no
 body.lleu .panell,body.lleu #agenda,body.lleu #rapid,body.lleu .d-dock,body.lleu #castbar{box-shadow:none !important}
 body.lleu .ombrat{text-shadow:none}
 body.lleu #tv .tv-ctl,body.lleu #tv .tv-canals,body.lleu #tv .tv-vod{-webkit-transition:none;transition:none}
+/* ===== Mòbils ===== */
+@media (max-width:480px){
+  #dash{padding:20px 16px 12px}
+  #hora{font-size:70px;letter-spacing:-2px}
+  body.e-fosc #hora,body.e-standby #hora{font-size:78px}
+  #temps{max-width:44%}
+  .t-ara svg{width:44px;height:44px;margin-right:6px}
+  .t-ara .gr{font-size:38px}
+  .t-dies{display:none}
+  .t-ds{font-size:12px}
+  .s-art{width:96px;height:96px}
+  #sona-tv{width:100%;height:auto}
+  .app .bx{width:56px;height:56px}
+  #mini .tm{display:none}
+  #nav div{font-size:9px}
+  #nav .nv-cfg{width:56px}
+}
+@media (max-height:500px){
+  #dash{padding:12px 18px 8px}
+  #hora{font-size:56px}
+  body.e-fosc #hora,body.e-standby #hora{font-size:60px}
+  .t-dies,#agenda,#rapid,#fpeu{display:none !important}
+  .t-ara svg{width:40px;height:40px}
+  .t-ara .gr{font-size:34px}
+  .s-art{width:80px;height:80px}
+  .app .bx{width:46px;height:46px}
+  #nav{height:48px}
+  #nav div{padding-top:6px;font-size:0}
+  #nav div .ic{width:24px;height:24px;margin-bottom:0}
+  #apps{bottom:48px}
+  body.en-app.sona #apps{bottom:104px}
+  #mini{height:56px;padding:4px 12px}
+  #mini .art{width:44px;height:44px}
+  #mini .art .ic{left:8px;top:8px}
+}
 </style>
 </head>
 <body class="e-ambient">
@@ -767,7 +802,13 @@ function repToca() {
   if (!it) return;
   R.represa = it.k == 'podcast' ? ((ls('pod') || {})[it.ep] || null) : null;
   PCM.params = null; PCM.pausat = false;
-  if (it.pcm && USA_PCM) { au.pause(); au.removeAttribute('src'); pcmInicia(it.pcm); }
+  if (USA_PCM && (it.k == 'musica' || it.k == 'podcast') && it.u && !it.pcm) it.pcm = pcmFitxer(it.u);
+  if (it.pcm && USA_PCM) {
+    au.pause(); au.removeAttribute('src');
+    var pr = it.pcm;
+    if (it.pcm.font == 'fitxer') { pr = { font: 'fitxer', u: it.pcm.u, ss: 0 }; var r = R.represa; if (r && !r.fet && r.t > 5) pr.ss = Math.round(r.t); R.represa = null; }
+    pcmInicia(pr);
+  }
   else {
     if (PCM.actiu) pcmAtura(true);
     if (it.u) { au.src = mitja(it.u); au.play(); }
@@ -794,15 +835,15 @@ function repSeguent() {
   if (TV.canal && TV.canal.vod) { vodSalta(30); return; }
   var it = R.cua[R.pos];
   if (it && it.k == 'spotify') { spOrdre('seg'); return; }
-  if (it && it.k == 'podcast') { au.currentTime = Math.min(au.duration || 1e9, au.currentTime + 30); return; }
+  if (it && it.k == 'podcast') { if (esPcmFitxer()) { pcmSalta(tempsActual() + 30); return; } au.currentTime = Math.min(au.duration || 1e9, au.currentTime + 30); return; }
   if (R.pos < R.cua.length - 1) { R.pos++; repToca(); }
 }
 function repAnterior() {
   if (TV.canal && TV.canal.vod) { vodSalta(-15); return; }
   var it = R.cua[R.pos];
   if (it && it.k == 'spotify') { spOrdre('ant'); return; }
-  if (it && it.k == 'podcast') { au.currentTime = Math.max(0, au.currentTime - 15); return; }
-  if (au.currentTime > 4 || R.pos === 0) { au.currentTime = 0; return; }
+  if (it && it.k == 'podcast') { if (esPcmFitxer()) { pcmSalta(tempsActual() - 15); return; } au.currentTime = Math.max(0, au.currentTime - 15); return; }
+  if (tempsActual() > 4 || R.pos === 0) { if (esPcmFitxer()) pcmSalta(0); else au.currentTime = 0; return; }
   R.pos--; repToca();
 }
 function repAtura() {
@@ -817,9 +858,10 @@ function atura() { if (TV.canal) tvAtura(); else repAtura(); }
 function poDesaPos(fet) {
   var it = R.cua[R.pos];
   if (!it || it.k != 'podcast') return;
-  if (!fet && !(au.currentTime > 0)) return;
+  if (!fet && !(tempsActual() > 0)) return;
   var pos = ls('pod') || {};
-  pos[it.ep] = { t: fet ? 0 : au.currentTime, d: isFinite(au.duration) ? au.duration : 0, fet: !!fet };
+  var dd = duradaActual();
+  pos[it.ep] = { t: fet ? 0 : tempsActual(), d: isFinite(dd) ? dd : 0, fet: !!fet };
   var claus = [];
   for (var k in pos) if (pos.hasOwnProperty(k)) claus.push(k);
   if (claus.length > 400) delete pos[claus[0]];
@@ -887,7 +929,7 @@ function iconesPlay() {
 function progres() {
   var it = R.cua[R.pos];
   if (!it) return;
-  var d = au.duration, t = au.currentTime;
+  var d = duradaActual(), t = tempsActual();
   if (it.k == 'spotify') { d = SP.estat ? SP.estat.dur : 0; t = SP.estat ? SP.estat.pos + (SP.estat.sona ? (Date.now() - SP.rebut) / 1000 : 0) : 0; if (d && t > d) t = d; }
   var ok = d && isFinite(d), pc = ok ? (100 * t / d) : 0;
   $('mini-prog').style.width = pc + '%';
@@ -897,7 +939,9 @@ function progres() {
 }
 function cercaPos(e, el) {
   var r = el.getBoundingClientRect();
-  if (au.duration && isFinite(au.duration)) au.currentTime = au.duration * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  var fr = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  if (esPcmFitxer()) { if (PCM.durada) pcmSalta(PCM.durada * fr); return; }
+  if (au.duration && isFinite(au.duration)) au.currentTime = au.duration * fr;
 }
 function iconaTipus(it) { return it.k == 'radio' ? IC.radio : it.k == 'podcast' ? IC.podcasts : it.k == 'spotify' ? IC.spotify : IC.musica; }
 function pintaMini() {
@@ -1181,11 +1225,12 @@ function tvLloc() {
     return;
   }
   w = TV.miniMida == 'p' ? Math.round(W * 0.26) : TV.miniMida == 'g' ? Math.round(W * 0.5) : (W > 900 ? 360 : 300); h = Math.round(w * 9 / 16);
-  if (h > H - 66 - 74 - 14 - 30) { h = H - 66 - 74 - 14 - 30; w = Math.round(h * 16 / 9); }
+  var peu = ($('nav').offsetHeight || 66) + ($('mini').offsetHeight || 74);
+  if (h > H - peu - 14 - 30) { h = H - peu - 14 - 30; w = Math.round(h * 16 / 9); }
   $('tv-b-mmida').textContent = TV.miniMida == 'p' ? 'S' : TV.miniMida == 'g' ? 'L' : 'M';
   t.className = 'mini' + vod;
   st.width = w + 'px'; st.height = h + 'px';
-  st.left = (W - w - 16) + 'px'; st.top = (H - h - 66 - 74 - 14) + 'px';
+  st.left = (W - w - 16) + 'px'; st.top = (H - h - peu - 14) + 'px';
 }
 /* Mida del vídeo flotant (quan es miren altres apps): S / M / L */
 function tvMiniMida() {
@@ -1839,15 +1884,39 @@ function pcmDesbloqueja() {
   } catch (e) { }
 }
 document.addEventListener('touchend', pcmDesbloqueja, true);
+/* URL d'un MP3 local (/f/...) o d'un pòdcast (http o via /api/x) */
+function pcmFitxer(u) {
+  if (u.indexOf('/f/') === 0) return { font: 'fitxer', u: u };
+  var m = /^\/api\/x\?(?:.*&)?u=([^&]+)/.exec(u);
+  if (m) return { font: 'fitxer', u: decodeURIComponent(m[1]) };
+  if (/^https?:/i.test(u)) return { font: 'fitxer', u: u };
+  return null;
+}
+function pcmTemps() {
+  if (!PCM.params) return 0;
+  var t = PCM.ss + (PCM.sona && PCM.ctx ? Math.max(0, PCM.ctx.currentTime - PCM.primer) : 0);
+  return PCM.durada ? Math.min(t, PCM.durada) : t;
+}
+function esPcmFitxer() { return !!(PCM.params && PCM.params.font == 'fitxer' && USA_PCM); }
+function tempsActual() { return esPcmFitxer() ? (PCM.sona ? pcmTemps() : PCM.ss) : au.currentTime; }
+function duradaActual() { return esPcmFitxer() ? PCM.durada : au.duration; }
+function pcmSalta(t) {
+  if (!esPcmFitxer()) return;
+  var p = { font: 'fitxer', u: PCM.params.u, ss: Math.max(0, Math.round(t)) };
+  if (PCM.durada && p.ss > PCM.durada - 2) p.ss = Math.max(0, Math.round(PCM.durada - 2));
+  pcmInicia(p);
+}
 function pcmInicia(params) {
   pcmAtura(true);
   var c = pcmCtx(); if (!c) return false;
   var g = ++PCM.gen;
-  PCM.actiu = true; PCM.sona = false; PCM.params = params; PCM.errors = 0;
+  PCM.actiu = true; PCM.sona = false; PCM.params = params; PCM.errors = 0; PCM.ss = params.ss || 0; PCM.silenci = 0; PCM.avisat = false;
+  if (!(params.font == 'fitxer' && PCM.durada && PCM.uDur == params.u)) PCM.durada = 0;
   iconesPlay();
   getJson(api('pcm/obre', params), function (d) {
     if (g != PCM.gen) return;
-    PCM.id = d.id; PCM.n = Math.max(0, d.seq - 1); PCM.fi = 0;
+    PCM.id = d.id; PCM.n = d.fitxer ? 0 : Math.max(0, d.seq - 1); PCM.fi = 0;
+    if (d.durada) { PCM.durada = d.durada; PCM.uDur = params.u; }
     pcmSegueix(g);
   }, function (st, txt) {
     if (g != PCM.gen) return;
@@ -1867,18 +1936,19 @@ function pcmSegueix(g) {
   x.timeout = 9000;
   x.onload = function () {
     if (g != PCM.gen) return;
-    if (x.status == 410) { pcmInicia(PCM.params); return; }
+    if (x.status == 410) { if (esPcmFitxer()) pcmAcabat(g); else pcmInicia(PCM.params); return; }
     if (x.status != 200) { PCM.errors++; setTimeout(function () { pcmSegueix(g); }, 500); return; }
-    var sq = +(x.getResponseHeader('X-Seq') || PCM.n);
+    var sq = +(x.getResponseHeader('X-Seq') || PCM.n), niv = x.getResponseHeader('X-Nivell');
+    if (PCM.params.font == 'spotify' && niv !== null) pcmMiraSilenci(+niv);
     PCM.n = sq + 1; PCM.errors = 0;
     c.decodeAudioData(x.response, function (buf) {
       if (g != PCM.gen) return;
       var src = c.createBufferSource();
       src.buffer = buf; src.connect(PCM.gain);
       var ara = c.currentTime;
-      if (PCM.fi < ara + 0.05) PCM.fi = ara + 0.25;   /* primer tros o s'ha buidat: deixa un marge */
+      if (PCM.fi < ara + 0.05) { PCM.fi = ara + 0.25; if (!PCM.sona) PCM.primer = PCM.fi; else PCM.primer += PCM.fi - Math.max(PCM.fiAnt || ara, ara); }   /* primer tros o s'ha buidat: deixa un marge */
       if (src.start) src.start(PCM.fi); else src.noteOn(PCM.fi);
-      PCM.fi += buf.duration;
+      PCM.fi += buf.duration; PCM.fiAnt = PCM.fi;
       PCM.fonts.push(src); if (PCM.fonts.length > 8) PCM.fonts.shift();
       if (!PCM.sona) { PCM.sona = true; RW.sonant = true; iconesPlay(); notifica(); }
       pcmSegueix(g);
@@ -1896,7 +1966,31 @@ function pcmAtura(silenci) {
   if (!silenci) iconesPlay();
 }
 /* Pausa = deixar d'escoltar; en tornar, es reprèn el directe */
-function pcmCommuta() { if (PCM.sona || PCM.actiu) { var p = PCM.params; pcmAtura(); PCM.params = p; PCM.pausat = true; } else if (PCM.params) { PCM.pausat = false; pcmInicia(PCM.params); } iconesPlay(); notifica(); }
+/* Fi d'un MP3 o pòdcast: espera que acabi de sonar i passa al següent */
+function pcmAcabat(g) {
+  var queda = PCM.ctx ? Math.max(0, PCM.fi - PCM.ctx.currentTime) : 0;
+  setTimeout(function () {
+    if (g != PCM.gen) return;
+    var it = R.cua[R.pos];
+    pcmAtura(true); PCM.params = null;
+    if (it && it.k == 'podcast') { poDesaPos(true); iconesPlay(); notifica(); return; }
+    if (R.pos < R.cua.length - 1) { R.pos++; repToca(); } else iconesPlay();
+  }, queda * 1000 + 200);
+}
+function pcmMiraSilenci(niv) {
+  PCM.silenci = niv > 0 ? 0 : (PCM.silenci || 0) + 1;
+  if (PCM.silenci >= 12 && !PCM.avisat && SP.estat && SP.estat.sona) {
+    PCM.avisat = true;
+    avis(T('Arriba silenci del PC: l\'Spotify sona, però no pel cable d\'àudio (CABLE Input). Mira Configuració ▸ Diagnòstic.'), 10000);
+  }
+}
+function pcmCommuta() { if (PCM.sona || PCM.actiu) { var p = PCM.params; if (p && p.font == 'fitxer') { p = { font: 'fitxer', u: p.u, ss: Math.round(pcmTemps()) }; PCM.ss = p.ss; } pcmAtura(); PCM.params = p; PCM.pausat = true; poDesaPos(); } else if (PCM.params) { PCM.pausat = false; pcmInicia(PCM.params); } iconesPlay(); notifica(); }
+setInterval(function () {
+  if (!esPcmFitxer() || !PCM.sona) return;
+  progres();
+  var it = R.cua[R.pos];
+  if (it && it.k == 'podcast' && Date.now() - podT > 10000) { podT = Date.now(); poDesaPos(); }
+}, 1000);
 function sonaPausat() { return PCM.params && (PCM.actiu || PCM.pausat) ? !PCM.sona : au.paused; }
 </script>
 </body>

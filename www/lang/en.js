@@ -697,3 +697,4 @@ TR.en["Sempre activat"]="Always on";
 TR.en["Treu animacions i ombres, fa servir fotos de fons més petites i les canvia menys sovint. Ajuda els iPads antics a anar més fluids i a no tancar Safari."]="Removes animations and shadows, uses smaller background photos and changes them less often. Helps old iPads run smoother and keeps Safari from crashing.";
 TR.en["adhesiu"]="sticker";
 TR.en["No arriba el so de l'Spotify des del PC. Mira Configuració ▸ Diagnòstic."]="Spotify sound isn't coming from the PC. Check Settings ▸ Diagnostics.";
+TR.en["Arriba silenci del PC: l'Spotify sona, però no pel cable d'àudio (CABLE Input). Mira Configuració ▸ Diagnòstic."]="Only silence is coming from the PC: Spotify is playing, but not through the audio cable (CABLE Input). Check Settings ▸ Diagnostics.";
