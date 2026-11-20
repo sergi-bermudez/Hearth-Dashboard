@@ -419,6 +419,10 @@ body.aud-l #rapid,body.aud-l #agenda{display:none !important}
 .s-aud.gran.g.vert .s-temps{text-align:left}
 #fons .fimg.on.kb{-webkit-animation:kb 24s linear forwards;animation:kb 24s linear forwards}
 #fons .fimg.sencera{background-size:contain}
+/* iOS 9: les zones amb desplaçament "natiu" (-webkit-overflow-scrolling:touch) creen una capa
+   del sistema que, quan la pantalla canvia (vídeo, caràtula, mida del reproductor), es queda on era
+   i es menja els tocs. Als iPads antics fem servir el desplaçament normal. */
+html.ios-vell #rapid,html.ios-vell #tv .tv-canals,html.ios-vell #cast .card{-webkit-overflow-scrolling:auto}
 </style>
 </head>
 <body class="e-ambient">
@@ -990,15 +994,12 @@ function provaAlternativa(it) {
 }
 function iconesPlay() {
   var it = R.cua[R.pos], aturat = TV.canal ? $('tv-v').paused : it && it.k == 'spotify' ? !(SP.estat && SP.estat.sona) : sonaPausat();
-  var p = aturat ? svg(IC.play) : svg(IC.pausa);
-  $('mini-play').innerHTML = p;
-  var g = $('s-play');
-  if (g) g.innerHTML = p;
-  var eq = $('s-eq');
-  if (eq) eq.className = aturat ? 'eq atura' : 'eq';
-  $('tv-b-play').innerHTML = p;
-  var mp = $('mc-play');
-  if (mp) mp.innerHTML = p;
+  /* Només es toca el DOM si canvia (a l'iPad 3, refer botons mentre es toquen fa perdre tocs) */
+  var p = aturat ? svg(IC.play) : svg(IC.pausa), k = aturat ? 'p' : 'z';
+  var posa = function (el) { if (el && el.getAttribute('data-e') !== k) { el.innerHTML = p; el.setAttribute('data-e', k); } };
+  posa($('mini-play')); posa($('s-play')); posa($('tv-b-play')); posa($('mc-play'));
+  var eq = $('s-eq'), ce = aturat ? 'eq atura' : 'eq';
+  if (eq && eq.className != ce) eq.className = ce;
 }
 function progres() {
   var it = R.cua[R.pos];
@@ -1558,6 +1559,7 @@ function continua(i) {
 function tocaRadio(i) { repInicia([radioItem(A.radios[i])], 0); }
 /* iOS 9 o anterior: el reproductor no s'entén bé amb la ràdio en directe "clàssica" (Icecast/Shoutcast) */
 var IOS_VELL = /(iPad|iPhone|iPod).* OS [4-9]_/.test(navigator.userAgent);
+if (IOS_VELL) document.documentElement.className += ' ios-vell';
 function radioItem(s) {
   /* Vies possibles, per ordre: iOS vell -> HLS fet pel servidor (com la TV, que sí que va bé);
      http -> directe (el més ràpid); https -> via el servidor; m3u8 -> HLS reescrit */
@@ -1876,7 +1878,7 @@ window.Casa = {
 
 /* ---------- Arrencada ---------- */
 (function () {
-  if (window.navigator.standalone) document.documentElement.className = 'sa';
+  if (window.navigator.standalone) document.documentElement.className += ' sa';
   else if (/iPad|iPhone/.test(navigator.userAgent) && !ls('consell')) $('consell').style.display = 'block';
   $('cs-1').textContent = T('Vols veure-ho a pantalla completa?');
   $('cs-2').textContent = T('Toca el botó «Compartir» del Safari i després «Afegir a la pantalla d\'inici». Obre Hearth des de la icona nova.');
