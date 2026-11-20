@@ -2137,6 +2137,41 @@ setInterval(function () {
   if (it && it.k == 'podcast' && Date.now() - podT > 10000) { podT = Date.now(); poDesaPos(); }
 }, 1000);
 function sonaPausat() { return PCM.params && (PCM.actiu || PCM.pausat) ? !PCM.sona : au.paused; }
+
+/* ---------- Tocs fiables a iOS 9 ----------
+   El Safari 9 de vegades decideix què s'ha tocat amb posicions antigues (després que el vídeo
+   o la caràtula canviïn de lloc) i el toc va a parar a un altre element, o enlloc.
+   Aquí es mira què hi ha realment sota el dit (elementFromPoint, amb la posició d'ara)
+   i, si no coincideix amb el que ha triat el Safari, es fa el clic al lloc bo. */
+(function () {
+  if (!IOS_VELL && !USA_PCM) return;
+  var t0 = null;
+  function clicable(el) {
+    while (el && el !== document.body && el.nodeType == 1) {
+      var tg = el.tagName;
+      if (tg == 'INPUT' || tg == 'SELECT' || tg == 'TEXTAREA' || tg == 'IFRAME' || tg == 'VIDEO') return null;
+      if (tg == 'BUTTON' || tg == 'A' || el.getAttribute('onclick')) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+  document.addEventListener('touchstart', function (e) {
+    t0 = e.touches.length == 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now(), el: e.target } : null;
+  }, true);
+  document.addEventListener('touchend', function (e) {
+    var a = t0; t0 = null;
+    if (!a || !e.changedTouches || !e.changedTouches.length) return;
+    var c = e.changedTouches[0];
+    if (Math.abs(c.clientX - a.x) > 12 || Math.abs(c.clientY - a.y) > 12 || Date.now() - a.t > 800) return;
+    var real = document.elementFromPoint(c.clientX, c.clientY);
+    if (!real || real.tagName == 'IFRAME') return;
+    var bo = clicable(real), triat = clicable(a.el);
+    if (bo && bo !== triat) {
+      e.preventDefault();
+      try { bo.click(); } catch (x) { }
+    }
+  }, true);
+})();
 </script>
 </body>
 </html>
