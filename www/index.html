@@ -801,6 +801,7 @@ function inici() {
   }
   A.vista = 'dash';
   estatCos();
+  refresca();
   pintaRapid();
   pintaSona();
   pintaWebDash();
@@ -1287,6 +1288,7 @@ function tvLloc() {
   var clau = TV.mode + '|' + A.vista + '|' + t.style.width + '|' + t.style.height + '|' + t.style.left + '|' + t.style.top;
   if (clau != TV.darrerLloc) {
     TV.darrerLloc = clau;
+    refresca();
     var v = $('tv-v');
     v.style.webkitTransform = 'translateZ(0)'; t.style.webkitTransform = 'translateZ(0)';
     v.style.width = '99.9%';
@@ -1359,7 +1361,22 @@ function espaiSona() {
 var SONA_RED = 0;
 /* Si no hi cap tot: primer es redueix la TV, després es compacta la capçalera, els preferits i la barra */
 var COMPACTE = 0;
+/* iOS 9: quan la pantalla d'inici canvia de mida o de lloc (caràtula, vídeo, dreceres), el Safari
+   a vegades continua fent servir les posicions d'abans per saber què es toca. Un petit "empenta"
+   el fa tornar a calcular-ho. */
+var REF = { t: null };
+function refresca() {
+  if (!IOS_VELL && !USA_PCM) return;
+  clearTimeout(REF.t);
+  REF.t = setTimeout(function () {
+    var d = $('dash');
+    d.style.webkitTransform = 'translateZ(0)';
+    void d.offsetHeight;
+    setTimeout(function () { d.style.webkitTransform = ''; void d.offsetHeight; try { window.scrollTo(0, 1); window.scrollTo(0, 0); } catch (e) { } }, 30);
+  }, 120);
+}
 function desbordDespres() {
+  refresca();
   var dash = $('dash'), baix = dash.getBoundingClientRect().bottom - parseFloat(getComputedStyle(dash).paddingBottom || 0) + 1;
   var sobra = $('dock').getBoundingClientRect().bottom - baix;
   if (sobra <= 0) return;
