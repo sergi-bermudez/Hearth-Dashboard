@@ -185,6 +185,8 @@ public static class Spotify
     public static void Api(string nom, Dictionary<string, string> q, HttpListenerContext ctx)
     {
         HttpListenerResponse res = ctx.Response;
+        // Mentre l'app de Spotify esta oberta, el so del PC ja es prepara (aixi a l'iPad comenca de seguida)
+        if (nom != "so") ThreadPool.QueueUserWorkItem(delegate { SoPC.Escalfa(); });
         try
         {
             switch (nom)
@@ -278,6 +280,10 @@ public static class SoPC
     static Process ff;
     static readonly List<BlockingCollection<byte[]>> clients = new List<BlockingCollection<byte[]>>();
     static Timer aturada;
+    // Els darrers segons de so: s'envien de cop a qui es connecta, perque el reproductor comenci de seguida
+    static readonly LinkedList<byte[]> recent = new LinkedList<byte[]>();
+    static int recentBytes = 0;
+    const int Rafega = 192000 / 8 * 4;   // ~4 s a 192 kbps
     public static string DarrerError = "";
     public static int Oients { get { lock (lk) return clients.Count; } }
 
@@ -350,11 +356,16 @@ public static class SoPC
                 {
                     byte[] c = new byte[n];
                     Buffer.BlockCopy(buf, 0, c, 0, n);
-                    lock (lk) foreach (BlockingCollection<byte[]> q in clients) { try { if (!q.IsAddingCompleted) q.TryAdd(c); } catch { } }
+                    lock (lk)
+                    {
+                        recent.AddLast(c); recentBytes += n;
+                        while (recentBytes > Rafega && recent.Count > 1) { recentBytes -= recent.First.Value.Length; recent.RemoveFirst(); }
+                        foreach (BlockingCollection<byte[]> q in clients) { try { if (!q.IsAddingCompleted) q.TryAdd(c); } catch { } }
+                    }
                 }
             }
             catch { }
-            lock (lk) { if (ff == p) ff = null; foreach (BlockingCollection<byte[]> q in clients) q.CompleteAdding(); }
+            lock (lk) { if (ff == p) { ff = null; recent.Clear(); recentBytes = 0; } foreach (BlockingCollection<byte[]> q in clients) q.CompleteAdding(); }
         });
         tl.IsBackground = true; tl.Start();
     }
@@ -368,14 +379,29 @@ public static class SoPC
         }
     }
 
+    // Engega ffmpeg abans que ningu l'escolti (quan s'obre l'app de Spotify), i l'atura si ningu l'escolta en 10 min
+    public static void Escalfa()
+    {
+        lock (lk)
+        {
+            try { if (ff == null || ff.HasExited) Engega(); } catch { return; }
+            if (clients.Count == 0)
+            {
+                if (aturada != null) aturada.Dispose();
+                aturada = new Timer(delegate { lock (lk) { if (clients.Count == 0) Atura(); } }, null, 600000, Timeout.Infinite);
+            }
+        }
+    }
+
     public static void Serveix(HttpListenerContext ctx)
     {
         HttpListenerResponse res = ctx.Response;
-        BlockingCollection<byte[]> q = new BlockingCollection<byte[]>(400);
+        BlockingCollection<byte[]> q = new BlockingCollection<byte[]>(2000);
         lock (lk)
         {
             if (aturada != null) { aturada.Dispose(); aturada = null; }
             if (ff == null || ff.HasExited) Engega();
+            foreach (byte[] b0 in recent) q.TryAdd(b0);
             clients.Add(q);
         }
         res.ContentType = "audio/mpeg";
@@ -395,7 +421,7 @@ public static class SoPC
                 if (clients.Count == 0)
                 {
                     if (aturada != null) aturada.Dispose();
-                    aturada = new Timer(delegate { lock (lk) { if (clients.Count == 0) Atura(); } }, null, 30000, Timeout.Infinite);
+                    aturada = new Timer(delegate { lock (lk) { if (clients.Count == 0) Atura(); } }, null, 300000, Timeout.Infinite);
                 }
             }
         }
