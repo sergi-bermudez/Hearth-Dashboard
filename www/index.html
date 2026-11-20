@@ -342,6 +342,12 @@ html.sa #castbar{top:30px}
 #nit .a{position:absolute;left:0;right:0;top:50%;margin-top:118px;font-size:17px;color:#3f3020}
 @media (orientation:portrait){ #nit .h{font-size:130px;margin-top:-90px} }
 #tv .tv-minictl .mmida{font-size:13px;font-weight:700;color:#fff}
+/* Mode lleuger (iPads antics): sense animacions, ombres ni transicions llargues */
+body.lleu .fimg,body.lleu #marc .capa{-webkit-transition:opacity .5s;transition:opacity .5s}
+body.lleu .eq span,body.lleu #marc .capa .kb{-webkit-animation:none;animation:none}
+body.lleu .panell,body.lleu #agenda,body.lleu #rapid,body.lleu .d-dock,body.lleu #castbar{box-shadow:none !important}
+body.lleu .ombrat{text-shadow:none}
+body.lleu #tv .tv-ctl,body.lleu #tv .tv-canals,body.lleu #tv .tv-vod{-webkit-transition:none;transition:none}
 </style>
 </head>
 <body class="e-ambient">
@@ -583,11 +589,11 @@ function fonsSeguent() {
   FS.n++;
   FS.actual = f;
   var vidre = estil() == 'widgets';
-  posaFons(miniUrl('fotos', f[0], vidre ? 40 : (window.innerWidth > 900 || window.innerHeight > 900 ? 1600 : 1024)));
+  posaFons(miniUrl('fotos', f[0], vidre ? 40 : (!lleuger() && (window.innerWidth > 900 || window.innerHeight > 900) ? 1600 : 1024)));
   var d = new Date(f[1]), avui = new Date(), anys = avui.getFullYear() - d.getFullYear();
   var rec = d.getDate() == avui.getDate() && d.getMonth() == avui.getMonth() && anys > 0;
   $('fpeu').innerHTML = rec ? '<b>' + T('Tal dia com avui') + '</b> · ' + (anys == 1 ? T('fa 1 any') : Tf('fa {1} anys', anys)) : esc(mesAny(d.getMonth(), d.getFullYear()));
-  FS.t = setTimeout(fonsSeguent, Math.max(8, A.ajustos.fonsSeg || 20) * (vidre ? 3000 : 1000));
+  FS.t = setTimeout(fonsSeguent, Math.max(lleuger() ? 60 : 8, A.ajustos.fonsSeg || 20) * (vidre ? 3000 : 1000));
 }
 var fonsCapa = 0, fonsUrl = '';
 function posaFons(u) {
@@ -725,6 +731,7 @@ function estatCos() {
   if (A.vista != 'dash') c.push('en-app');
   if (A.vista != 'dash' && A.pest) c.push('amb-pest');
   if (R.cua.length || TV.canal) c.push('sona');
+  if (lleuger()) c.push('lleu');
   document.body.className = c.join(' ');
 }
 function notifica() {
@@ -759,7 +766,7 @@ function repToca() {
   var it = R.cua[R.pos];
   if (!it) return;
   R.represa = it.k == 'podcast' ? ((ls('pod') || {})[it.ep] || null) : null;
-  if (it.u) { au.src = it.u; au.play(); }
+  if (it.u) { au.src = mitja(it.u); au.play(); }
   else { au.pause(); au.removeAttribute('src'); }
   vigilaRadio();
   estatCos();
@@ -773,7 +780,7 @@ function repPlay() {
   if (!R.cua.length) return;
   if (R.cua[R.pos].k == 'spotify') { spOrdre('playpausa'); if (au.paused && R.cua[R.pos].u) au.play(); return; }
   if (au.paused) {
-    if (R.cua[R.pos].k == 'radio') au.src = R.cua[R.pos].u;
+    if (R.cua[R.pos].k == 'radio') au.src = mitja(R.cua[R.pos].u);
     au.play();
   } else au.pause();
 }
@@ -854,7 +861,7 @@ function vigilaRadio() {
 function provaAlternativa(it) {
   if (!it.alt || !it.alt.length) return false;
   it.u = it.alt.shift();
-  au.src = it.u; au.play();
+  au.src = mitja(it.u); au.play();
   vigilaRadio();
   return true;
 }
@@ -925,7 +932,7 @@ function spReconnecta() {
   var it = R.cua[R.pos];
   if (!it || it.k != 'spotify' || !it.u) return;
   it.u = api('spotify/so', { t: Date.now() });
-  au.src = it.u; au.play();
+  au.src = mitja(it.u); au.play();
 }
 function spAtura() { clearInterval(SP.t); SP.t = null; SP.estat = null; }
 function spOrdre(o) { post(api('spotify/ordre', { o: o }), '', function () { setTimeout(spPoll, 500); }, errXarxa(T('controlar el Spotify'))); }
@@ -1021,7 +1028,7 @@ function tvProva() {
     return;
   }
   tvEstat(T('Connectant…'));
-  v.src = TV.cands[TV.i];
+  v.src = mitja(TV.cands[TV.i]);
   try { v.load(); } catch (e) { }
   v.play();
   if (!TV.canal.vod) TV.t = setTimeout(function () { TV.i++; tvProva(); }, 15000);
@@ -1391,7 +1398,7 @@ function marcSona() {
   iconesPlay();
 }
 /* Estils: fos (clàssic), kenburns (com els Records de l'iPhone), revista (3 fotos de la mateixa època) i marc (foto sencera) */
-function estilPassi() { return A.ajustos.passi || 'fos'; }
+function estilPassi() { var e = A.ajustos.passi || 'fos'; return lleuger() && e == 'kenburns' ? 'fos' : e; }
 function marcFotos() {
   /* Revista: fotos consecutives per data (de la mateixa sortida o viatge) */
   if (estilPassi() == 'revista') {
@@ -1770,6 +1777,29 @@ function nitComprova() {
 }
 function nitDesperta() { $('nit').style.display = 'none'; NIT.fins = Date.now() + 3 * 60000; toc(); }
 setInterval(nitComprova, 20000);
+
+/* ---------- Mode lleuger ---------- */
+/* Automàtic: activat a iOS 9 o anterior. Es pot forçar a Configuració ▸ Pantalla d'inici */
+function lleuger() { var v = A.ajustos.lleuger; return v === 'si' || v === true ? true : v === 'no' ? false : IOS_VELL; }
+
+/* ---------- Connexió a part per al so i el vídeo ----------
+   Safari obre com a molt 6 connexions alhora amb un mateix servidor. Si estan ocupades
+   (logos de ràdio, caràtules...), la ràdio o l'Spotify s'esperen i sembla que no sonin.
+   Per això el so i el vídeo van per una altra adreça del mateix PC (la IP o hearth.local). */
+var MEDIA = { base: '' };
+function mitja(u) { return MEDIA.base && u && u.charAt(0) == '/' && u.indexOf('/api/') === 0 ? MEDIA.base + u : u; }
+(function () {
+  var h = location.hostname, port = location.port ? ':' + location.port : '';
+  function prova(host) {
+    var x = new XMLHttpRequest(), base = 'http://' + host + port;
+    x.open('GET', base + '/api/ip', true);
+    x.timeout = 4000;
+    x.onload = function () { if (x.status == 200) MEDIA.base = base; };
+    try { x.send(); } catch (e) { }
+  }
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) prova('hearth.local');
+  else getJson(api('ip'), function (d) { if (d && d.ip && d.ip != h) prova(d.ip); }, function () { });
+})();
 </script>
 </body>
 </html>

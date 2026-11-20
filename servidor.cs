@@ -337,6 +337,7 @@ public static class CasaServidor
         }
         if (nom.StartsWith("spotify/")) { if (!FuncioActiva("spotify")) { Error(res, 403, "Spotify est\u00e0 desactivat (Configuraci\u00f3 \u25b8 Funcions opcionals)"); return; } Spotify.Api(nom.Substring(8), q, ctx); return; }
         if (nom.StartsWith("web/")) { Webs.Api(nom.Substring(4), q, ctx); return; }
+        if (nom == "ip") { Text(res, "{\"ip\":\"" + ((IPEndPoint)ctx.Request.LocalEndPoint).Address + "\"}", "application/json; charset=utf-8"); return; }
         if (nom == "radios") { Radios.Api(q, ctx); return; }
         if (nom.StartsWith("cast/")) { Cast.Api(nom, q, ctx, Port); return; }
         if (nom.StartsWith("radio/")) { RadioHls.Api(nom.Substring(6), q, ctx); return; }

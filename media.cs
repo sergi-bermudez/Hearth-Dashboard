@@ -644,7 +644,7 @@ public static class Media
         {
             switch (nom)
             {
-                case "imgx": EnviaImatge(ctx, ImatgeExterna(CasaServidor.Q(q, "u"), 6000), m); return;
+                case "imgx": EnviaImatge(ctx, ImatgeExterna(CasaServidor.Q(q, "u"), 3500), m); return;
                 case "portada": EnviaImatge(ctx, Portada(CasaServidor.Q(q, "c"), CasaServidor.Q(q, "p")), m); return;
                 case "caratula":
                     {

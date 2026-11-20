@@ -691,3 +691,7 @@ TR.fr["Mode nit"]="Mode nuit";
 TR.fr["De nit, només un rellotge fosc i tènue (es desperta tocant la pantalla)"]="La nuit, juste une horloge sombre et discrète (touche l'écran pour la réveiller)";
 TR.fr["De"]="De";
 TR.fr["a"]="à";
+TR.fr["Mode lleuger"]="Mode léger";
+TR.fr["Automàtic (iPads amb iOS 9 o anterior)"]="Automatique (iPad sous iOS 9 ou antérieur)";
+TR.fr["Sempre activat"]="Toujours activé";
+TR.fr["Treu animacions i ombres, fa servir fotos de fons més petites i les canvia menys sovint. Ajuda els iPads antics a anar més fluids i a no tancar Safari."]="Supprime animations et ombres, utilise des photos de fond plus petites et les change moins souvent. Aide les vieux iPad à être plus fluides et évite que Safari se ferme.";
