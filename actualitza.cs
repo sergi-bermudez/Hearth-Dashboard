@@ -60,17 +60,28 @@ public static class Actualitza
         return true;
     }
 
+    static string Baixa(string url, bool api)
+    {
+        HttpWebRequest rq = (HttpWebRequest)WebRequest.Create(url);
+        rq.UserAgent = "Hearth/" + Local();
+        if (api) rq.Accept = "application/vnd.github.raw";
+        rq.Timeout = 15000; rq.ReadWriteTimeout = 15000;
+        rq.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
+        using (WebResponse rs = rq.GetResponse())
+        using (StreamReader sr = new StreamReader(rs.GetResponseStream(), Encoding.UTF8)) return sr.ReadToEnd().Trim();
+    }
+
     static string Mira(bool forca)
     {
         if (!forca && (DateTime.Now - mirat).TotalMinutes < 60 && remota != "") return remota;
+        try { ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12; } catch { }
         try
         {
-            HttpWebRequest rq = (HttpWebRequest)WebRequest.Create("https://raw.githubusercontent.com/" + Repo + "/main/VERSION?t=" + DateTime.Now.Ticks);
-            rq.UserAgent = "Hearth/" + Local();
-            rq.Timeout = 15000; rq.ReadWriteTimeout = 15000;
-            rq.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
-            using (WebResponse rs = rq.GetResponse())
-            using (StreamReader sr = new StreamReader(rs.GetResponseStream(), Encoding.UTF8)) remota = sr.ReadToEnd().Trim();
+            // L'API de GitHub dona la versio al moment; raw.githubusercontent.com la pot tenir 5 min en memoria cau
+            string v;
+            try { v = Baixa("https://api.github.com/repos/" + Repo + "/contents/VERSION?ref=main", true); }
+            catch { v = Baixa("https://raw.githubusercontent.com/" + Repo + "/main/VERSION?t=" + DateTime.Now.Ticks, false); }
+            if (v.Length > 0 && v.Length < 20) remota = v;
             mirat = DateTime.Now;
             error = "";
         }
