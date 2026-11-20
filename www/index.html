@@ -344,7 +344,7 @@ html.sa #castbar{top:30px}
 #tv .tv-minictl .mmida{font-size:13px;font-weight:700;color:#fff}
 /* Mode lleuger (iPads antics): sense animacions, ombres ni transicions llargues */
 body.lleu .fimg,body.lleu #marc .capa{-webkit-transition:opacity .5s;transition:opacity .5s}
-body.lleu .eq span,body.lleu #marc .capa .kb{-webkit-animation:none;animation:none}
+body.lleu .eq span{-webkit-animation:none;animation:none}
 body.lleu .panell,body.lleu #agenda,body.lleu #rapid,body.lleu .d-dock,body.lleu #castbar{box-shadow:none !important}
 body.lleu .ombrat{text-shadow:none}
 body.lleu #tv .tv-ctl,body.lleu #tv .tv-canals,body.lleu #tv .tv-vod{-webkit-transition:none;transition:none}
@@ -1606,7 +1606,7 @@ function marcSona() {
   iconesPlay();
 }
 /* Estils: fos (clàssic), kenburns (com els Records de l'iPhone), revista (3 fotos de la mateixa època) i marc (foto sencera) */
-function estilPassi() { var e = A.ajustos.passi || 'fos'; return lleuger() && e == 'kenburns' ? 'fos' : e; }
+function estilPassi() { return A.ajustos.passi || 'fos'; }
 function marcFotos() {
   /* Revista: fotos consecutives per data (de la mateixa sortida o viatge) */
   if (estilPassi() == 'revista') {
