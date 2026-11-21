@@ -794,3 +794,7 @@ TR.pt["Afegint {1} de {2}…"]="A adicionar {1} de {2}…";
 TR.pt["Fet: {1} de {2} productes al carro."]="Feito: {1} de {2} produtos no carrinho.";
 TR.pt["Revisa el carro i paga a la pantalla del PC."]="Revê o carrinho e paga no ecrã do PC.";
 TR.pt["No s'han pogut afegir:"]="Não foi possível adicionar:";
+TR.pt["Atura"]="Parar";
+TR.pt["aturat"]="parado";
+TR.pt["Aturant… acabarà la pàgina que està llegint."]="A parar… acaba a página que está a ler.";
+TR.pt["Aturat"]="Parado";

@@ -13,7 +13,7 @@ public static class Botigues
 {
     static readonly object lk = new object();
     static Timer rellotge;
-    static volatile bool enMarxa;
+    static volatile bool enMarxa, atura;
     static string estatText = "";
     static volatile string llegintB = "";
     static Dictionary<string, object> cistellEstat;
@@ -107,7 +107,7 @@ public static class Botigues
     // nomesB: llegeix nom\u00e9s aquesta botiga (les altres es queden com estaven); "" = totes
     public static void Recorre(string nomesB)
     {
-        lock (lk) { if (enMarxa) return; enMarxa = true; llegintB = nomesB; }
+        lock (lk) { if (enMarxa) return; enMarxa = true; atura = false; llegintB = nomesB; }
         Thread th = new Thread(delegate ()
         {
             string pagina = null;
@@ -134,6 +134,7 @@ public static class Botigues
                 foreach (object ob in Config())
                 {
                     Dictionary<string, object> b = ob as Dictionary<string, object>;
+                    if (atura) break;
                     if (b == null || S(b, "url") == "" || S(b, "off") == "True") continue;
                     string id = S(b, "id"), nom = S(b, "nom");
                     if (nomesB == "*auto") { if (S(b, "auto") != "True") continue; }
@@ -165,7 +166,7 @@ public static class Botigues
                                     if (cat == "") cat = Categoria(S(e, "u"));
                                     if (cat == "") continue;
                                     int k; perCat.TryGetValue(cat, out k);
-                                    if (k >= 3) continue;
+                                    if (k >= 2) continue;
                                     perCat[cat] = k + 1;
                                     cats.Add(new string[] { S(e, "u"), cat });
                                 }
@@ -173,10 +174,10 @@ public static class Botigues
                         }
                         est["cats"] = cats.Count;
                         Dictionary<string, bool> vistos = new Dictionary<string, bool>();
-                        int maxPag = 12, maxProd = 5000;
+                        int maxPag = 8, maxProd = 5000;
                         foreach (string[] cu in cats)
                         {
-                            if (prods.Count - n0 >= maxProd) break;
+                            if (prods.Count - n0 >= maxProd || atura) break;
                             estatText = nom + ": " + cu[1] + " (" + (prods.Count - n0) + ")";
                             try
                             {
@@ -188,7 +189,7 @@ public static class Botigues
                                     if (sf is bool && (bool)sf && !cu[0].Contains("sz=")) Navega(c, cu[0] + (cu[0].Contains("?") ? "&" : "?") + "start=0&sz=120");
                                 }
                                 catch { }
-                                for (int pg = 0; pg < maxPag; pg++)
+                                for (int pg = 0; pg < maxPag && !atura; pg++)
                                 {
                                     object r = Crida(c, "mes()", 12000);
                                     if (!(r is bool) || !(bool)r) break;
@@ -215,6 +216,12 @@ public static class Botigues
                             }
                             catch { }
                             Thread.Sleep(1200); // amb calma: no carregar la web de la botiga
+                        }
+                        if (atura)
+                        {
+                            est["avis"] = "Aturat";
+                            // el que no s'ha arribat a llegir es queda com estava
+                            foreach (Dictionary<string, object> pa in anteriors.Values) if (S(pa, "b") == id && !vistos.ContainsKey(S(pa, "u"))) prods.Add(pa);
                         }
                         est["n"] = prods.Count - n0;
                         est["t"] = (DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds;
@@ -454,6 +461,7 @@ public static class Botigues
             object[] items = Js().DeserializeObject(text) as object[];
             if (items == null || items.Length == 0) { CasaServidor.Error(res, 400, "No hi ha productes"); return; }
             lock (lk) { if (cistellEstat != null && cistellEstat.ContainsKey("fent") && (bool)cistellEstat["fent"]) { CasaServidor.Error(res, 409, "Ja s'esta omplint un carro"); return; } }
+            atura = false;
             Dictionary<string, object> est = new Dictionary<string, object>();
             est["fent"] = true; est["b"] = id; est["total"] = items.Length; est["fets"] = 0; est["errors"] = new List<object>();
             lock (lk) cistellEstat = est;
@@ -470,6 +478,7 @@ public static class Botigues
                     string carro = "";
                     foreach (object o in items)
                     {
+                        if (atura) { est["aturat"] = true; break; }
                         Dictionary<string, object> it = o as Dictionary<string, object>;
                         if (it == null) continue;
                         string u = S(it, "u"), n = S(it, "n");
@@ -497,6 +506,12 @@ public static class Botigues
             });
             th.IsBackground = true;
             th.Start();
+            CasaServidor.Json(res, CasaServidor.Dic("ok", true));
+            return;
+        }
+        if (nom == "atura")
+        {
+            atura = true;
             CasaServidor.Json(res, CasaServidor.Dic("ok", true));
             return;
         }

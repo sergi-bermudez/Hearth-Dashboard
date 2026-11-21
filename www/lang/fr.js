@@ -794,3 +794,7 @@ TR.fr["Afegint {1} de {2}…"]="Ajout de {1} sur {2}…";
 TR.fr["Fet: {1} de {2} productes al carro."]="Terminé : {1} sur {2} produits dans le panier.";
 TR.fr["Revisa el carro i paga a la pantalla del PC."]="Vérifiez le panier et payez sur l'écran du PC.";
 TR.fr["No s'han pogut afegir:"]="Impossible d'ajouter :";
+TR.fr["Atura"]="Arrêter";
+TR.fr["aturat"]="arrêté";
+TR.fr["Aturant… acabarà la pàgina que està llegint."]="Arrêt… il termine la page en cours.";
+TR.fr["Aturat"]="Arrêté";

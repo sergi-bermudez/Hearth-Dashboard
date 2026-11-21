@@ -286,7 +286,7 @@ body{background:#000}
     <h2>Compra</h2>
     <div class="desc">Les botigues on compres. Hearth en llegeix de la web els productes, els preus i les promocions, i l'app Compra et diu on és més barat cada cosa. Funciona amb qualsevol supermercat amb botiga online, de qualsevol país. És experimental: no totes les webs es deixen llegir.</div>
     <div id="bt-llista"></div>
-    <div class="bt-resum"><span class="gris" id="bt-estat"></span><button onclick="btActualitza()">Llegeix-les totes</button></div>
+    <div class="bt-resum"><span class="gris" id="bt-estat"></span><button id="bt-totes" onclick="btActualitza()">Llegeix-les totes</button></div>
     <h3 class="bt-h">Afegeix una botiga</h3>
     <select id="bt-preset" class="sel" onchange="btPreset()"></select>
     <div class="bt-nova"><input type="text" id="bt-nom" placeholder="Nom"><input type="url" id="bt-url" placeholder="https://…" autocapitalize="off" autocorrect="off"><button class="pri" onclick="btAfegeix()">Afegeix</button></div>
@@ -1037,13 +1037,13 @@ function btPinta() {
     var b = BT.l[i], s = e[b.id] || {}, llegint = t.enMarxa && (t.llegint == b.id || t.llegint == '' || (t.llegint == '*auto' && b.auto));
     var st = llegint ? '<span class="st gris">⏳ ' + T('Llegint…') + '</span>'
       : s.error ? '<span class="st" style="color:#ff453a">⚠️ ' + esc(T(s.error)) + '</span>'
-      : s.n ? '<span class="st" style="color:#30d158">✓ ' + Tf('{1} productes', s.n) + '</span>'
+      : s.n ? '<span class="st" style="color:#30d158">✓ ' + Tf('{1} productes', s.n) + (s.avis ? ' · ' + T('aturat') : '') + '</span>'
       : '<span class="st gris">' + T('Encara no llegit') + '</span>';
     h += '<div class="bt-card"><div class="bt-cap"><i style="background:' + BT_COLORS[i % BT_COLORS.length] + '"></i><b>' + esc(b.nom) + '</b>' + st + '</div>' +
       '<div class="bt-url">' + esc(b.url) + (s.t ? ' · ' + T('llegit') + ' ' + new Date(s.t).toLocaleString() : '') + '</div>' +
       '<div class="bt-peu"><label class="check"><input type="checkbox"' + (b.auto ? ' checked' : '') + ' onchange="btAuto(' + i + ',this.checked)">' + T('Revisa-la cada dia (de matinada)') + '</label>' +
       (BT.obert == b.id ? '<button class="pri" onclick="btAgafa(\'' + b.id + '\')">' + T('Fet') + '</button>' : '<button onclick="btObre(\'' + b.id + '\')">' + T('Obre al PC') + '</button>') +
-      (llegint ? '' : '<button onclick="btActualitza(\'' + b.id + '\')">' + T('Llegeix') + '</button>') +
+      (llegint ? '<button class="pri" style="background:#ff453a" onclick="btAtura()">' + T('Atura') + '</button>' : '<button onclick="btActualitza(\'' + b.id + '\')">' + T('Llegeix') + '</button>') +
       '<button onclick="btTreu(' + i + ')">' + T('Treu') + '</button></div></div>';
   }
   if (!h) h = '<div class="gris" style="margin:10px 0">' + T('Encara no hi ha cap botiga.') + '</div>';
@@ -1053,6 +1053,7 @@ function btPinta() {
   for (k in BT_PRESETS) if (BT_PRESETS.hasOwnProperty(k) && k != PAIS) for (j = 0; j < BT_PRESETS[k].length; j++) o += '<option value="' + k + ':' + j + '">' + esc(BT_PRESETS[k][j][0]) + ' (' + k + ')</option>';
   $('bt-preset').innerHTML = o;
   $('bt-estat').textContent = t.enMarxa ? T('Llegint…') + ' ' + (t.fent || '') : t.n ? Tf('{1} productes · {2} en promoció', t.n, t.promos) : '';
+  $('bt-totes').style.display = t.enMarxa ? 'none' : '';
   if (t.enMarxa) setTimeout(btCarrega, 4000);
 }
 function btPreset() {
@@ -1082,6 +1083,7 @@ function btObre(id) {
 function btAgafa(id) {
   postJson(api('admin/compra/agafa', { b: id }), {}, function (d) { BT.obert = ''; avis(T('Desat') + (d && d.url ? ': ' + d.url : '')); btCarrega(); }, errXarxa('desar'));
 }
+function btAtura() { post(api('admin/compra/atura'), '', function () { avis(T('Aturant… acabarà la pàgina que està llegint.')); setTimeout(btCarrega, 1500); }, errXarxa('aturar')); }
 function btAuto(i, v) { BT.l[i].auto = v; btDesa(); }
 function btTreu(i) { BT.l.splice(i, 1); btDesa(); }
 function btActualitza(b) {

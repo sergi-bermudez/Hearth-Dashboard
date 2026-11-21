@@ -497,6 +497,8 @@ function estatCarro() {
     var h = d.fent ? Tf('Afegint {1} de {2}…', Math.min((d.fets || 0) + 1, d.total), d.total) + (d.ara ? '<br><b>' + esc(d.ara) + '</b>' : '') : Tf('Fet: {1} de {2} productes al carro.', d.total - (d.errors ? d.errors.length : 0), d.total) + '<br>' + T('Revisa el carro i paga a la pantalla del PC.');
     if (d.errors && d.errors.length) { h += '<p style="color:#ff9f0a">' + T('No s\'han pogut afegir:') + '</p>'; for (var i = 0; i < d.errors.length; i++) h += '<div>• ' + esc(d.errors[i].n) + '</div>'; }
     if (d.error) h += '<p style="color:#ff453a">' + esc(d.error) + '</p>';
+    if (d.fent) h += '<p><button style="background:#ff453a;color:#fff" onclick="post(api(\'admin/compra/atura\'),\'\',function(){})">' + T('Atura') + '</button></p>';
+    if (d.aturat) h += '<p class="gris">' + T('Aturat') + '</p>';
     $('cx-e').innerHTML = h;
     if (d.fent) setTimeout(estatCarro, 1500);
   }, function () { });

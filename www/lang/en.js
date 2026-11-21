@@ -794,3 +794,7 @@ TR.en["Afegint {1} de {2}…"]="Adding {1} of {2}…";
 TR.en["Fet: {1} de {2} productes al carro."]="Done: {1} of {2} products in the cart.";
 TR.en["Revisa el carro i paga a la pantalla del PC."]="Check the cart and pay on the PC screen.";
 TR.en["No s'han pogut afegir:"]="Couldn't add:";
+TR.en["Atura"]="Stop";
+TR.en["aturat"]="stopped";
+TR.en["Aturant… acabarà la pàgina que està llegint."]="Stopping… it will finish the page it is reading.";
+TR.en["Aturat"]="Stopped";
