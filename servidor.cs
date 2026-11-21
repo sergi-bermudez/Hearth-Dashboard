@@ -873,11 +873,21 @@ public static class CasaServidor
     {
         HttpListenerResponse res = ctx.Response;
         FileInfo fi = new FileInfo(full);
+        if (fi.Extension.ToLowerInvariant() == ".html" && fi.Length < 4000000)
+        {
+            // Els .js i .css de la pagina porten la versio a l'adreca: despres d'una actualitzacio cap aparell
+            // no pot barrejar un index.html nou amb un comu.js vell que tenia guardat (la pantalla quedava buida).
+            string html = File.ReadAllText(full, Encoding.UTF8);
+            string v = Uri.EscapeDataString(Actualitza.Local());
+            html = Regex.Replace(html, "(<script[^>]+src=\"|<link[^>]+href=\")([^\"?:#]+\\.(?:js|css))\"", "$1$2?v=" + v + "\"");
+            Text(res, html, "text/html; charset=utf-8");
+            return;
+        }
         long len = fi.Length;
         string ct = Tipus(fi.Extension);
         res.ContentType = ct;
         res.AddHeader("Accept-Ranges", "bytes");
-        res.AddHeader("Cache-Control", ct.StartsWith("text/") || ct.StartsWith("application/json") ? "no-cache" : "max-age=86400");
+        res.AddHeader("Cache-Control", ct.StartsWith("text/") || ct.StartsWith("application/json") || ct.StartsWith("application/javascript") || ct.Contains("manifest") ? "no-cache" : "max-age=86400");
         long ini = 0, fi2 = len - 1;
         string rg = ctx.Request.Headers["Range"];
         if (!string.IsNullOrEmpty(rg) && rg.StartsWith("bytes=") && len > 0)

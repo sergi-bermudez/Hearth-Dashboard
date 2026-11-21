@@ -12,7 +12,9 @@ var LANG = (function () {
   }
   return l;
 })();
-if (LANG != 'ca') document.write('<script src="lang/' + LANG + '.js"><\/script>');
+/* la mateixa versió que porta aquest fitxer a l'adreça (la hi posa el servidor), perquè no se'n faci servir un de vell */
+var LANG_V = (function () { var e = document.getElementsByTagName('script'); for (var i = e.length - 1; i >= 0; i--) { var m = /i18n\.js\?v=([^&"]+)/.exec(e[i].src || ''); if (m) return '?v=' + m[1]; } return ''; })();
+if (LANG != 'ca') document.write('<script src="lang/' + LANG + '.js' + LANG_V + '"><\/script>');
 
 function T(s) { var d = TR[LANG]; return d && d[s] ? d[s] : s; }
 /* T amb valors: Tf('Pujades {1} de {2}', a, b) */
