@@ -185,8 +185,8 @@ body{background:#000}
     <h2>Mode lleuger</h2>
     <div class="fila"><label>Mode lleuger</label><select id="aj-lleuger" class="sel"><option value="">Automàtic (iPads amb iOS 9 o anterior)</option><option value="si">Sempre activat</option><option value="no">Desactivat</option></select></div>
     <div class="fila"><label>Mode tele</label><label class="check"><input type="checkbox" id="aj-tele"> Per a la tele: tot més gran i navegació amb les fletxes del comandament</label></div>
-    <div class="fila"><label></label><button onclick="teleObre()">Obre Hearth en mode tele a la pantalla del PC</button></div>
-    <div class="desc petit">Per veure Hearth a la tele i fer-lo servir amb el comandament: obre'l en mode tele al PC i projecta la pantalla a la tele (Windows + K, Miracast). Amb una LG, el comandament controla el PC. Esc o Enrere tornen a l'inici; Alt + F4 el tanca.</div>
+    <div class="fila"><label>Tele</label><button class="pri" onclick="teleObre()">📺 Mostra Hearth a la tele…</button></div>
+    <div class="desc petit">També des de la pantalla d'inici de qualsevol aparell, amb la icona 📺: tries la tele de la llista (les que accepten projecció, Miracast), el PC hi obre Hearth en mode tele i el comandament de la tele el controla (fletxes, OK, Enrere).</div>
     <div class="gris petit" style="margin:-4px 0 10px">Treu animacions i ombres, fa servir fotos de fons més petites i les canvia menys sovint. Ajuda els iPads antics a anar més fluids i a no tancar Safari.</div>
     <h2>Mode nit</h2>
     <label class="check"><input type="checkbox" id="aj-nit"> <span>De nit, només un rellotge fosc i tènue (es desperta tocant la pantalla)</span></label>
@@ -1088,7 +1088,7 @@ function btAgafa(id) {
   postJson(api('admin/compra/agafa', { b: id }), {}, function (d) { BT.obert = ''; avis(T('Desat') + (d && d.url ? ': ' + d.url : '')); btCarrega(); }, errXarxa('desar'));
 }
 function btAtura() { post(api('admin/compra/atura'), '', function () { avis(T('Aturant… acabarà la pàgina que està llegint.')); setTimeout(btCarrega, 1500); }, errXarxa('aturar')); }
-function teleObre() { post(api('admin/tele/obre'), '', function () { avis(T('Obert a la pantalla del PC.')); }, errXarxa('obrir')); }
+function teleObre() { if (Casa && Casa.teleMenu) Casa.teleMenu(); else avis(T('Obre-ho des de la pantalla d\'inici (icona 📺).')); }
 function btAuto(i, v) { BT.l[i].auto = v; btDesa(); }
 function btTreu(i) { BT.l.splice(i, 1); btDesa(); }
 function btActualitza(b) {

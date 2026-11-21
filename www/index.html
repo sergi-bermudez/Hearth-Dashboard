@@ -196,6 +196,9 @@ body.amb-pest #apps iframe{height:-webkit-calc(100% - 52px);height:calc(100% - 5
 #cfg-av.act{display:block;background:#0a84ff;color:#fff}
 #cfg-av.err{display:block;background:#ff9f0a;color:#1c1300}
 @media (max-width:480px){ #cfg-av span{display:none} #cfg-av{padding:3px 7px;margin-left:6px} }
+#b-tele{margin-left:10px;width:36px;height:36px;padding:7px;box-sizing:border-box;border-radius:50%;background:rgba(255,255,255,.14);cursor:pointer;-webkit-flex:none;flex:none}
+#b-tele .ic{width:22px;height:22px;display:block}
+body.tele #b-tele{display:none}
 #cfg.punt:after{content:'';position:absolute;top:0;right:0;width:10px;height:10px;border-radius:5px;background:#ff9f0a;box-shadow:0 0 0 2px rgba(0,0,0,.4)}
 #cfg.punt.act:after{background:#0a84ff}
 #cfg{position:relative;-webkit-flex:none;flex:none;margin-right:10px;width:36px;height:36px;padding:6px;box-sizing:border-box;opacity:.8;cursor:pointer;border-radius:50%;background:rgba(255,255,255,.14);-webkit-tap-highlight-color:rgba(255,255,255,.3)}
@@ -491,7 +494,7 @@ body:not(.en-app) #apps{top:-30000px;bottom:auto;height:10px}
 <div id="dash">
   <div class="d-cap">
     <div class="d-hora ombrat panell" style="position:relative">
-      <div class="salut-fila"><div id="cfg" onclick="obreConfig()"></div><div id="salut"></div><div id="cfg-av" onclick="obreAvis()"></div></div>
+      <div class="salut-fila"><div id="cfg" onclick="obreConfig()"></div><div id="salut"></div><div id="cfg-av" onclick="obreAvis()"></div><div id="b-tele" onclick="teleMenu()" title="Mostra Hearth a la tele"></div></div>
       <div id="hora">--:--</div>
       <div id="data"></div>
     </div>
@@ -790,6 +793,7 @@ function pintaDock() {
   }
   n += '<div onclick="obreConfig()" id="nv-config" class="nv-cfg">' + svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config) + esc(T('Ajustos')) + '</div>';
   $('cfg').innerHTML = svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config);
+  $('b-tele').innerHTML = svg(IC.tv); $('b-tele').style.display = INF.actiu ? 'none' : '';
   $('dock').innerHTML = h;
   $('nav').innerHTML = n;
   if (window.NF) puntMissatges();
@@ -1876,6 +1880,30 @@ function posaAvis(u, errs) {
   else { e.className = ''; e.textContent = ''; AVIS.sec = ''; }
   g.className = AVIS.sec ? 'punt' + (AVIS.sec == 'actualitza' ? ' act' : '') : '';
 }
+/* ---------- 📺 Hearth a la tele: el PC l'obre en mode tele i el projecta (Miracast); el comandament de la tele el controla ---------- */
+function teleMenu() {
+  if (INF.actiu) return;
+  $('cast').style.display = 'block';
+  var h = '<h3>📺 ' + T('Mostra Hearth a la tele') + '</h3><div id="tl-l" class="gris" style="padding:8px 4px">' + T('Buscant teles… (uns segons)') + '</div>' +
+    '<div style="text-align:right;margin-top:10px"><button onclick="teleTreu()">' + T('Treu-lo de la tele') + '</button> <button onclick="castTanca()">' + T('Tanca') + '</button></div>';
+  $('cast-c').innerHTML = h;
+  getJson(api('admin/tele/llista'), function (l) {
+    if (!$('tl-l')) return;
+    l = l || [];
+    var x = '';
+    for (var i = 0; i < l.length; i++) x += '<div class="ce" data-n="' + esc(l[i]) + '" onclick="teleMostra(this.getAttribute(\'data-n\'))">' + svg(IC.tv) + '<div>' + esc(l[i]) + '<small>Miracast</small></div></div>';
+    $('tl-l').className = ''; $('tl-l').innerHTML = x || '<div class="gris">' + T('No he trobat cap tele que accepti projecció (Miracast). Ha d\'estar engegada i a prop del PC.') + '</div>';
+  }, function () { $('tl-l').textContent = T('No s\'ha pogut connectar amb el servidor.'); });
+}
+function teleMostra(nom) {
+  $('tl-l').innerHTML = '<div class="gris">' + esc(Tf('Connectant amb {1}…', nom)) + '</div>';
+  getJsonPost(api('admin/tele/obre', { nom: nom }), function (d) {
+    if (d && d.ok) { castTanca(); avis(T('Hearth ja és a la tele. Fes-lo servir amb el comandament.'), 6000); }
+    else $('tl-l').innerHTML = '<div style="color:#ff9f0a">' + T('No s\'ha pogut connectar. Prova-ho de nou.') + '</div>';
+  });
+}
+function teleTreu() { getJsonPost(api('admin/tele/atura'), function () { castTanca(); avis(T('Fet')); }); }
+function getJsonPost(u, ok) { post(u, '', function (t) { var d = null; try { d = JSON.parse(t); } catch (e) { } ok(d); }, function () { ok(null); }); }
 function obreAvis() { if (AVIS.sec && !INF.actiu) obre('config', AVIS.sec); else obreConfig(); }
 setTimeout(comprovaAvisos, 15000);
 setInterval(comprovaAvisos, 30 * 60 * 1000);
@@ -1970,6 +1998,7 @@ window.Casa = {
   websCanviades: function (l) { WB.defs = l; pintaDock(); pintaWebDash(); },
   fotos: fotosLlista, fotosRecarrega: fotosRecarrega,
   ajustos: function () { return A.ajustos; },
+  teleMenu: function () { teleMenu(); },
   recarrega: function () { carregaAjustos(); carregaSuggeriments(); },
   radiosCanviades: function (l) { A.radios = l; pintaRapid(); if (A.vista == 'dash') pintaSona(); },
   canalsCanviats: function (l) { A.canals = l; pintaCanalsTv(); pintaRapid(); },

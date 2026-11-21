@@ -374,15 +374,29 @@ public static class CasaServidor
         if (nom == "tuya/ajustos") { Tuya.Ajusta(ctx); return; }
         if (nom.StartsWith("actualitza/")) { Actualitza.Api(nom, q, ctx); return; }
         if (nom == "diagnosi") { Diagnosi.Api(ctx); return; }
-        if (nom == "tele/obre")
+        if (nom == "tele/obre" || nom == "tele/atura" || nom == "tele/llista")
         {
-            // Hearth a pantalla completa (mode quiosc) a la pantalla del PC, en mode tele, per projectar-lo a la tele
+            // Un sol boto: obre Hearth en mode tele a pantalla completa al PC i el projecta a la tele (Miracast),
+            // o ho desfa. La projeccio la fa eines/tele.ps1 amb el panell Connecta de Windows.
             try
             {
-                string perfil = Path.Combine(Dades, "edge-tele");
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Edge.Ruta(),
-                    "--kiosk \"http://localhost:" + Port + "/?tele=1\" --edge-kiosk-type=fullscreen --no-first-run --autoplay-policy=no-user-gesture-required --user-data-dir=\"" + perfil + "\"") { UseShellExecute = false });
-                Json(res, Dic("ok", true));
+                if (nom == "tele/obre")
+                {
+                    string perfil = Path.Combine(Dades, "edge-tele");
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Edge.Ruta(),
+                        "--kiosk \"http://localhost:" + Port + "/?tele=1\" --edge-kiosk-type=fullscreen --no-first-run --autoplay-policy=no-user-gesture-required --user-data-dir=\"" + perfil + "\"") { UseShellExecute = false });
+                    System.Threading.Thread.Sleep(3000);
+                }
+                string tele = Q(q, "nom");
+                System.Diagnostics.ProcessStartInfo pi = new System.Diagnostics.ProcessStartInfo("powershell.exe",
+                    "-NoProfile -ExecutionPolicy Bypass -File \"" + Path.Combine(DirArrel, "eines", "tele.ps1") + "\" " + (nom == "tele/atura" ? "-Atura" : nom == "tele/llista" ? "-Llista" : "-Nom \"" + tele.Replace("\"", "") + "\""));
+                pi.UseShellExecute = false; pi.RedirectStandardOutput = true; pi.CreateNoWindow = true;
+                System.Diagnostics.Process pr = System.Diagnostics.Process.Start(pi);
+                string sortida = pr.StandardOutput.ReadToEnd();
+                pr.WaitForExit(40000);
+                sortida = sortida.Trim();
+                if (nom == "tele/llista") { Text(res, sortida.StartsWith("[") ? sortida : "[]", "application/json; charset=utf-8"); return; }
+                Json(res, Dic("ok", sortida.StartsWith("ok") || sortida == "no-projectava", "resultat", sortida));
             }
             catch (Exception ex) { Error(res, 500, ex.Message); }
             return;
