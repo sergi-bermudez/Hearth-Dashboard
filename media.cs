@@ -603,12 +603,19 @@ public static class Media
     static List<string> Variants(string t)
     {
         List<string> l = new List<string>(); l.Add(t);
+        // sense el subtitol: "El rei lleo 2 - L'orgull de Simba" -> "El rei lleo 2"
+        Match sub = Regex.Match(t, @"^(.{3,}?)\s*(?:\s-\s|:|\s\u2013\s)");
+        string t2 = sub.Success ? sub.Groups[1].Value.Trim() : t;
+        // el numero de la seqUela, encara que hi hagi text despres
+        Match mn = Regex.Match(t2, @"^(.*?\S)\s+(\d|II|III|IV|VI?)(?:\s|$)", RegexOptions.IgnoreCase);
+        if (!mn.Success) mn = Regex.Match(t2, @"^(.*\S)\s+(\d|I{1,3}|IV|V|VI)$", RegexOptions.IgnoreCase);
+        if (t2 != t) l.Add(t2);
         string[] ar = { "1", "2", "3", "4", "5", "6" }, ro = { "I", "II", "III", "IV", "V", "VI" };
-        Match m = Regex.Match(t, @"^(.*\S)\s+(\d|I{1,3}|IV|V|VI)$", RegexOptions.IgnoreCase);
-        if (m.Success)
+        if (mn.Success)
         {
-            string b = m.Groups[1].Value, n = m.Groups[2].Value.ToUpperInvariant();
+            string b = mn.Groups[1].Value, n = mn.Groups[2].Value.ToUpperInvariant();
             int ia = Array.IndexOf(ar, n), ir = Array.IndexOf(ro, n);
+            if (!l.Contains(b + " " + n)) l.Add(b + " " + n);
             if (ia >= 0) l.Add(b + " " + ro[ia]); else if (ir >= 0) l.Add(b + " " + ar[ir]);
             l.Add(b);
         }
@@ -695,9 +702,19 @@ public static class Media
     {
         Dictionary<string, object> r = JsonDe("https://www.wikidata.org/w/api.php?action=wbsearchentities&format=json&type=item&limit=12&language=" + ll + "&uselang=" + ll + "&search=" + Uri.EscapeDataString(q), 8000) as Dictionary<string, object>;
         object[] res = r != null && r.ContainsKey("search") ? r["search"] as object[] : null;
-        if (res == null || res.Length == 0) return;
         List<string> ids = new List<string>();
-        foreach (object x in res) ids.Add(S(x as Dictionary<string, object>, "id"));
+        if (res != null) foreach (object x in res) ids.Add(S(x as Dictionary<string, object>, "id"));
+        // cerca de text (no cal que comenci igual ni que porti accents), nomes entre pel.licules
+        try
+        {
+            Dictionary<string, object> r2 = JsonDe("https://www.wikidata.org/w/api.php?action=query&list=search&format=json&srlimit=12&srsearch=" + Uri.EscapeDataString(q + " haswbstatement:P31=Q11424|P31=Q202866|P31=Q24869|P31=Q1257444|P31=Q506240"), 8000) as Dictionary<string, object>;
+            Dictionary<string, object> qd = r2 != null && r2.ContainsKey("query") ? r2["query"] as Dictionary<string, object> : null;
+            object[] res2 = qd != null && qd.ContainsKey("search") ? qd["search"] as object[] : null;
+            if (res2 != null) foreach (object x in res2) { string id = S(x as Dictionary<string, object>, "title"); if (Regex.IsMatch(id, @"^Q\d+$") && !ids.Contains(id)) ids.Add(id); }
+        }
+        catch { }
+        if (ids.Count == 0) return;
+        if (ids.Count > 45) ids.RemoveRange(45, ids.Count - 45);
         Dictionary<string, object> e = JsonDe("https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels|claims&languages=" + ll + "|en|es|ca|pt|fr&ids=" + string.Join("|", ids.ToArray()), 10000) as Dictionary<string, object>;
         Dictionary<string, object> ents = e != null && e.ContainsKey("entities") ? e["entities"] as Dictionary<string, object> : null;
         if (ents == null) return;
@@ -736,7 +753,7 @@ public static class Media
             o["titol"] = local; if (en != "" && en != local) o["original"] = en;
             if (anyW != "") o["any"] = anyW;
             // la caratula i la sinopsi, d'iTunes amb el titol angles (o el local)
-            if (n++ < 5)
+            if (n++ < 8)
                 try
                 {
                     string qq = en != "" ? en : local;
@@ -763,7 +780,7 @@ public static class Media
     }
 
     // Les pel.licules que s'assemblen a un titol, de moltes fonts i idiomes alhora, per triar-ne una
-    internal static List<Dictionary<string, object>> Opcions(List<string[]> cands, bool complet)
+    internal static List<Dictionary<string, object>> Opcions(List<string[]> cands, bool complet, List<string> errs)
     {
         List<Dictionary<string, object>> l = new List<Dictionary<string, object>>();
         if (!Internet()) return l;
@@ -794,7 +811,7 @@ public static class Media
         foreach (Action a in feina)
         {
             Action a2 = a;
-            ThreadPool.QueueUserWorkItem(delegate { try { a2(); } catch { } try { fet.Signal(); } catch { } });
+            ThreadPool.QueueUserWorkItem(delegate { try { a2(); } catch (Exception ex) { if (errs != null) lock (errs) { if (errs.Count < 6 && !errs.Contains(ex.Message)) errs.Add(ex.Message); } } try { fet.Signal(); } catch { } });
         }
         fet.Wait(complet ? 40000 : 20000);
         List<Dictionary<string, object>> r;
@@ -1059,7 +1076,15 @@ public static class Media
                         else cands = CandidatsAmbTitol(rel, full);
                         Dictionary<string, object> o = new Dictionary<string, object>();
                         List<object> cs = new List<object>(); foreach (string[] c in cands) cs.Add(c[0] + (c[1] != "" ? " " + c[1] : ""));
-                        o["cerca"] = cs; o["opcions"] = Opcions(cands, CasaServidor.Q(q, "rapid") != "1"); o["fitxer"] = Path.GetFileName(full.TrimEnd('\\', '/'));
+                        List<string> errs = new List<string>();
+                        List<Dictionary<string, object>> ops = Opcions(cands, CasaServidor.Q(q, "rapid") != "1", errs);
+                        Dictionary<string, int> per = new Dictionary<string, int>();
+                        foreach (string f in new string[] { "TMDB", "iTunes", "Viquip\u00e8dia", "Wikidata" }) per[f] = 0;
+                        foreach (Dictionary<string, object> op in ops) { string f = S(op, "fontNom"); if (f.StartsWith("Wikidata")) f = "Wikidata"; if (per.ContainsKey(f)) per[f]++; }
+                        List<string> pf = new List<string>(); foreach (KeyValuePair<string, int> kv in per) pf.Add(kv.Key + " " + kv.Value);
+                        if (A("tmdb", "") == "") pf[0] = "TMDB (sense clau)";
+                        List<object> vs = new List<object>(); foreach (string[] c in cands) foreach (string v in Variants(c[0])) if (!vs.Contains(v)) vs.Add(v);
+                        o["cerca"] = cs; o["opcions"] = ops; o["fonts"] = string.Join(" \u00b7 ", pf.ToArray()); o["errors"] = errs; o["variants"] = vs; o["fitxer"] = Path.GetFileName(full.TrimEnd('\\', '/'));
                         CasaServidor.Json(res, o);
                         return;
                     }

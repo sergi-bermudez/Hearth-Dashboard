@@ -879,3 +879,5 @@ TR.pt["Desfet."]="Desfeito.";
 TR.pt["desfer"]="desfazer";
 TR.pt["Desfés la tria"]="Desfazer a escolha";
 TR.pt["Buscant a TMDB, iTunes, Viquipèdia i Wikidata, en diversos idiomes…"]="A procurar no TMDB, iTunes, Wikipédia e Wikidata, em vários idiomas…";
+TR.pt["He buscat:"]="Pesquisei:";
+TR.pt["Errors:"]="Erros:";

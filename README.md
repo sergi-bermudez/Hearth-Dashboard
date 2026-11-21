@@ -91,3 +91,5 @@ Hearth is a personal hobby project for use **at home with your own accounts**. I
 ## License
 
 [MIT](LICENSE)
+
+Shopping-list icons are [Twemoji](https://github.com/jdecked/twemoji) graphics (© Twitter, Inc. and other contributors, [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)), downloaded once by the server and cached.

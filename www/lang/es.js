@@ -879,3 +879,5 @@ TR.es["Desfet."]="Deshecho.";
 TR.es["desfer"]="deshacer";
 TR.es["Desfés la tria"]="Deshacer la elección";
 TR.es["Buscant a TMDB, iTunes, Viquipèdia i Wikidata, en diversos idiomes…"]="Buscando en TMDB, iTunes, Wikipedia y Wikidata, en varios idiomas…";
+TR.es["He buscat:"]="He buscado:";
+TR.es["Errors:"]="Errores:";

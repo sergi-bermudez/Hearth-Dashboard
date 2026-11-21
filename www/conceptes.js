@@ -156,8 +156,19 @@ function emo(s) {
   }
   return r;
 }
-(function () {
-  if (!EMO_ANTIC) return;
-  var ls = [typeof CONCEPTES != 'undefined' ? CONCEPTES : [], typeof CONCEPTES_MES != 'undefined' ? CONCEPTES_MES : []];
-  for (var k = 0; k < ls.length; k++) for (var i = 0; i < ls[k].length; i++) if (ls[k][i] && ls[k][i][1]) ls[k][i][1] = emo(ls[k][i][1]);
-})();
+/* Les icones es pinten com a imatges (Twemoji, CC-BY 4.0) que el servidor baixa un cop i guarda:
+   es veuen iguals a tots els aparells, també els que no tenen els emojis nous. Si la imatge no arriba, surt l'emoji en text. */
+function emoCodi(e) {
+  var r = [], i = 0;
+  while (i < e.length) {
+    var c = e.charCodeAt(i), cp;
+    if (c >= 0xD800 && c <= 0xDBFF && i + 1 < e.length) { cp = (c - 0xD800) * 0x400 + (e.charCodeAt(i + 1) - 0xDC00) + 0x10000; i += 2; } else { cp = c; i++; }
+    if (cp != 0xfe0f) r.push(cp.toString(16));
+  }
+  return r.join('-');
+}
+function emoImg(e) {
+  if (!e) return '';
+  if (typeof api != 'function') return emo(e);
+  return '<img class="emo" src="' + api('imgx', { u: 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/' + emoCodi(e) + '.svg' }) + '" alt="' + emo(e) + '" onerror="this.onerror=null;this.parentNode.replaceChild(document.createTextNode(this.alt),this)">';
+}

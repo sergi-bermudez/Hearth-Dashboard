@@ -879,3 +879,5 @@ TR.fr["Desfet."]="Annulé.";
 TR.fr["desfer"]="annuler";
 TR.fr["Desfés la tria"]="Annuler le choix";
 TR.fr["Buscant a TMDB, iTunes, Viquipèdia i Wikidata, en diversos idiomes…"]="Recherche dans TMDB, iTunes, Wikipédia et Wikidata, en plusieurs langues…";
+TR.fr["He buscat:"]="J'ai cherché :";
+TR.fr["Errors:"]="Erreurs :";

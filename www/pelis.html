@@ -347,7 +347,8 @@ function carregaOpcions(text) {
   getJson(api('peli-opcions', { p: p, q: text }), function (d) {
     if (TR.p != p) return;
     if (!$('tr-q').value && d.cerca && d.cerca.length) $('tr-q').value = d.cerca[0];
-    $('tr-nota').textContent = Tf('Fitxer: {1}', d.fitxer || '') + ' · ' + T('Toca la correcta.');
+    $('tr-nota').innerHTML = esc(Tf('Fitxer: {1}', d.fitxer || '') + ' · ' + T('Toca la correcta.')) +
+      '<div class="petit" style="margin-top:4px;opacity:.75">' + esc(T('He buscat:') + ' ' + (d.variants || d.cerca || []).join(' · ') + (d.fonts ? ' — ' + d.fonts : '') + (d.errors && d.errors.length ? ' — ' + T('Errors:') + ' ' + d.errors.join('; ') : '')) + '</div>';
     $('tr-l').innerHTML = opcionsHtml(d.opcions || [], p, '') || '<div class="gris">' + T('No he trobat res. Prova amb el títol original o un altre nom.') + '</div>';
     mandrosTria();
   }, function () { $('tr-nota').textContent = T('No s\'ha pogut buscar.'); });

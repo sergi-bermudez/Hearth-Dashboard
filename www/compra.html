@@ -33,6 +33,8 @@ html,body{height:100%;overflow:hidden}
 .t{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;display:inline-block;vertical-align:top;width:calc(25% - 8px);margin:4px;background:#1c1c1e;border-radius:14px;position:relative;cursor:pointer;overflow:hidden}
 .t .im{height:96px;background:#fff center/contain no-repeat;border-bottom:1px solid rgba(255,255,255,.05)}
 .t .em{height:100px;line-height:100px;text-align:center;font-size:54px;background:#232326}
+img.emo{width:1.15em;height:1.15em;vertical-align:-0.2em;border:0}
+.t .em img.emo{width:60px;height:60px;vertical-align:middle}
 .t .tx{padding:7px 9px 9px}
 .t .nm{font-size:14px;line-height:1.25;height:2.5em;overflow:hidden}
 .t .qn{font-size:12px;color:#8d95a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:16px}
@@ -176,7 +178,6 @@ var IC_WA = 'M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 
 var CATS = [['fruita', '🍎', 'Fruita i verdura'], ['congelats', '🧊', 'Congelats'], ['xarcuteria', '🧀', 'Formatges i embotit'], ['snacks', '🥜', 'Pica-pica'], ['rebost', '🥫', 'Rebost'],
   ['vegetal', '🌱', 'Vegetarià'], ['lactis', '🥛', 'Làctics i ous'], ['pa', '🥖', 'Pa'], ['begudes', '🧃', 'Begudes'], ['carn', '🥩', 'Carn'], ['peix', '🐟', 'Peix'],
   ['neteja', '🧽', 'Neteja i casa'], ['higiene', '🧴', 'Higiene'], ['bebe', '🍼', 'Bebè'], ['animals', '🐾', 'Animals']];
-for (var ce = 0; ce < CATS.length; ce++) CATS[ce][1] = emo(CATS[ce][1]);
 var COLORS = ['#e3262e', '#2e8b3a', '#0a84ff', '#ff9f0a', '#bf5af2', '#64d2ff', '#ff375f'];
 var L = { items: [], hist: {}, fav: [] }, VERSIO = '', EDITA = 0;
 var V = { cat: 'fruita', bot: '', q: '', res: [], est: null, tq: null };
@@ -195,7 +196,7 @@ function plega(v) {
 }
 function pintaMini() {
   var p = pendents(), h = '<div class="n' + (p.length ? '' : ' zero') + '">' + p.length + '</div>';
-  for (var i = 0; i < p.length && i < 9; i++) h += '<div class="e">' + (p[i].e || '•') + '</div>';
+  for (var i = 0; i < p.length && i < 9; i++) h += '<div class="e">' + (p[i].e ? emoImg(p[i].e) : '•') + '</div>';
   if (p.length > 9) h += '<div class="e">…</div>';
   if (vertical()) h += '<div class="v">' + esc(T('Toca per veure la llista')) + '</div>'; else
   h += '<div class="v">' + esc(T('Llista')) + '</div>';
@@ -252,7 +253,7 @@ function nomBot(id) { var i = idxBot(id); return i >= 0 ? botigues()[i].nom : ''
 function pintaChips() {
   var n = (V.est && V.est.cats) || {}, h = '<span id="c-fav" onclick="triaCat(\'fav\')">⭐ ' + esc(T('Preferits')) + '</span>', i;
   if (V.est && V.est.promos) h += '<span id="c-promo" onclick="triaCat(\'promo\')">🏷️ ' + esc(T('Promocions')) + '</span>';
-  for (i = 0; i < CATS.length; i++) if (conceptesDe(CATS[i][0]).length) h += '<span id="c-' + CATS[i][0] + '" onclick="triaCat(\'' + CATS[i][0] + '\')">' + CATS[i][1] + ' ' + esc(T(CATS[i][2])) + '</span>';
+  for (i = 0; i < CATS.length; i++) if (conceptesDe(CATS[i][0]).length) h += '<span id="c-' + CATS[i][0] + '" onclick="triaCat(\'' + CATS[i][0] + '\')">' + emoImg(CATS[i][1]) + ' ' + esc(T(CATS[i][2])) + '</span>';
   $('cats').innerHTML = h;
   var bl = botigues(), b = '';
   if (bl.length > 1) {
@@ -301,7 +302,7 @@ function sensePla(s) { return String(s || '').toLowerCase().replace(/[àáâã]/
 function htmlTile(p, i) {
   var k = clauP(p), h = '<div class="t' + (p.esg ? ' esg' : '') + (p.cc ? ' conc' : p.u ? '' : ' lliure') + '" data-k="' + esc(k) + '"' + (p.cc ? ' data-q="' + esc(p.cq) + '" data-cat="' + esc(p.cat || '') + '"' : '') + ' onclick="tocaTile(' + i + ')" oncontextmenu="treuTile(' + i + ');return false" ontouchstart="premTile(' + i + ')" ontouchend="deixaTile()" ontouchmove="deixaTile()">';
   var pf = p.cc && L.prefs && L.prefs[k], im = p.img || (pf && pf.img);
-  h += im ? '<div class="im" style="background-image:' + bg(imgx(im, 200)) + '"></div>' : '<div class="em">' + (p.e || '🛒') + '</div>';
+  h += im ? '<div class="im" style="background-image:' + bg(imgx(im, 200)) + '"></div>' : '<div class="em">' + emoImg(p.e || '🛒') + '</div>';
   if (p.b) h += '<span class="bt" style="background:' + colorBot(p.b) + '">' + esc(nomBot(p.b) || p.b) + '</span>';
   if (p.pv && p.pv > p.p) h += '<span class="dc">-' + Math.round((1 - p.p / p.pv) * 100) + '%</span>';
   if (!p.nou) h += '<span class="st" onclick="event.stopPropagation();commutaFav(' + i + ')">' + (esFav(k) ? '★' : '☆') + '</span>';
@@ -524,7 +525,7 @@ function htmlItem(it) {
   if (o) sub = '<small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b) || '') + '</span>' + (it.cq ? ' · ' + esc(o.n) : '') + (o.q && !o.g ? ' · ' + esc(o.q) : '') + (o.g ? ' · ' + euro(o.p) + '/kg' : enKg(it) && o.pu && /kg/i.test(o.uu || '') ? ' · ' + euro(o.pu) + '/kg' : '') + (o.g && !enKg(it) && kgsDe(it, o) ? ' · ≈ ' + kgTxt(kgsDe(it, o)) : '') + (preuItem(it, o) ? ' · <b>' + (o.g ? '≈ ' : '') + euro(preuItem(it, o)) + '</b>' : '') + (it.cq && !it.tria ? ' ' + (o.s > 0 ? T('(com el que sols comprar)') : T('(el més barat)')) : '') + '</small>';
   else if (it.cq && MILL[it.cq]) sub = '<small>' + T('No el trobo a les botigues') + '</small>';
   return '<div class="ci' + (it.fet ? ' fet' : '') + '"><div class="ck" onclick="commuta(\'' + it.id + '\')"><i></i></div>' +
-    '<div class="tx" onclick="' + (it.cq && !it.fet ? 'opcions(\'' + it.id + '\')' : 'commuta(\'' + it.id + '\')') + '"><b>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</b>' + sub + '</div>' +
+    '<div class="tx" onclick="' + (it.cq && !it.fet ? 'opcions(\'' + it.id + '\')' : 'commuta(\'' + it.id + '\')') + '"><b>' + (it.e ? emoImg(it.e) + ' ' : '') + esc(it.t) + '</b>' + sub + '</div>' +
     (it.fet ? '' : '<div class="qb"><button onclick="quant(\'' + it.id + '\',-1)">−</button><span' + (esPes(it) ? ' class="kg" onclick="canviaMode(\'' + it.id + '\')" title="' + esc(T('Toca per canviar entre peces i kg')) + '"' : '') + '>' + qText(it) + (esPes(it) ? '<small>' + (enKg(it) ? T('toca: unitats') : T('toca: kg')) + '</small>' : '') + '</span><button onclick="quant(\'' + it.id + '\',1)">+</button></div>') + '</div>';
 }
 /* Totals: comprant cada cosa on és més barata, o tot en una sola botiga */
@@ -583,7 +584,7 @@ function pintaLlista() {
 var OPC = null;
 function opcions(id, primer) {
   var it = L.items[troba(id)]; if (!it) return;
-  var m = MILL[it.cq], h = '<h3>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</h3>' + (primer ? '<div class="gris petit" style="margin:-4px 0 8px">' + T('Quin vols? Ho recordaré per a la propera vegada.') + '</div>' : '');
+  var m = MILL[it.cq], h = '<h3>' + (it.e ? emoImg(it.e) + ' ' : '') + esc(it.t) + '</h3>' + (primer ? '<div class="gris petit" style="margin:-4px 0 8px">' + T('Quin vols? Ho recordaré per a la propera vegada.') + '</div>' : '');
   OPC = { id: id, l: m && m.top ? m.top : [] };
   if (primer && !OPC.l.length) return;
   if (!OPC.l.length) h += '<div class="gris">' + (V.est && V.est.n ? T('No el trobo a les botigues.') : T('Afegeix les teves botigues a Configuració ▸ Compra per veure on és més barat.')) + '</div>';
