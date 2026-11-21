@@ -389,14 +389,14 @@ public static class CasaServidor
                 }
                 string tele = Q(q, "nom");
                 System.Diagnostics.ProcessStartInfo pi = new System.Diagnostics.ProcessStartInfo("powershell.exe",
-                    "-NoProfile -ExecutionPolicy Bypass -File \"" + Path.Combine(DirArrel, "eines", "tele.ps1") + "\" " + (nom == "tele/atura" ? "-Atura" : nom == "tele/llista" ? "-Llista" : Q(q, "manual") == "1" ? "-Manual" : "-Nom \"" + tele.Replace("\"", "") + "\""));
+                    "-NoProfile -ExecutionPolicy Bypass -File \"" + Path.Combine(DirArrel, "eines", "tele.ps1") + "\" " + (nom == "tele/atura" ? "-Atura" : nom == "tele/llista" ? "-Llista" : "-Nom \"" + tele.Replace("\"", "") + "\""));
                 pi.UseShellExecute = false; pi.RedirectStandardOutput = true; pi.CreateNoWindow = true;
                 System.Diagnostics.Process pr = System.Diagnostics.Process.Start(pi);
                 string sortida = pr.StandardOutput.ReadToEnd();
                 pr.WaitForExit(40000);
                 sortida = sortida.Trim();
                 if (nom == "tele/llista") { Text(res, sortida.StartsWith("[") ? sortida : "[]", "application/json; charset=utf-8"); return; }
-                Json(res, Dic("ok", sortida.StartsWith("ok") || sortida == "no-projectava" || sortida == "manual", "manual", sortida == "manual" || sortida == "ok:manual", "resultat", sortida));
+                Json(res, Dic("ok", sortida.StartsWith("ok") || sortida == "no-projectava", "resultat", sortida));
             }
             catch (Exception ex) { Error(res, 500, ex.Message); }
             return;

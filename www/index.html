@@ -15,8 +15,6 @@
 <meta name="application-name" content="Hearth">
 <title>Hearth</title>
 <script src="i18n.js"></script>
-<script>/* si el servidor s'estava reiniciant (p. ex. en una actualització) i algun fitxer no ha arribat, la pàgina queda buida: torna-ho a provar */
-setTimeout(function () { if (!window.Casa) location.reload(); }, 12000);</script>
 <style>
 *{box-sizing:border-box;-webkit-box-sizing:border-box;-webkit-tap-highlight-color:rgba(0,0,0,0)}
 html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0b0d12;color:#fff;font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:17px;-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
@@ -138,10 +136,7 @@ html.sa #dash{top:20px}
 .gb:last-child{margin-right:0}
 .gb .ic{display:block;width:30px;height:30px;margin:0 auto 6px}
 /* Preferits */
-/* la fila llisca dins .rapid-in; la seva barra de desplaçament queda per sota, retallada (Windows la pinta encara que s'amagui) */
-#rapid{-webkit-flex:none;flex:none;margin-bottom:14px;overflow:hidden}
-#rapid .rapid-in{white-space:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding-bottom:30px;margin-bottom:-30px}
-#rapid .rapid-in::-webkit-scrollbar{display:none;height:0}#rapid .rapid-in{scrollbar-width:none;-ms-overflow-style:none}
+#rapid{-webkit-flex:none;flex:none;margin-bottom:14px;white-space:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
 .rt{display:inline-block;width:78px;margin-right:12px;text-align:center;font-size:12px;vertical-align:top;white-space:normal;cursor:pointer;line-height:1.2}
 .rt .lg{width:78px;height:78px;border-radius:16px;background:#fff center/68% no-repeat;margin-bottom:5px;position:relative;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .rt .lg.color{background-size:cover}
@@ -352,9 +347,6 @@ html.sa #mc-sona{top:40px}
   body.e-fosc #hora{font-size:130px}
 }
 ::-webkit-scrollbar{width:8px;height:0;background:transparent}
-/* Files que es desplacen de costat (accessos ràpids, moll, canals): sense barra de desplaçament (es mouen arrossegant o amb la roda) */
-#rapid,.d-dock,#tv .tv-canals,.chips{scrollbar-width:none;-ms-overflow-style:none}
-#rapid::-webkit-scrollbar,.d-dock::-webkit-scrollbar,#tv .tv-canals::-webkit-scrollbar,.chips::-webkit-scrollbar{display:none;height:0}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:4px}
 #rapid,#tv .tv-canals{scrollbar-width:none}
 /* Enviar a la tele / altaveu (Chromecast, Google Nest, DLNA) */
@@ -491,7 +483,7 @@ body.aud-l #rapid,body.aud-l #agenda{display:none !important}
 /* iOS 9: les zones amb desplaçament "natiu" (-webkit-overflow-scrolling:touch) creen una capa
    del sistema que, quan la pantalla canvia (vídeo, caràtula, mida del reproductor), es queda on era
    i es menja els tocs. Als iPads antics fem servir el desplaçament normal. */
-html.ios-vell #rapid .rapid-in,html.ios-vell #tv .tv-canals,html.ios-vell #cast .card{-webkit-overflow-scrolling:auto}
+html.ios-vell #rapid,html.ios-vell #tv .tv-canals,html.ios-vell #cast .card{-webkit-overflow-scrolling:auto}
 /* Fora de la pantalla quan no es fa servir (a més d'amagat) */
 body:not(.en-app) #apps{top:-30000px;bottom:auto;height:10px}
 </style>
@@ -1635,7 +1627,7 @@ function pintaRapid() {
   if (h) parts.push(h);
   parts = parts0.concat(parts);
   var r = $('rapid');
-  r.innerHTML = '<div class="rapid-in">' + parts.join('<span class="rsep"></span>') + '</div>';
+  r.innerHTML = parts.join('<span class="rsep"></span>');
   r.style.display = parts.length ? 'block' : 'none';
 }
 var RV = [];
@@ -1900,15 +1892,13 @@ function teleMenu() {
     l = l || [];
     var x = '';
     for (var i = 0; i < l.length; i++) x += '<div class="ce" data-n="' + esc(l[i]) + '" onclick="teleMostra(this.getAttribute(\'data-n\'))">' + svg(IC.tv) + '<div>' + esc(l[i]) + '<small>Miracast</small></div></div>';
-    x += '<div class="ce" onclick="teleMostra(\'\', 1)">' + svg(IC.tv) + '<div>' + T('Tria-la tu al PC') + '<small>' + T('Obre el panell Projecta de Windows (Win + K)') + '</small></div></div>';
-    $('tl-l').className = ''; $('tl-l').innerHTML = (l.length ? '' : '<div class="gris" style="padding:4px 4px 10px">' + T('No he trobat la tele des d\'aquí. Tria-la tu al PC: Hearth s\'hi obrirà igualment.') + '</div>') + x;
+    $('tl-l').className = ''; $('tl-l').innerHTML = x || '<div class="gris">' + T('No he trobat cap tele que accepti projecció (Miracast). Ha d\'estar engegada i a prop del PC.') + '</div>';
   }, function () { $('tl-l').textContent = T('No s\'ha pogut connectar amb el servidor.'); });
 }
-function teleMostra(nom, manual) {
-  $('tl-l').innerHTML = '<div class="gris">' + (manual ? T('Obrint…') : esc(Tf('Connectant amb {1}…', nom))) + '</div>';
-  getJsonPost(api('admin/tele/obre', manual ? { manual: 1 } : { nom: nom }), function (d) {
-    if (d && d.ok && d.manual) { castTanca(); avis(T('Al PC, tria la tele al panell Projecta. Hearth ja és obert a pantalla completa.'), 9000); }
-    else if (d && d.ok) { castTanca(); avis(T('Hearth ja és a la tele. Fes-lo servir amb el comandament.'), 6000); }
+function teleMostra(nom) {
+  $('tl-l').innerHTML = '<div class="gris">' + esc(Tf('Connectant amb {1}…', nom)) + '</div>';
+  getJsonPost(api('admin/tele/obre', { nom: nom }), function (d) {
+    if (d && d.ok) { castTanca(); avis(T('Hearth ja és a la tele. Fes-lo servir amb el comandament.'), 6000); }
     else $('tl-l').innerHTML = '<div style="color:#ff9f0a">' + T('No s\'ha pogut connectar. Prova-ho de nou.') + '</div>';
   });
 }
