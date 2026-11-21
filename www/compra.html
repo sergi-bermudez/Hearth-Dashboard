@@ -388,7 +388,7 @@ function afegeixProducte(p) {
     desa(); pintaLlista(); marcaQuantitats(); return;
   }
   var it = { id: Date.now().toString(36) + Math.random().toString(36).substring(2, 5), k: k, t: p.n, q: 1, fet: false };
-  if (p.cc) { it.cq = p.cq; it.e = p.e; }
+  if (p.cc) { it.cq = p.cq; it.e = p.e; if (p.cat) it.cat = p.cat; }
   else { it.p = p.p || 0; it.b = p.b || ''; it.u = p.u || ''; it.qn = p.q || ''; }
   L.items.unshift(it); ultimId = it.id;
   desa(); pintaLlista(); marcaQuantitats();
@@ -402,18 +402,30 @@ function afegeixText() {
   $('q').value = ''; V.q = ''; carregaGraella();
 }
 /* Productes a pes (fruita a granel, carn, peix...): la quantitat és en kg, de mig en mig */
-function esPes(it) { var o = opcio(it); return !!(o && o.g); }
+/* Es pot comprar a pes: si la botiga el ven a granel, o si és fruita, verdura, carn o peix fresc */
+var PES_CATS = { fruita: 1, carn: 1, peix: 1 };
+function catDe(it) {
+  if (it.cat) return it.cat;
+  if (!it.cq) return '';
+  var l = CONCEPTES.concat(CONCEPTES_MES);
+  for (var i = 0; i < l.length; i++) if (concCerca(l[i]) == it.cq) return (it.cat = l[i][0]);
+  return '';
+}
+function esPes(it) { var o = opcio(it); return !!(o && o.g) || !!PES_CATS[catDe(it)]; }
 /* A pes es pot demanar per peces («3 plàtans») o per pes («0,75 kg»): tocant la quantitat es canvia */
 function enKg(it) { return esPes(it) && it.mode == 'kg'; }
 function pas(it) { return enKg(it) ? 0.25 : 1; }
 function pesUnitat(o) { var m = o && /([\d.,]+)\s*kg/i.exec(o.q || ''); var w = m ? parseFloat(m[1].replace(',', '.')) : 0; return w > 0 && w < 5 ? w : 0; }
-function kgsDe(it, o) { var q = it.q || 1; if (!o || !o.g) return 0; return it.mode == 'kg' ? q : q * pesUnitat(o); }
+function kgsDe(it, o) { var q = it.q || 1; if (it.mode == 'kg') return q; if (!o || !o.g) return 0; return q * pesUnitat(o); }
 function kgTxt(k) { return (Math.round(k * 100) / 100).toString().replace('.', ',') + ' kg'; }
 /* Preu d'un article amb l'opció donada (0 si no se sap: peces sense pes per peça) */
 function preuItem(it, o) {
   if (!o || !o.p) return 0;
-  if (!o.g) return o.p * (it.q || 1);
-  return o.p * kgsDe(it, o);
+  var q = it.q || 1;
+  if (o.g) return o.p * kgsDe(it, o);
+  /* la botiga el ven per peça o paquet: per kg només si en dona el preu per kg */
+  if (it.mode == 'kg') return o.pu && /kg/i.test(o.uu || '') ? o.pu * q : 0;
+  return o.p * q;
 }
 function qText(it) { var q = it.q || 1; return enKg(it) ? kgTxt(q) : String(q); }
 function canviaMode(id) {
@@ -441,7 +453,7 @@ function opcio(it) {
 }
 function htmlItem(it) {
   var o = opcio(it), sub = '';
-  if (o) sub = '<small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b) || '') + '</span>' + (it.cq ? ' · ' + esc(o.n) : '') + (o.q && !o.g ? ' · ' + esc(o.q) : '') + (o.g ? ' · ' + euro(o.p) + '/kg' : '') + (o.g && !enKg(it) && kgsDe(it, o) ? ' · ≈ ' + kgTxt(kgsDe(it, o)) : '') + (preuItem(it, o) ? ' · <b>' + (o.g ? '≈ ' : '') + euro(preuItem(it, o)) + '</b>' : '') + (it.cq && !it.tria ? ' ' + T('(el més barat)') : '') + '</small>';
+  if (o) sub = '<small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b) || '') + '</span>' + (it.cq ? ' · ' + esc(o.n) : '') + (o.q && !o.g ? ' · ' + esc(o.q) : '') + (o.g ? ' · ' + euro(o.p) + '/kg' : enKg(it) && o.pu && /kg/i.test(o.uu || '') ? ' · ' + euro(o.pu) + '/kg' : '') + (o.g && !enKg(it) && kgsDe(it, o) ? ' · ≈ ' + kgTxt(kgsDe(it, o)) : '') + (preuItem(it, o) ? ' · <b>' + (o.g ? '≈ ' : '') + euro(preuItem(it, o)) + '</b>' : '') + (it.cq && !it.tria ? ' ' + T('(el més barat)') : '') + '</small>';
   else if (it.cq && MILL[it.cq]) sub = '<small>' + T('No el trobo a les botigues') + '</small>';
   return '<div class="ci' + (it.fet ? ' fet' : '') + '"><div class="ck" onclick="commuta(\'' + it.id + '\')"><i></i></div>' +
     '<div class="tx" onclick="' + (it.cq && !it.fet ? 'opcions(\'' + it.id + '\')' : 'commuta(\'' + it.id + '\')') + '"><b>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</b>' + sub + '</div>' +
@@ -523,7 +535,7 @@ function triaOpcio(i) {
 /* Quantes vegades cal prémer «afegir»: a pes, segons el pes de cada unitat a la web (p. ex. «0.5 Kg») */
 function clics(it, o) {
   var q = it.q || 1;
-  if (!o || !o.g || it.mode != 'kg') return q;
+  if (!o || it.mode != 'kg') return q;
   return Math.max(1, Math.round(q / (pesUnitat(o) || 0.5)));
 }
 function alCarro(b) {
