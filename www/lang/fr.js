@@ -803,3 +803,4 @@ TR.fr["peces"]="pièces";
 TR.fr["un"]="pc";
 TR.fr["toca: unitats"]="touchez : pièces";
 TR.fr["toca: kg"]="touchez : kg";
+TR.fr["(com el que sols comprar)"]="(comme ce que vous achetez d'habitude)";

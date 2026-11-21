@@ -803,3 +803,4 @@ TR.en["peces"]="pieces";
 TR.en["un"]="pcs";
 TR.en["toca: unitats"]="tap: pieces";
 TR.en["toca: kg"]="tap: kg";
+TR.en["(com el que sols comprar)"]="(like what you usually buy)";

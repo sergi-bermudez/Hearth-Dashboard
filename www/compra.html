@@ -335,7 +335,7 @@ function pintaDes() {
     if (!d) continue;
     if (!m) d.innerHTML = '';
     else if (!b) d.innerHTML = '<span class="gris">' + T('No el trobo a les botigues') + '</span>';
-    else d.innerHTML = T('des de') + ' <b>' + euro(b.p) + (b.g ? '/kg' : b.q ? '</b> <span class="gris">' + esc(b.q) + '</span><b>' : '') + '</b> · <span style="color:' + colorBot(b.b) + '">' + esc(nomBot(b.b)) + '</span>';
+    else d.innerHTML = (b.s > 0 ? '' : T('des de') + ' ') + '<b>' + euro(b.p) + (b.g ? '/kg' : b.q ? '</b> <span class="gris">' + esc(b.q) + '</span><b>' : '') + '</b> · <span style="color:' + colorBot(b.b) + '">' + esc(nomBot(b.b)) + '</span>';
   }
 }
 function marcaQuantitats() {
@@ -469,7 +469,7 @@ function opcio(it) {
 }
 function htmlItem(it) {
   var o = opcio(it), sub = '';
-  if (o) sub = '<small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b) || '') + '</span>' + (it.cq ? ' · ' + esc(o.n) : '') + (o.q && !o.g ? ' · ' + esc(o.q) : '') + (o.g ? ' · ' + euro(o.p) + '/kg' : enKg(it) && o.pu && /kg/i.test(o.uu || '') ? ' · ' + euro(o.pu) + '/kg' : '') + (o.g && !enKg(it) && kgsDe(it, o) ? ' · ≈ ' + kgTxt(kgsDe(it, o)) : '') + (preuItem(it, o) ? ' · <b>' + (o.g ? '≈ ' : '') + euro(preuItem(it, o)) + '</b>' : '') + (it.cq && !it.tria ? ' ' + T('(el més barat)') : '') + '</small>';
+  if (o) sub = '<small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b) || '') + '</span>' + (it.cq ? ' · ' + esc(o.n) : '') + (o.q && !o.g ? ' · ' + esc(o.q) : '') + (o.g ? ' · ' + euro(o.p) + '/kg' : enKg(it) && o.pu && /kg/i.test(o.uu || '') ? ' · ' + euro(o.pu) + '/kg' : '') + (o.g && !enKg(it) && kgsDe(it, o) ? ' · ≈ ' + kgTxt(kgsDe(it, o)) : '') + (preuItem(it, o) ? ' · <b>' + (o.g ? '≈ ' : '') + euro(preuItem(it, o)) + '</b>' : '') + (it.cq && !it.tria ? ' ' + (o.s > 0 ? T('(com el que sols comprar)') : T('(el més barat)')) : '') + '</small>';
   else if (it.cq && MILL[it.cq]) sub = '<small>' + T('No el trobo a les botigues') + '</small>';
   return '<div class="ci' + (it.fet ? ' fet' : '') + '"><div class="ck" onclick="commuta(\'' + it.id + '\')"><i></i></div>' +
     '<div class="tx" onclick="' + (it.cq && !it.fet ? 'opcions(\'' + it.id + '\')' : 'commuta(\'' + it.id + '\')') + '"><b>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</b>' + sub + '</div>' +

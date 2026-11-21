@@ -803,3 +803,4 @@ TR.es["peces"]="piezas";
 TR.es["un"]="ud";
 TR.es["toca: unitats"]="toca: unidades";
 TR.es["toca: kg"]="toca: kg";
+TR.es["(com el que sols comprar)"]="(como el que sueles comprar)";

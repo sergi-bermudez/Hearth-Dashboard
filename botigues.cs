@@ -365,13 +365,14 @@ public static class Botigues
                     // "tomate cherry|tomate mini -polpa @fruita": alternatives separades per |,
                     // paraules a excloure amb -, i categoria obligat\u00f2ria amb @
                     List<List<string>> alts = new List<List<string>>();
-                    List<string> no = new List<string>();
+                    List<string> no = new List<string>(), pref = new List<string>();
                     string catQ = "";
                     foreach (string alt in Pla(qo == null ? "" : qo.ToString()).Split('|'))
                     {
                         List<string> si = new List<string>();
                         foreach (string w in alt.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
                             if (w.StartsWith("-")) { if (w.Length > 1) no.Add(w.Substring(1)); }
+                            else if (w.StartsWith("~")) { if (w.Length > 1) pref.Add(w.Substring(1)); }
                             else if (w.StartsWith("@")) catQ = w.Substring(1);
                             else si.Add(w);
                         if (si.Count > 0) alts.Add(si);
@@ -395,7 +396,19 @@ public static class Botigues
                         }
                     // Si la botiga classifica b\u00e9 la secci\u00f3, nom\u00e9s d'aquella categoria; si no, de totes
                     if (catQ != "" && rCat.Count > 0) r = rCat;
-                    r.Sort(delegate (Dictionary<string, object> x, Dictionary<string, object> y) { return PreuRef(x).CompareTo(PreuRef(y)); });
+                    // Primer els m\u00e9s semblants al que es compra habitualment (paraules ~), despr\u00e9s el m\u00e9s barat
+                    Dictionary<Dictionary<string, object>, int> sem = new Dictionary<Dictionary<string, object>, int>();
+                    foreach (Dictionary<string, object> p in r)
+                    {
+                        string nn = " " + Pla(S(p, "n") + " " + S(p, "m") + " " + S(p, "q")) + " ";
+                        int n = 0;
+                        foreach (string w in pref) if (Paraula(nn, w)) n++;
+                        sem[p] = n;
+                    }
+                    r.Sort(delegate (Dictionary<string, object> x, Dictionary<string, object> y) { int a = sem[y].CompareTo(sem[x]); return a != 0 ? a : PreuRef(x).CompareTo(PreuRef(y)); });
+                    List<Dictionary<string, object>> r2 = new List<Dictionary<string, object>>();
+                    foreach (Dictionary<string, object> p in r) { Dictionary<string, object> cp = new Dictionary<string, object>(p); cp["s"] = pref.Count > 0 ? (double)sem[p] / pref.Count : 0; r2.Add(cp); }
+                    r = r2;
                     Dictionary<string, object> perB = new Dictionary<string, object>();
                     foreach (Dictionary<string, object> p in r) { string b = S(p, "b"); if (!perB.ContainsKey(b)) perB[b] = p; }
                     Dictionary<string, object> e = new Dictionary<string, object>();
