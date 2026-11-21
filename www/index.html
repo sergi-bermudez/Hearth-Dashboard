@@ -1898,13 +1898,15 @@ function teleMenu() {
     l = l || [];
     var x = '';
     for (var i = 0; i < l.length; i++) x += '<div class="ce" data-n="' + esc(l[i]) + '" onclick="teleMostra(this.getAttribute(\'data-n\'))">' + svg(IC.tv) + '<div>' + esc(l[i]) + '<small>Miracast</small></div></div>';
-    $('tl-l').className = ''; $('tl-l').innerHTML = x || '<div class="gris">' + T('No he trobat cap tele que accepti projecció (Miracast). Ha d\'estar engegada i a prop del PC.') + '</div>';
+    x += '<div class="ce" onclick="teleMostra(\'\', 1)">' + svg(IC.tv) + '<div>' + T('Tria-la tu al PC') + '<small>' + T('Obre el panell Projecta de Windows (Win + K)') + '</small></div></div>';
+    $('tl-l').className = ''; $('tl-l').innerHTML = (l.length ? '' : '<div class="gris" style="padding:4px 4px 10px">' + T('No he trobat la tele des d\'aquí. Tria-la tu al PC: Hearth s\'hi obrirà igualment.') + '</div>') + x;
   }, function () { $('tl-l').textContent = T('No s\'ha pogut connectar amb el servidor.'); });
 }
-function teleMostra(nom) {
-  $('tl-l').innerHTML = '<div class="gris">' + esc(Tf('Connectant amb {1}…', nom)) + '</div>';
-  getJsonPost(api('admin/tele/obre', { nom: nom }), function (d) {
-    if (d && d.ok) { castTanca(); avis(T('Hearth ja és a la tele. Fes-lo servir amb el comandament.'), 6000); }
+function teleMostra(nom, manual) {
+  $('tl-l').innerHTML = '<div class="gris">' + (manual ? T('Obrint…') : esc(Tf('Connectant amb {1}…', nom))) + '</div>';
+  getJsonPost(api('admin/tele/obre', manual ? { manual: 1 } : { nom: nom }), function (d) {
+    if (d && d.ok && d.manual) { castTanca(); avis(T('Al PC, tria la tele al panell Projecta. Hearth ja és obert a pantalla completa.'), 9000); }
+    else if (d && d.ok) { castTanca(); avis(T('Hearth ja és a la tele. Fes-lo servir amb el comandament.'), 6000); }
     else $('tl-l').innerHTML = '<div style="color:#ff9f0a">' + T('No s\'ha pogut connectar. Prova-ho de nou.') + '</div>';
   });
 }
