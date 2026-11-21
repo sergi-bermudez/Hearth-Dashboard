@@ -1,7 +1,7 @@
 // Hearth · lector de catàlegs de supermercat (s'executa dins l'Edge amagat, a la pàgina de la botiga).
 // No depèn de classes concretes de cap web: busca enllaços a fitxes de producte i, al voltant, el preu.
 (function () {
-  if (window.__bt && window.__bt.v === 7) return;
+  if (window.__bt && window.__bt.v === 8) return;
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   // Fitxa de producte: /produto/…, /product/…, /p/… o adreces que acaben en un codi (…-544184.html).
   // "/produtos/…" (plural) sol ser una categoria, no un producte.
@@ -32,6 +32,8 @@
   }
 
   function preus(s) {
+    // preus partits en dues línies (euros i cèntims en elements diferents): «5\n,10 €» → «5,10 €»
+    s = s.replace(/(\d)\s*\n\s*([.,]\d{1,3})/g, '$1$2').replace(/(\d[.,])\s*\n\s*(\d{1,3})/g, '$1$2');
     // "PVPR 6,00€ 5,34€ 0,89€/lt" → preu 5,34 · abans 6,00 · unitari 0,89/lt
     const r = []; let m; RX_PREU.lastIndex = 0;
     while ((m = RX_PREU.exec(s))) {
@@ -99,6 +101,17 @@
     return r2.length > r.length ? r2 : r;
   }
 
+  // Quantitat total d'un envàs en la unitat del preu unitari: «6 x 1 lt» → 6 (lt), «500 gr» → 0,5 (kg)
+  function totalQ(q, uu) {
+    const m = /(?:(\d+)\s*x\s*)?(\d+(?:[.,]\d+)?)\s*(kg|gr|g|lt|l|ml|cl|un)\b/i.exec(q || '');
+    if (!m) return 0;
+    let n = (m[1] ? parseInt(m[1], 10) : 1) * parseFloat(m[2].replace(',', '.'));
+    const u = m[3].toLowerCase(), b = String(uu || '').toLowerCase();
+    if (u == 'g' || u == 'gr') n /= 1000; else if (u == 'ml') n /= 1000; else if (u == 'cl') n /= 100;
+    const massa = /^(kg|g|gr)$/.test(u), vol = /^(l|lt|ml|cl)$/.test(u);
+    if ((/^kg/.test(b) && massa) || (/^l/.test(b) && vol) || (/^un/.test(b) && u == 'un')) return n;
+    return 0;
+  }
   function productes() {
     const out = [];
     for (const [a, t, h] of candidats()) {
@@ -116,6 +129,9 @@
       const marca = t.querySelector('[class*="brand" i], [class*="marca" i]');
       let im = img ? (img.currentSrc || img.src || img.getAttribute('data-src') || '') : '';
       if (/^data:/.test(im)) im = img.getAttribute('data-src') || '';
+      // Si el preu llegit és el preu per litre/kg i el paquet en té més d'un (6 x 1 lt), el preu és el del paquet
+      const tot = totalQ(qm ? qm[1] : '', pr.uu);
+      if (pr.pu && Math.abs(pr.p - pr.pu) < 0.005 && tot > 1.01 && !pr.granel) { const f = tot; pr.pv = pr.pv ? Math.round(pr.pv * f * 100) / 100 : 0; pr.p = Math.round(pr.p * f * 100) / 100; }
       out.push({
         n: nom, u: h, img: im, p: pr.p, pv: pr.pv, pu: pr.pu, uu: pr.uu,
         q: qm ? qm[1].trim() : '', m: marca ? txt(marca) : '',
@@ -199,5 +215,5 @@
     return { url: location.href, titol: document.title, n: productes().length };
   }
 
-  window.__bt = { v: 7, afegeix: afegeix, cistell: cistell, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
+  window.__bt = { v: 8, afegeix: afegeix, cistell: cistell, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
 })();

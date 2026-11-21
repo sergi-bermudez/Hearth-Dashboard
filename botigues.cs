@@ -346,7 +346,9 @@ public static class Botigues
             else if (paraules.Length > 0)
                 r.Sort(delegate (Dictionary<string, object> x, Dictionary<string, object> y) { int a = S(x, "n").Length.CompareTo(S(y, "n").Length); return a != 0 ? a : Convert.ToDouble(x["p"]).CompareTo(Convert.ToDouble(y["p"])); });
             if (r.Count > max) r = r.GetRange(0, max);
-            CasaServidor.Json(res, r.ToArray());
+            List<object> rc = new List<object>();
+            foreach (Dictionary<string, object> p in r) rc.Add(Corregeix(p));
+            CasaServidor.Json(res, rc.ToArray());
             return;
         }
         if (nom == "millors")
@@ -409,7 +411,7 @@ public static class Botigues
                     }
                     r.Sort(delegate (Dictionary<string, object> x, Dictionary<string, object> y) { int a = sem[y].CompareTo(sem[x]); return a != 0 ? a : PreuRef(x).CompareTo(PreuRef(y)); });
                     List<Dictionary<string, object>> r2 = new List<Dictionary<string, object>>();
-                    foreach (Dictionary<string, object> p in r) { Dictionary<string, object> cp = new Dictionary<string, object>(p); cp["s"] = pref.Count > 0 ? (double)sem[p] / pref.Count : 0; r2.Add(cp); }
+                    foreach (Dictionary<string, object> p in r) { Dictionary<string, object> cp = Corregeix(p); cp["s"] = pref.Count > 0 ? (double)sem[p] / pref.Count : 0; r2.Add(cp); }
                     r = r2;
                     Dictionary<string, object> perB = new Dictionary<string, object>();
                     foreach (Dictionary<string, object> p in r) { string b = S(p, "b"); if (!perB.ContainsKey(b)) perB[b] = p; }
@@ -547,6 +549,31 @@ public static class Botigues
     }
 
     // Preu de refer\u00e8ncia: el preu per kg/litre/unitat si la web el dona; si no, el preu
+    // Cataleg llegit abans de 4.11.5: si el preu era el preu per litre/kg d'un paquet (6 x 1 lt a 0,85),
+    // el preu de debo es el del paquet sencer
+    static Dictionary<string, object> Corregeix(Dictionary<string, object> p)
+    {
+        Dictionary<string, object> c = new Dictionary<string, object>(p);
+        try
+        {
+            double pr = Convert.ToDouble(p["p"]), pu = p.ContainsKey("pu") && p["pu"] != null ? Convert.ToDouble(p["pu"]) : 0;
+            if (pu <= 0 || Math.Abs(pr - pu) > 0.005 || S(p, "g") == "1") return c;
+            System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(S(p, "q"), @"(?:(\d+)\s*x\s*)?(\d+(?:[.,]\d+)?)\s*(kg|gr|g|lt|l|ml|cl|un)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (!m.Success) return c;
+            double n = (m.Groups[1].Success ? int.Parse(m.Groups[1].Value) : 1) * double.Parse(m.Groups[2].Value.Replace(',', '.'), System.Globalization.CultureInfo.InvariantCulture);
+            string u = m.Groups[3].Value.ToLowerInvariant(), b = S(p, "uu").ToLowerInvariant();
+            if (u == "g" || u == "gr" || u == "ml") n /= 1000; else if (u == "cl") n /= 100;
+            bool massa = u == "kg" || u == "g" || u == "gr", vol = u == "l" || u == "lt" || u == "ml" || u == "cl";
+            if (!((b.StartsWith("kg") && massa) || (b.StartsWith("l") && vol) || (b.StartsWith("un") && u == "un"))) return c;
+            if (n <= 1.01) return c;
+            c["p"] = Math.Round(pr * n, 2);
+            double pv = p.ContainsKey("pv") && p["pv"] != null ? Convert.ToDouble(p["pv"]) : 0;
+            if (pv > 0) c["pv"] = Math.Round(pv * n, 2);
+        }
+        catch { }
+        return c;
+    }
+
     static double PreuRef(Dictionary<string, object> p)
     {
         double pu = p.ContainsKey("pu") && p["pu"] != null ? Convert.ToDouble(p["pu"]) : 0;
