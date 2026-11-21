@@ -315,7 +315,12 @@ public static class CasaServidor
                     {
                         string text;
                         using (StreamReader sr = new StreamReader(ctx.Request.InputStream, Encoding.UTF8)) text = sr.ReadToEnd();
-                        lock (DadesLock) File.WriteAllText(f, text, new UTF8Encoding(false));
+                        lock (DadesLock)
+                        {
+                            // c\u00f2pia de l'anterior, per si de cas (p. ex. una llista de la compra trepitjada)
+                            try { if (File.Exists(f)) File.Copy(f, Path.Combine(Dades, n + ".anterior.json"), true); } catch { }
+                            File.WriteAllText(f, text, new UTF8Encoding(false));
+                        }
                         Text(res, "{\"ok\":true}", "application/json; charset=utf-8");
                     }
                     else

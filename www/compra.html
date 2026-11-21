@@ -202,23 +202,41 @@ plega(!!ls('compra.plegada'));
 /* ---------- Dades compartides entre aparells ---------- */
 /* La llista viu al servidor: és la mateixa a l'iPad, al PC i al mòbil, i es manté d'una vegada a l'altra.
    (amb un número a l'adreça perquè el Safari vell no torni una còpia guardada) */
+/* Mai es desa res fins que la llista del servidor s'ha llegit bé: si el servidor s'està reiniciant
+   (p. ex. després d'una actualització), una llista buida no ha de trepitjar la de debò. */
+var CARREGADA = false, PENDENT = false;
 function carrega(primer) {
   getJson(api('dades', { n: 'compra', _: Date.now() }), function (d) {
-    if (Date.now() - EDITA < 2500) return;
+    if (CARREGADA && Date.now() - EDITA < 2500) return;
     var j = JSON.stringify(d || {});
-    if (!primer && j == VERSIO) return;
+    if (CARREGADA && !primer && j == VERSIO) return;
+    var local = L;
     VERSIO = j;
     L = d && d.items ? d : { items: [], hist: (d && d.hist) || {} };
     if (!L.hist) L.hist = {};
     if (!L.fav) L.fav = [];
     /* llistes antigues: cada article necessita una clau */
     for (var i = 0; i < L.items.length; i++) if (!L.items[i].k) L.items[i].k = 'txt:' + clau(L.items[i].t);
+    var eraPrimera = !CARREGADA;
+    CARREGADA = true;
+    /* el que s'hagi afegit mentre es carregava, s'hi afegeix ara */
+    if (eraPrimera && PENDENT) {
+      PENDENT = false;
+      for (i = 0; i < local.items.length; i++) { var ja = false; for (var x = 0; x < L.items.length; x++) if (L.items[x].k == local.items[i].k) ja = true; if (!ja) L.items.unshift(local.items[i]); }
+      if (local.prefs) { if (!L.prefs) L.prefs = {}; for (var kk in local.prefs) if (local.prefs.hasOwnProperty(kk)) L.prefs[kk] = local.prefs[kk]; }
+      desa();
+    }
     pintaLlista();
-    if (primer || (V.cat == 'fav' && !V.q)) pintaGraella();
+    if (primer || eraPrimera || (V.cat == 'fav' && !V.q)) pintaGraella();
     else marcaQuantitats();
-  }, function () { });
+  }, function () { if (!CARREGADA) setTimeout(function () { carrega(true); }, 2000); });
 }
-function desa() { EDITA = Date.now(); VERSIO = JSON.stringify(L); desaDades('compra', L); }
+function desa() {
+  EDITA = Date.now();
+  if (!CARREGADA) { PENDENT = true; return; }
+  VERSIO = JSON.stringify(L);
+  desaDades('compra', L);
+}
 
 /* ---------- Botigues i categories ---------- */
 function botigues() { return (V.est && V.est.botigues) || []; }
