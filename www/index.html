@@ -15,6 +15,8 @@
 <meta name="application-name" content="Hearth">
 <title>Hearth</title>
 <script src="i18n.js"></script>
+<script>/* si el servidor s'estava reiniciant (p. ex. en una actualització) i algun fitxer no ha arribat, la pàgina queda buida: torna-ho a provar */
+setTimeout(function () { if (!window.Casa) location.reload(); }, 12000);</script>
 <style>
 *{box-sizing:border-box;-webkit-box-sizing:border-box;-webkit-tap-highlight-color:rgba(0,0,0,0)}
 html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0b0d12;color:#fff;font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:17px;-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
