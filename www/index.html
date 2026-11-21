@@ -136,7 +136,10 @@ html.sa #dash{top:20px}
 .gb:last-child{margin-right:0}
 .gb .ic{display:block;width:30px;height:30px;margin:0 auto 6px}
 /* Preferits */
-#rapid{-webkit-flex:none;flex:none;margin-bottom:14px;white-space:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+/* la fila llisca dins .rapid-in; la seva barra de desplaçament queda per sota, retallada (Windows la pinta encara que s'amagui) */
+#rapid{-webkit-flex:none;flex:none;margin-bottom:14px;overflow:hidden}
+#rapid .rapid-in{white-space:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding-bottom:30px;margin-bottom:-30px}
+#rapid .rapid-in::-webkit-scrollbar{display:none;height:0}#rapid .rapid-in{scrollbar-width:none;-ms-overflow-style:none}
 .rt{display:inline-block;width:78px;margin-right:12px;text-align:center;font-size:12px;vertical-align:top;white-space:normal;cursor:pointer;line-height:1.2}
 .rt .lg{width:78px;height:78px;border-radius:16px;background:#fff center/68% no-repeat;margin-bottom:5px;position:relative;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .rt .lg.color{background-size:cover}
@@ -347,6 +350,9 @@ html.sa #mc-sona{top:40px}
   body.e-fosc #hora{font-size:130px}
 }
 ::-webkit-scrollbar{width:8px;height:0;background:transparent}
+/* Files que es desplacen de costat (accessos ràpids, moll, canals): sense barra de desplaçament (es mouen arrossegant o amb la roda) */
+#rapid,.d-dock,#tv .tv-canals,.chips{scrollbar-width:none;-ms-overflow-style:none}
+#rapid::-webkit-scrollbar,.d-dock::-webkit-scrollbar,#tv .tv-canals::-webkit-scrollbar,.chips::-webkit-scrollbar{display:none;height:0}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:4px}
 #rapid,#tv .tv-canals{scrollbar-width:none}
 /* Enviar a la tele / altaveu (Chromecast, Google Nest, DLNA) */
@@ -483,7 +489,7 @@ body.aud-l #rapid,body.aud-l #agenda{display:none !important}
 /* iOS 9: les zones amb desplaçament "natiu" (-webkit-overflow-scrolling:touch) creen una capa
    del sistema que, quan la pantalla canvia (vídeo, caràtula, mida del reproductor), es queda on era
    i es menja els tocs. Als iPads antics fem servir el desplaçament normal. */
-html.ios-vell #rapid,html.ios-vell #tv .tv-canals,html.ios-vell #cast .card{-webkit-overflow-scrolling:auto}
+html.ios-vell #rapid .rapid-in,html.ios-vell #tv .tv-canals,html.ios-vell #cast .card{-webkit-overflow-scrolling:auto}
 /* Fora de la pantalla quan no es fa servir (a més d'amagat) */
 body:not(.en-app) #apps{top:-30000px;bottom:auto;height:10px}
 </style>
@@ -1627,7 +1633,7 @@ function pintaRapid() {
   if (h) parts.push(h);
   parts = parts0.concat(parts);
   var r = $('rapid');
-  r.innerHTML = parts.join('<span class="rsep"></span>');
+  r.innerHTML = '<div class="rapid-in">' + parts.join('<span class="rsep"></span>') + '</div>';
   r.style.display = parts.length ? 'block' : 'none';
 }
 var RV = [];
