@@ -15,6 +15,41 @@
 <meta name="application-name" content="Hearth">
 <title>Hearth</title>
 <script src="i18n.js"></script>
+<script>
+/* Si la pantalla d'inici no arrenca (un error, o dades d'aquest navegador fetes malbé), no es queda buida:
+   el primer cop esborra les dades locals i ho torna a provar; si torna a fallar, ensenya l'error i un botó per reparar. */
+var HEARTH_ERRS = [];
+window.onerror = function (m, u, l) { HEARTH_ERRS.push(m + ' (' + String(u || '').split('/').pop() + ':' + l + ')'); };
+function hearthRepara() {
+  try { localStorage.clear(); } catch (e) { }
+  try { document.cookie = 'hdisp=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'; } catch (e) { }
+  var fet = function () { location.reload(); };
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      navigator.serviceWorker.getRegistrations().then(function (rs) { for (var i = 0; i < rs.length; i++) rs[i].unregister(); });
+      if (window.caches) caches.keys().then(function (k) { for (var i = 0; i < k.length; i++) caches['delete'](k[i]); });
+    }
+  } catch (e) { }
+  setTimeout(fet, 800);
+}
+setTimeout(function () {
+  var c = document.getElementById('cfg');
+  if (c && c.innerHTML) { try { sessionStorage.removeItem('hearth-rep'); } catch (e) { } return; }
+  var ja = ''; try { ja = sessionStorage.getItem('hearth-rep') || ''; } catch (e) { }
+  if (!ja) {
+    try { sessionStorage.setItem('hearth-rep', '1'); } catch (e) { }
+    if (HEARTH_ERRS.length) hearthRepara(); else location.reload();
+    return;
+  }
+  var d = document.createElement('div');
+  d.style.cssText = 'position:fixed;left:20px;right:20px;top:20px;z-index:99999;background:#2c2c2e;color:#fff;border-radius:16px;padding:18px;font:15px -apple-system,Segoe UI,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.5)';
+  var t = (HEARTH_ERRS.length ? HEARTH_ERRS.slice(0, 5).join('\n') : 'No answer from the server / Sense resposta del servidor');
+  d.innerHTML = '<b>Hearth no ha pogut arrencar</b><pre style="white-space:pre-wrap;font-size:12px;opacity:.8;margin:10px 0"></pre><button style="font-size:16px;padding:10px 16px;border-radius:10px;border:0;background:#0a84ff;color:#fff">Repara i torna-ho a provar</button>';
+  d.getElementsByTagName('pre')[0].textContent = t + '\n' + navigator.userAgent;
+  d.getElementsByTagName('button')[0].onclick = function () { try { sessionStorage.removeItem('hearth-rep'); } catch (e) { } hearthRepara(); };
+  document.body.appendChild(d);
+}, 25000);
+</script>
 <style>
 *{box-sizing:border-box;-webkit-box-sizing:border-box;-webkit-tap-highlight-color:rgba(0,0,0,0)}
 html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0b0d12;color:#fff;font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:17px;-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
