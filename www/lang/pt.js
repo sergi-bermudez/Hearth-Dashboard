@@ -808,3 +808,5 @@ TR.pt["Quin vols? Ho recordaré per a la propera vegada."]="Qual queres? Lembro-
 TR.pt["Que triï Hearth cada vegada (el més semblant i barat)"]="Escolhe tu de cada vez (o mais parecido e barato)";
 TR.pt["Suggerit: com el que sols comprar"]="Sugerido: como o que costumas comprar";
 TR.pt["Suggerit: el més barat"]="Sugerido: o mais barato";
+TR.pt["{1} preus dubtosos"]="{1} preços duvidosos";
+TR.pt["Preus que no quadren amb el preu per kg/litre de la mateixa fitxa: no surten als suggeriments."]="Preços que não batem certo com o preço por kg/litro da mesma ficha: não aparecem nas sugestões.";

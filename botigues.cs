@@ -224,6 +224,9 @@ public static class Botigues
                             foreach (Dictionary<string, object> pa in anteriors.Values) if (S(pa, "b") == id && !vistos.ContainsKey(S(pa, "u"))) prods.Add(pa);
                         }
                         est["n"] = prods.Count - n0;
+                        int nd = 0;
+                        for (int ii = n0; ii < prods.Count; ii++) { Dictionary<string, object> pd = prods[ii] as Dictionary<string, object>; if (pd != null && S(pd, "dub") == "1") nd++; }
+                        est["dub"] = nd;
                         est["t"] = (DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds;
                         if (prods.Count == n0) est["error"] = "No he trobat productes";
                     }
@@ -387,6 +390,7 @@ public static class Botigues
                             if (p == null || S(p, "esg") == "1") continue;
                             // preus llegits malament abans (p. ex. els 0,10 EUR del dip\u00f2sit de l'env\u00e0s)
                             if (Convert.ToDouble(p["p"]) <= 0.25 && PreuRef(p) > 4 * Convert.ToDouble(p["p"])) continue;
+                            if (S(p, "dub") == "1") continue; // preu que no ha passat la verificacio
                             string nn = " " + Pla(S(p, "n") + " " + S(p, "m")) + " ";
                             bool ok = false;
                             foreach (List<string> si in alts)
@@ -400,6 +404,16 @@ public static class Botigues
                         }
                     // Si la botiga classifica b\u00e9 la secci\u00f3, nom\u00e9s d'aquella categoria; si no, de totes
                     if (catQ != "" && rCat.Count > 0) r = rCat;
+                    // Verificacio entre productes semblants: un preu per kg/litre/unitat molt per sota de la resta
+                    // (menys d'un 30% de la mediana) gairebe sempre es un preu mal llegit
+                    if (r.Count >= 4)
+                    {
+                        List<double> refs = new List<double>();
+                        foreach (Dictionary<string, object> p in r) refs.Add(PreuRef(p));
+                        refs.Sort();
+                        double med = refs[refs.Count / 2];
+                        r = r.FindAll(delegate (Dictionary<string, object> p) { return PreuRef(p) >= med * 0.3; });
+                    }
                     // Primer els m\u00e9s semblants al que es compra habitualment (paraules ~), despr\u00e9s el m\u00e9s barat
                     Dictionary<Dictionary<string, object>, int> sem = new Dictionary<Dictionary<string, object>, int>();
                     foreach (Dictionary<string, object> p in r)

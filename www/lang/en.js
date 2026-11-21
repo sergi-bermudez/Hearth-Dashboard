@@ -808,3 +808,5 @@ TR.en["Quin vols? Ho recordaré per a la propera vegada."]="Which one? I'll reme
 TR.en["Que triï Hearth cada vegada (el més semblant i barat)"]="Let Hearth pick each time (most similar and cheapest)";
 TR.en["Suggerit: com el que sols comprar"]="Suggested: like what you usually buy";
 TR.en["Suggerit: el més barat"]="Suggested: cheapest";
+TR.en["{1} preus dubtosos"]="{1} doubtful prices";
+TR.en["Preus que no quadren amb el preu per kg/litre de la mateixa fitxa: no surten als suggeriments."]="Prices that don't match the price per kg/litre on the same product card: left out of suggestions.";

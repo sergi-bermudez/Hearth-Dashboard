@@ -1037,7 +1037,7 @@ function btPinta() {
     var b = BT.l[i], s = e[b.id] || {}, llegint = t.enMarxa && (t.llegint == b.id || t.llegint == '' || (t.llegint == '*auto' && b.auto));
     var st = llegint ? '<span class="st gris">⏳ ' + T('Llegint…') + '</span>'
       : s.error ? '<span class="st" style="color:#ff453a">⚠️ ' + esc(T(s.error)) + '</span>'
-      : s.n ? '<span class="st" style="color:#30d158">✓ ' + Tf('{1} productes', s.n) + (s.avis ? ' · ' + T('aturat') : '') + '</span>'
+      : s.n ? '<span class="st" style="color:#30d158">✓ ' + Tf('{1} productes', s.n) + (s.avis ? ' · ' + T('aturat') : '') + '</span>' + (s.dub ? '<span class="st" style="color:#ff9f0a;margin-left:8px" title="' + esc(T('Preus que no quadren amb el preu per kg/litre de la mateixa fitxa: no surten als suggeriments.')) + '">⚠️ ' + Tf('{1} preus dubtosos', s.dub) + '</span>' : '')
       : '<span class="st gris">' + T('Encara no llegit') + '</span>';
     h += '<div class="bt-card"><div class="bt-cap"><i style="background:' + BT_COLORS[i % BT_COLORS.length] + '"></i><b>' + esc(b.nom) + '</b>' + st + '</div>' +
       '<div class="bt-url">' + esc(b.url) + (s.t ? ' · ' + T('llegit') + ' ' + new Date(s.t).toLocaleString() : '') + '</div>' +

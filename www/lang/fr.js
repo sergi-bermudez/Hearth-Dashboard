@@ -808,3 +808,5 @@ TR.fr["Quin vols? Ho recordaré per a la propera vegada."]="Lequel voulez-vous ?
 TR.fr["Que triï Hearth cada vegada (el més semblant i barat)"]="Laisser Hearth choisir (le plus proche et le moins cher)";
 TR.fr["Suggerit: com el que sols comprar"]="Suggéré : comme d'habitude";
 TR.fr["Suggerit: el més barat"]="Suggéré : le moins cher";
+TR.fr["{1} preus dubtosos"]="{1} prix douteux";
+TR.fr["Preus que no quadren amb el preu per kg/litre de la mateixa fitxa: no surten als suggeriments."]="Prix incohérents avec le prix au kg/litre de la même fiche : exclus des suggestions.";

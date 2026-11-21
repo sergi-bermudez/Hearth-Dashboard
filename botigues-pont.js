@@ -1,7 +1,7 @@
 // Hearth · lector de catàlegs de supermercat (s'executa dins l'Edge amagat, a la pàgina de la botiga).
 // No depèn de classes concretes de cap web: busca enllaços a fitxes de producte i, al voltant, el preu.
 (function () {
-  if (window.__bt && window.__bt.v === 9) return;
+  if (window.__bt && window.__bt.v === 10) return;
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   // Fitxa de producte: /produto/…, /product/…, /p/… o adreces que acaben en un codi (…-544184.html).
   // "/produtos/…" (plural) sol ser una categoria, no un producte.
@@ -66,7 +66,7 @@
     const preu = nous.length ? Math.min.apply(null, nous.map((x) => x.v)) : nets[0].v;
     let abans = nets.find((x) => x.antic);
     abans = abans ? abans.v : (nets.length > 1 ? Math.max.apply(null, nets.map((x) => x.v)) : 0);
-    return { p: preu, pv: abans > preu ? abans : 0, pu: unit ? unit.v : 0, uu: mu ? mu[1] : '' };
+    return { p: preu, pv: abans > preu ? abans : 0, pu: unit ? unit.v : 0, uu: mu ? mu[1] : '', cands: nets.map((x) => x.v) };
   }
 
   const RX_AFEGIR = /^\s*(adicionar|adicionar ao carrinho|add|add to (cart|basket|trolley)|añadir|anadir|afegir|ajouter|aggiungi|comprar|in den warenkorb|\+)\s*$/i;
@@ -136,9 +136,19 @@
       // Si el preu llegit és el preu per litre/kg i el paquet en té més d'un (6 x 1 lt), el preu és el del paquet
       const tot = totalQ(qm ? qm[1] : '', pr.uu);
       if (pr.pu && Math.abs(pr.p - pr.pu) < 0.005 && tot > 1.01 && !pr.granel) { const f = tot; pr.pv = pr.pv ? Math.round(pr.pv * f * 100) / 100 : 0; pr.p = Math.round(pr.p * f * 100) / 100; }
+      // Verificació: preu ≈ preu unitari × quantitat de l'envàs. Si no quadra, es tria l'import de la fitxa
+      // que hi quadra; si cap no hi quadra, es marca com a dubtós (no surt als suggeriments)
+      let dub = 0;
+      if (pr.pu && tot > 0 && !pr.granel) {
+        const esp = pr.pu * tot, ok = (v) => Math.abs(v - esp) <= Math.max(0.06, esp * 0.12);
+        if (!ok(pr.p)) {
+          const c = (pr.cands || []).filter(ok);
+          if (c.length) pr.p = c[0]; else dub = 1;
+        }
+      }
       out.push({
         n: nom, u: h, img: im, p: pr.p, pv: pr.pv, pu: pr.pu, uu: pr.uu,
-        q: qm ? qm[1].trim() : '', m: marca ? txt(marca) : '',
+        q: qm ? qm[1].trim() : '', m: marca ? txt(marca) : '', dub: dub,
         g: pr.granel || (pr.pu && pr.p == pr.pu && /^(kg|kilo)/i.test(pr.uu) && /granel|\/\s*kg\b|€\s*\/\s*kg|kg\s*$/i.test(s.split('\n').slice(0, 6).join(' ')) && !/emb\.|\d+\s*(g|gr)\b/i.test(s)) ? 1 : 0,
         esg: /indispon[ií]vel|esgotado|sem stock/i.test(s) ? 1 : 0,
         promo: pr.pv > 0 || /promo|desconto|poupe|leve \d|oferta|\-\d+\s*%/i.test(s) ? 1 : 0
@@ -219,5 +229,5 @@
     return { url: location.href, titol: document.title, n: productes().length };
   }
 
-  window.__bt = { v: 9, afegeix: afegeix, cistell: cistell, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
+  window.__bt = { v: 10, afegeix: afegeix, cistell: cistell, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
 })();
