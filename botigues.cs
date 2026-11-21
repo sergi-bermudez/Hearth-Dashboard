@@ -311,6 +311,46 @@ public static class Botigues
             CasaServidor.Json(res, r.ToArray());
             return;
         }
+        if (nom == "millors")
+        {
+            // Rep una llista de conceptes ("leite meio gordo -chocolate") i, per a cada un,
+            // torna les opcions m\u00e9s barates (per preu unitari) i la millor de cada botiga
+            string text;
+            using (StreamReader sr = new StreamReader(ctx.Request.InputStream, Encoding.UTF8)) text = sr.ReadToEnd();
+            object[] qs = Js().DeserializeObject(text) as object[];
+            Dictionary<string, object> c = Cataleg();
+            object[] prods = c != null && c.ContainsKey("prod") ? c["prod"] as object[] : null;
+            List<object> sortida = new List<object>();
+            if (qs != null)
+                foreach (object qo in qs)
+                {
+                    List<string> si = new List<string>(), no = new List<string>();
+                    foreach (string w in Pla(qo == null ? "" : qo.ToString()).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                        if (w.StartsWith("-")) { if (w.Length > 1) no.Add(w.Substring(1)); } else si.Add(w);
+                    List<Dictionary<string, object>> r = new List<Dictionary<string, object>>();
+                    if (prods != null && si.Count > 0)
+                        foreach (object o in prods)
+                        {
+                            Dictionary<string, object> p = o as Dictionary<string, object>;
+                            if (p == null || S(p, "esg") == "1") continue;
+                            string nn = " " + Pla(S(p, "n") + " " + S(p, "m")) + " ";
+                            bool ok = true;
+                            foreach (string w in si) if (!Paraula(nn, w)) { ok = false; break; }
+                            if (ok) foreach (string w in no) if (nn.Contains(w)) { ok = false; break; }
+                            if (ok) r.Add(p);
+                        }
+                    r.Sort(delegate (Dictionary<string, object> x, Dictionary<string, object> y) { return PreuRef(x).CompareTo(PreuRef(y)); });
+                    Dictionary<string, object> perB = new Dictionary<string, object>();
+                    foreach (Dictionary<string, object> p in r) { string b = S(p, "b"); if (!perB.ContainsKey(b)) perB[b] = p; }
+                    Dictionary<string, object> e = new Dictionary<string, object>();
+                    e["n"] = r.Count;
+                    e["top"] = (r.Count > 8 ? r.GetRange(0, 8) : r).ToArray();
+                    e["perBotiga"] = perB;
+                    sortida.Add(e);
+                }
+            CasaServidor.Json(res, sortida.ToArray());
+            return;
+        }
         if (!admin) { CasaServidor.Error(res, 404, "No"); return; }
         if (nom == "botigues" && ctx.Request.HttpMethod == "POST")
         {
@@ -329,6 +369,25 @@ public static class Botigues
             return;
         }
         CasaServidor.Error(res, 404, "No");
+    }
+
+    // Preu de refer\u00e8ncia: el preu per kg/litre/unitat si la web el dona; si no, el preu
+    static double PreuRef(Dictionary<string, object> p)
+    {
+        double pu = p.ContainsKey("pu") && p["pu"] != null ? Convert.ToDouble(p["pu"]) : 0;
+        return pu > 0 ? pu : Convert.ToDouble(p["p"]);
+    }
+
+    // La paraula ha de comen\u00e7ar una paraula del nom ("ovo" troba "ovos" per\u00f2 no "novo")
+    static bool Paraula(string nom, string w)
+    {
+        int i = nom.IndexOf(w, StringComparison.Ordinal);
+        while (i >= 0)
+        {
+            if (i == 0 || !char.IsLetterOrDigit(nom[i - 1])) return true;
+            i = nom.IndexOf(w, i + 1, StringComparison.Ordinal);
+        }
+        return false;
     }
 
     static double Desc(Dictionary<string, object> p)

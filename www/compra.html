@@ -57,6 +57,19 @@ html,body{height:100%;overflow:hidden}
 .peu button{margin:0 6px 6px 0}
 .peu .wa{background:#25d366;color:#04210f;font-weight:600}
 .peu .wa .ic{width:18px;height:18px;fill:#04210f;vertical-align:-3px;margin-right:6px}
+.t .ds{font-size:13px;color:#c7ccd3;margin-top:4px;height:34px;overflow:hidden;line-height:1.3}
+.t.conc .em{height:84px;line-height:84px}
+.resum{background:#1c1c1e;border-radius:12px;padding:10px 12px;margin:10px 0}
+.resum .rf{display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;padding:4px 0;font-size:14px}
+.resum .rf:first-child{border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:7px;margin-bottom:3px;font-size:15px}
+.resum .rf i{display:inline-block;width:8px;height:8px;border-radius:4px;margin-right:6px}
+.resum small{color:#8d95a1}
+#tria .op{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
+#tria .op div{-webkit-flex:1;flex:1;min-width:0}
+#tria .op div b{font-weight:500;font-size:15px}
+#tria .op .oi{width:48px;height:48px;-webkit-flex:none;flex:none;border-radius:8px;background:#fff center/contain no-repeat;margin-right:10px}
+#tria .op .pp{margin-left:10px}
+#tria .op.on{background:rgba(48,209,88,.12);border-radius:10px}
 #seg{display:none}
 #tria{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:50;display:none}
 #tria .card{position:absolute;left:50%;top:40px;width:460px;margin-left:-230px;max-height:85%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#1c1c1e;border-radius:20px;padding:18px}
@@ -97,6 +110,7 @@ html,body{height:100%;overflow:hidden}
 </div>
 <div id="tria" onclick="if(event.target==this)this.style.display='none'"><div class="card" id="tria-c"></div></div>
 <script src="comu.js"></script>
+<script src="conceptes.js"></script>
 <script>
 var Casa = null;
 try { if (window.parent !== window && window.parent.Casa) Casa = window.parent.Casa; } catch (e) { Casa = null; }
@@ -107,7 +121,7 @@ var CATS = [['fruita', '🍎', 'Fruita i verdura'], ['carn', '🥩', 'Carn'], ['
   ['rebost', '🥫', 'Rebost'], ['begudes', '🧃', 'Begudes'], ['congelats', '🧊', 'Congelats'], ['neteja', '🧽', 'Neteja'], ['higiene', '🧴', 'Higiene i bellesa'], ['bebe', '🍼', 'Bebè'], ['animals', '🐾', 'Animals']];
 var COLORS = ['#e3262e', '#2e8b3a', '#0a84ff', '#ff9f0a', '#bf5af2', '#64d2ff', '#ff375f'];
 var L = { items: [], hist: {}, fav: [] }, VERSIO = '', EDITA = 0;
-var V = { cat: 'fav', bot: '', q: '', res: [], est: null, tq: null };
+var V = { cat: 'lactis', bot: '', q: '', res: [], est: null, tq: null };
 $('b-afg').innerHTML = svg(IC_MES);
 $('q').placeholder = T('Cerca o escriu un producte');
 $('q').oninput = function () { clearTimeout(V.tq); V.tq = setTimeout(function () { V.q = $('q').value.replace(/^\s+|\s+$/g, ''); carregaGraella(); }, 350); };
@@ -143,7 +157,7 @@ function nomBot(id) { var i = idxBot(id); return i >= 0 ? botigues()[i].nom : ''
 function pintaChips() {
   var n = (V.est && V.est.cats) || {}, h = '<span id="c-fav" onclick="triaCat(\'fav\')">⭐ ' + esc(T('Preferits')) + '</span>', i;
   if (V.est && V.est.promos) h += '<span id="c-promo" onclick="triaCat(\'promo\')">🏷️ ' + esc(T('Promocions')) + '</span>';
-  for (i = 0; i < CATS.length; i++) if (n[CATS[i][0]]) h += '<span id="c-' + CATS[i][0] + '" onclick="triaCat(\'' + CATS[i][0] + '\')">' + CATS[i][1] + ' ' + esc(T(CATS[i][2])) + '</span>';
+  for (i = 0; i < CATS.length; i++) h += '<span id="c-' + CATS[i][0] + '" onclick="triaCat(\'' + CATS[i][0] + '\')">' + CATS[i][1] + ' ' + esc(T(CATS[i][2])) + '</span>';
   $('cats').innerHTML = h;
   var bl = botigues(), b = '';
   if (bl.length > 1) {
@@ -162,53 +176,99 @@ function marcaChips() {
 function triaCat(c) { V.cat = c; V.q = ''; $('q').value = ''; carregaGraella(); $('graella').scrollTop = 0; }
 function triaBot(b) { V.bot = b; carregaGraella(); }
 
-/* ---------- Graella de productes (com la caixa d'un restaurant) ---------- */
+/* ---------- Graella: conceptes («Ous», «Llet»…) com la caixa d'un restaurant ---------- */
+var VIS = [], MILL = {}, MPEND = {};
+function concepteObj(c) { return { cc: 1, n: concNom(c), cq: concCerca(c), e: c[1], cat: c[0] }; }
+function conceptesDe(cat) {
+  var r = [], i;
+  for (i = 0; i < CONCEPTES.length; i++) if (CONCEPTES[i][0] == cat) r.push(concepteObj(CONCEPTES[i]));
+  var m = L.conc || [];
+  for (i = 0; i < m.length; i++) if (m[i].cat == cat) r.push({ cc: 1, n: m[i].n, cq: m[i].n, e: m[i].e || '📝', cat: cat });
+  return r;
+}
 function carregaGraella() {
   marcaChips();
-  if (!V.q && V.cat == 'fav') { pintaGraella(); return; }
-  if (!(V.est && V.est.n)) { V.res = []; pintaGraella(); return; }
-  var p = { max: 80 };
-  if (V.q) p.q = V.q; else if (V.cat == 'promo') p.promo = 1; else p.cat = V.cat;
-  if (V.bot) p.b = V.bot;
-  $('graella').innerHTML = '<div class="buit">' + T('Carregant…') + '</div>';
-  getJson(api('compra/productes', p), function (r) { V.res = r || []; pintaGraella(); }, function () { V.res = []; pintaGraella(); });
+  if (V.cat == 'promo' && !V.q) {
+    if (!(V.est && V.est.n)) { V.res = []; pintaGraella(); return; }
+    $('graella').innerHTML = '<div class="buit">' + T('Carregant…') + '</div>';
+    getJson(api('compra/productes', V.bot ? { promo: 1, max: 80, b: V.bot } : { promo: 1, max: 80 }), function (r) { V.res = r || []; pintaGraella(); }, function () { V.res = []; pintaGraella(); });
+    return;
+  }
+  V.res = [];
+  pintaGraella();
+  if (V.q && V.est && V.est.n) getJson(api('compra/productes', V.bot ? { q: V.q, max: 40, b: V.bot } : { q: V.q, max: 40 }), function (r) { V.res = r || []; pintaGraella(); }, function () { });
 }
 function clau(t) { return String(t || '').toLowerCase().replace(/^\s*\d+([.,]\d+)?\s*(x|kg|g|l|ml|un)?\.?\s+/, '').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, ''); }
-function clauP(p) { return p.u ? p.u : 'txt:' + clau(p.n); }
+function clauP(p) { return p.cc ? 'c:' + clau(p.cq || p.n) : p.u ? p.u : 'txt:' + clau(p.n); }
 function esFav(k) { for (var i = 0; i < L.fav.length; i++) if (L.fav[i].k == k) return true; return false; }
 function euro(v) { return v ? (Math.round(v * 100) / 100).toFixed(2).replace('.', ',') + ' €' : ''; }
+function sensePla(s) { return String(s || '').toLowerCase().replace(/[àáâã]/g, 'a').replace(/[èéê]/g, 'e').replace(/[ìíï]/g, 'i').replace(/[òóôõ]/g, 'o').replace(/[ùúü]/g, 'u').replace(/ç/g, 'c'); }
 function htmlTile(p, i) {
-  var k = clauP(p), h = '<div class="t' + (p.esg ? ' esg' : '') + (p.u ? '' : ' lliure') + '" data-k="' + esc(k) + '" onclick="tocaTile(' + i + ')">';
+  var k = clauP(p), h = '<div class="t' + (p.esg ? ' esg' : '') + (p.cc ? ' conc' : p.u ? '' : ' lliure') + '" data-k="' + esc(k) + '"' + (p.cc ? ' data-q="' + esc(p.cq) + '"' : '') + ' onclick="tocaTile(' + i + ')">';
   h += p.img ? '<div class="im" style="background-image:' + bg(imgx(p.img, 200)) + '"></div>' : '<div class="em">' + (p.e || '🛒') + '</div>';
   if (p.b) h += '<span class="bt" style="background:' + colorBot(p.b) + '">' + esc(nomBot(p.b) || p.b) + '</span>';
   if (p.pv && p.pv > p.p) h += '<span class="dc">-' + Math.round((1 - p.p / p.pv) * 100) + '%</span>';
   if (!p.nou) h += '<span class="st" onclick="event.stopPropagation();commutaFav(' + i + ')">' + (esFav(k) ? '★' : '☆') + '</span>';
   h += '<span class="qt" style="display:none"></span>';
-  h += '<div class="tx"><div class="nm">' + esc(p.n) + '</div><div class="qn">' + esc(p.q || '') + (p.pu ? ' · ' + euro(p.pu) + '/' + esc(p.uu || '') : '') + '</div>';
-  if (p.p) h += '<div class="pr">' + euro(p.p) + (p.pv && p.pv > p.p ? '<s>' + euro(p.pv) + '</s>' : '') + '</div>';
+  h += '<div class="tx"><div class="nm">' + esc(p.n) + '</div>';
+  if (p.cc) h += '<div class="ds"></div>';
+  else {
+    h += '<div class="qn">' + esc(p.q || '') + (p.pu ? ' · ' + euro(p.pu) + '/' + esc(p.uu || '') : '') + '</div>';
+    if (p.p) h += '<div class="pr">' + euro(p.p) + (p.pv && p.pv > p.p ? '<s>' + euro(p.pv) + '</s>' : '') + '</div>';
+  }
   return h + '</div></div>';
 }
-var VIS = [];
 function pintaGraella() {
   var l = [], h = '', i, k;
-  if (!V.q && V.cat == 'fav') {
+  if (V.q) {
+    /* conceptes que coincideixen + el text com a concepte nou + productes concrets de les botigues */
+    var qq = sensePla(V.q);
+    for (i = 0; i < CONCEPTES.length; i++) if (sensePla(concNom(CONCEPTES[i])).indexOf(qq) >= 0 || sensePla(concCerca(CONCEPTES[i])).indexOf(qq) >= 0) l.push(concepteObj(CONCEPTES[i]));
+    var m = L.conc || [];
+    for (i = 0; i < m.length; i++) if (sensePla(m[i].n).indexOf(qq) >= 0) l.push({ cc: 1, n: m[i].n, cq: m[i].n, e: m[i].e || '📝', cat: m[i].cat });
+    var ja = false;
+    for (i = 0; i < l.length; i++) if (sensePla(l[i].n) == qq) ja = true;
+    if (!ja) l.unshift({ cc: 1, n: V.q, cq: V.q, e: '➕', nou: 1, cat: V.cat != 'fav' && V.cat != 'promo' ? V.cat : '' });
+    for (i = 0; i < V.res.length; i++) l.push(V.res[i]);
+  } else if (V.cat == 'fav') {
     for (i = 0; i < L.fav.length; i++) l.push(L.fav[i]);
-    /* i el que s'acostuma a afegir escrivint */
-    var hs = [];
-    for (k in L.hist) if (L.hist.hasOwnProperty(k) && !esFav('txt:' + k)) hs.push(k);
-    hs.sort(function (a, b) { return L.hist[b] - L.hist[a]; });
-    for (i = 0; i < hs.length && i < 24; i++) l.push({ n: hs[i], e: '📝' });
-    if (!l.length) h = '<div class="buit">' + (V.est && V.est.n ? T('Toca l\'estrella ☆ d\'un producte per tenir-lo aquí.') : T('Escriu el que vols a dalt. Per veure productes i preus de les teves botigues, afegeix-les a Configuració ▸ Compra.')) + '</div>';
-  } else {
+    if (!l.length) h = '<div class="buit">' + T('Toca l\'estrella ☆ del que compres sovint per tenir-ho aquí.') + '</div>';
+  } else if (V.cat == 'promo') {
     l = V.res.slice(0);
-    if (V.q) l.unshift({ n: V.q, e: '➕', nou: 1 });
-    if (!V.res.length) h = '<div class="buit">' + (V.q ? T('Cap producte de les botigues amb aquest nom. Toca ➕ per afegir-lo igualment.') : T('No hi ha productes en aquesta categoria.')) + '</div>';
-  }
+    if (!l.length) h = '<div class="buit">' + T('No hi ha promocions (o encara no s\'han llegit les botigues).') + '</div>';
+  } else l = conceptesDe(V.cat);
   VIS = l;
   var t = '';
   for (i = 0; i < l.length; i++) t += htmlTile(l[i], i);
   $('graella').innerHTML = t + h;
   marcaQuantitats();
+  preusConceptes();
+}
+/* «des de 1,39 € · Continente» a cada concepte visible */
+function preusConceptes() {
+  if (!(V.est && V.est.n)) return;
+  var ts = document.querySelectorAll('#graella .t.conc'), falta = [], i;
+  for (i = 0; i < ts.length; i++) { var q = ts[i].getAttribute('data-q'); if (!MILL[q] && !MPEND[q]) { falta.push(q); MPEND[q] = 1; } }
+  if (!falta.length) { pintaDes(); return; }
+  millors(falta, pintaDes);
+}
+function millors(qs, ok) {
+  peticio('POST', api('compra/millors'), JSON.stringify(qs), function (txt) {
+    var r = []; try { r = JSON.parse(txt) || []; } catch (e) { }
+    for (var i = 0; i < qs.length; i++) { MILL[qs[i]] = r[i] || { n: 0, top: [], perBotiga: {} }; delete MPEND[qs[i]]; }
+    if (ok) ok();
+  }, function () { for (var i = 0; i < qs.length; i++) delete MPEND[qs[i]]; });
+}
+function millor(m) { return m && m.top && m.top.length ? m.top[0] : null; }
+function pintaDes() {
+  var ts = document.querySelectorAll('#graella .t.conc');
+  for (var i = 0; i < ts.length; i++) {
+    var m = MILL[ts[i].getAttribute('data-q')], b = millor(m), d = ts[i].querySelector('.ds');
+    if (!d) continue;
+    if (!m) d.innerHTML = '';
+    else if (!b) d.innerHTML = '<span class="gris">' + T('No el trobo a les botigues') + '</span>';
+    else d.innerHTML = T('des de') + ' <b>' + euro(b.p) + '</b> · <span style="color:' + colorBot(b.b) + '">' + esc(nomBot(b.b)) + '</span>';
+  }
 }
 function marcaQuantitats() {
   var q = {}, i;
@@ -221,31 +281,50 @@ function marcaQuantitats() {
 }
 function tocaTile(i) {
   var p = VIS[i]; if (!p) return;
+  if (p.nou) {
+    /* concepte nou: es guarda per tenir-lo a la seva categoria */
+    if (!L.conc) L.conc = [];
+    if (p.cat) L.conc.push({ n: p.n, cat: p.cat, e: '📝' });
+  }
   afegeixProducte(p);
+  if (p.cc) {
+    var it = L.items[troba(ultimId)];
+    var ensenya = function () { var b = millor(MILL[p.cq]); if (b) avis(p.n + ': ' + T('més barat a') + ' ' + nomBot(b.b) + ', ' + euro(b.p) + ' (' + b.n + ')', 4000); };
+    if (MILL[p.cq]) ensenya(); else if (V.est && V.est.n) millors([p.cq], function () { pintaLlista(); ensenya(); });
+  }
   if (p.nou) { $('q').value = ''; V.q = ''; carregaGraella(); }
 }
 function commutaFav(i) {
   var p = VIS[i], k = clauP(p);
   for (var j = 0; j < L.fav.length; j++) if (L.fav[j].k == k) { L.fav.splice(j, 1); desa(); pintaGraella(); return; }
-  L.fav.unshift({ k: k, n: p.n, u: p.u || '', img: p.img || '', p: p.p || 0, pv: p.pv || 0, b: p.b || '', q: p.q || '', e: p.u ? '' : '📝' });
+  var f = { k: k, n: p.n, e: p.e || '' };
+  if (p.cc) { f.cc = 1; f.cq = p.cq; f.cat = p.cat || ''; }
+  else { f.u = p.u || ''; f.img = p.img || ''; f.p = p.p || 0; f.pv = p.pv || 0; f.b = p.b || ''; f.q = p.q || ''; }
+  L.fav.unshift(f);
   desa(); pintaGraella();
 }
 
 /* ---------- Llista ---------- */
+var ultimId = '';
 function afegeixProducte(p) {
   var k = clauP(p);
   for (var i = 0; i < L.items.length; i++) if (L.items[i].k == k) {
     if (L.items[i].fet) { L.items[i].fet = false; L.items[i].q = 1; } else L.items[i].q = (L.items[i].q || 1) + 1;
+    ultimId = L.items[i].id;
     desa(); pintaLlista(); marcaQuantitats(); return;
   }
-  L.items.unshift({ id: Date.now().toString(36) + Math.random().toString(36).substring(2, 5), k: k, t: p.n, q: 1, fet: false, p: p.p || 0, b: p.b || '', u: p.u || '', qn: p.q || '' });
-  if (!p.u) L.hist[clau(p.n)] = (L.hist[clau(p.n)] || 0) + 1;
+  var it = { id: Date.now().toString(36) + Math.random().toString(36).substring(2, 5), k: k, t: p.n, q: 1, fet: false };
+  if (p.cc) { it.cq = p.cq; it.e = p.e; }
+  else { it.p = p.p || 0; it.b = p.b || ''; it.u = p.u || ''; it.qn = p.q || ''; }
+  L.items.unshift(it); ultimId = it.id;
   desa(); pintaLlista(); marcaQuantitats();
 }
 function afegeixText() {
   var t = ($('q').value || '').replace(/^\s+|\s+$/g, '');
   if (!t) return;
-  afegeixProducte({ n: t });
+  var cat = V.cat != 'fav' && V.cat != 'promo' ? V.cat : '';
+  if (cat) { if (!L.conc) L.conc = []; L.conc.push({ n: t, cat: cat, e: '📝' }); }
+  afegeixProducte({ cc: 1, n: t, cq: t, e: '📝' });
   $('q').value = ''; V.q = ''; carregaGraella();
 }
 function troba(id) { for (var i = 0; i < L.items.length; i++) if (L.items[i].id == id) return i; return -1; }
@@ -258,40 +337,91 @@ function quant(id, d) {
 }
 function netejaFets() { var r = []; for (var i = 0; i < L.items.length; i++) if (!L.items[i].fet) r.push(L.items[i]); L.items = r; desa(); pintaLlista(); marcaQuantitats(); }
 function pendents() { var r = []; for (var i = 0; i < L.items.length; i++) if (!L.items[i].fet) r.push(L.items[i]); return r; }
+/* L'opció que toca per a un article: la que s'ha triat, o la més barata */
+function opcio(it) {
+  if (!it.cq) return it.p ? { n: it.t, p: it.p, b: it.b, q: it.qn } : null;
+  if (it.tria) return it.tria;
+  return millor(MILL[it.cq]);
+}
 function htmlItem(it) {
-  var sub = [];
-  if (it.b) sub.push(nomBot(it.b) || it.b);
-  if (it.qn) sub.push(it.qn);
-  if (it.p) sub.push(euro(it.p * (it.q || 1)));
+  var o = opcio(it), sub = '';
+  if (o) sub = '<small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b) || '') + '</span>' + (it.cq ? ' · ' + esc(o.n) : '') + (o.q ? ' · ' + esc(o.q) : '') + ' · <b>' + euro(o.p * (it.q || 1)) + '</b>' + (it.cq && !it.tria ? ' ' + T('(el més barat)') : '') + '</small>';
+  else if (it.cq && MILL[it.cq]) sub = '<small>' + T('No el trobo a les botigues') + '</small>';
   return '<div class="ci' + (it.fet ? ' fet' : '') + '"><div class="ck" onclick="commuta(\'' + it.id + '\')"><i></i></div>' +
-    '<div class="tx" onclick="commuta(\'' + it.id + '\')"><b>' + esc(it.t) + '</b>' + (sub.length ? '<small>' + esc(sub.join(' · ')) + '</small>' : '') + '</div>' +
+    '<div class="tx" onclick="' + (it.cq && !it.fet ? 'opcions(\'' + it.id + '\')' : 'commuta(\'' + it.id + '\')') + '"><b>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</b>' + sub + '</div>' +
     (it.fet ? '' : '<div class="qb"><button onclick="quant(\'' + it.id + '\',-1)">−</button><span>' + (it.q || 1) + '</span><button onclick="quant(\'' + it.id + '\',1)">+</button></div>') + '</div>';
 }
+/* Totals: comprant cada cosa on és més barata, o tot en una sola botiga */
+function resum(p) {
+  var mix = 0, nMix = 0, perB = {}, falta = {}, bl = botigues(), i, j;
+  for (j = 0; j < bl.length; j++) { perB[bl[j].id] = 0; falta[bl[j].id] = 0; }
+  for (i = 0; i < p.length; i++) {
+    var it = p[i], q = it.q || 1, o = opcio(it);
+    if (o) { mix += o.p * q; nMix++; }
+    for (j = 0; j < bl.length; j++) {
+      var id = bl[j].id, x = null;
+      if (it.cq) { var m = MILL[it.cq]; x = it.tria && it.tria.b == id ? it.tria : m && m.perBotiga ? m.perBotiga[id] : null; }
+      else if (it.b == id) x = it;
+      if (x) perB[id] += x.p * q; else falta[id]++;
+    }
+  }
+  return { mix: mix, nMix: nMix, perB: perB, falta: falta };
+}
 function pintaLlista() {
-  var p = pendents(), f = [], h = '', i, tot = 0, nP = 0;
+  var p = pendents(), f = [], h = '', i;
   for (i = 0; i < L.items.length; i++) if (L.items[i].fet) f.push(L.items[i]);
-  for (i = 0; i < p.length; i++) { h += htmlItem(p[i]); if (p[i].p) { tot += p[i].p * (p[i].q || 1); nP++; } }
-  if (!L.items.length) h = '<div class="buit">' + T('La llista és buida. Toca els productes per afegir-los.') + '</div>';
+  /* preus que falten */
+  var cal = [];
+  for (i = 0; i < p.length; i++) if (p[i].cq && !MILL[p[i].cq] && !MPEND[p[i].cq]) { cal.push(p[i].cq); MPEND[p[i].cq] = 1; }
+  if (cal.length && V.est && V.est.n) millors(cal, pintaLlista);
+  for (i = 0; i < p.length; i++) h += htmlItem(p[i]);
+  if (!L.items.length) h = '<div class="buit">' + T('La llista és buida. Toca el que necessites i et diré on és més barat.') + '</div>';
+  if (p.length && V.est && V.est.n) {
+    var r = resum(p), bl = botigues();
+    h += '<div class="resum"><div class="rf"><b>' + T('Cada cosa on és més barata') + '</b><span>' + euro(r.mix) + '</span></div>';
+    for (i = 0; i < bl.length; i++) h += '<div class="rf"><span><i style="background:' + COLORS[i % COLORS.length] + '"></i>' + Tf('Tot a {1}', esc(bl[i].nom)) + (r.falta[bl[i].id] ? ' <small>' + Tf('(en falten {1})', r.falta[bl[i].id]) + '</small>' : '') + '</span><span>' + euro(r.perB[bl[i].id]) + '</span></div>';
+    h += '</div>';
+  }
   if (f.length) { h += '<div class="sec">' + T('Al carro') + ' · ' + f.length + '</div>'; for (i = 0; i < f.length; i++) h += htmlItem(f[i]); }
   $('llista').innerHTML = h;
-  $('tot').textContent = p.length ? Tf('{1} articles', p.length) + (nP ? ' · ' + (nP < p.length ? '≈ ' : '') + euro(tot) : '') : '';
+  $('tot').textContent = p.length ? Tf('{1} articles', p.length) : '';
   $('sg-l').textContent = T('Llista') + (p.length ? ' (' + p.length + ')' : '');
   var a = '';
   if (p.length) a += '<button class="wa" onclick="enviaWa()">' + svg(IC_WA) + T('Envia per WhatsApp') + '</button>';
   if (f.length) a += '<button onclick="netejaFets()">' + T('Treu els comprats') + '</button>';
   $('accions').innerHTML = a; $('accions').style.display = a ? '' : 'none';
 }
-/* Text per enviar: agrupat per botiga, amb quantitats i preus */
+/* Tria entre les opcions d'un concepte */
+var OPC = null;
+function opcions(id) {
+  var it = L.items[troba(id)]; if (!it) return;
+  var m = MILL[it.cq], h = '<h3>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</h3>';
+  OPC = { id: id, l: m && m.top ? m.top : [] };
+  if (!OPC.l.length) h += '<div class="gris">' + (V.est && V.est.n ? T('No el trobo a les botigues.') : T('Afegeix les teves botigues a Configuració ▸ Compra per veure on és més barat.')) + '</div>';
+  for (var i = 0; i < OPC.l.length; i++) {
+    var o = OPC.l[i], on = it.tria ? it.tria.u == o.u : i == 0;
+    h += '<div class="xt op' + (on ? ' on' : '') + '" onclick="triaOpcio(' + i + ')">' + (o.img ? '<span class="oi" style="background-image:' + bg(imgx(o.img, 96)) + '"></span>' : '') +
+      '<div><b>' + esc(o.n) + '</b><small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b)) + '</span>' + (o.q ? ' · ' + esc(o.q) : '') + (o.pu ? ' · ' + euro(o.pu) + '/' + esc(o.uu || '') : '') + '</small></div><b class="pp">' + euro(o.p) + '</b></div>';
+  }
+  if (it.tria) h += '<p><button onclick="triaOpcio(-1)">' + T('Torna a «el més barat»') + '</button></p>';
+  $('tria-c').innerHTML = h; $('tria').style.display = 'block';
+}
+function triaOpcio(i) {
+  var it = L.items[troba(OPC.id)]; if (!it) return;
+  if (i < 0) delete it.tria; else { var o = OPC.l[i]; it.tria = { n: o.n, p: o.p, b: o.b, u: o.u, q: o.q, img: o.img }; }
+  $('tria').style.display = 'none'; desa(); pintaLlista();
+}
+/* Text per enviar: agrupat per la botiga on és més barat cada cosa */
 function textLlista() {
   var p = pendents(), g = {}, ord = [], i, j, t = '🛒 ' + T('Llista de la compra');
-  for (i = 0; i < p.length; i++) { var b = p[i].b || ''; if (!g[b]) { g[b] = []; ord.push(b); } g[b].push(p[i]); }
+  for (i = 0; i < p.length; i++) { var o = opcio(p[i]), b = o ? o.b || '' : ''; if (!g[b]) { g[b] = []; ord.push(b); } g[b].push(p[i]); }
   ord.sort(function (a, b) { return a && !b ? -1 : !a && b ? 1 : 0; });
   for (i = 0; i < ord.length; i++) {
     if (ord.length > 1 || ord[i]) t += '\n\n' + (ord[i] ? nomBot(ord[i]) || ord[i] : T('Altres')) + ':';
     else t += '\n';
     for (j = 0; j < g[ord[i]].length; j++) {
-      var it = g[ord[i]][j];
-      t += '\n• ' + ((it.q || 1) > 1 ? it.q + '× ' : '') + it.t + (it.qn ? ' (' + it.qn + ')' : '') + (it.p ? ' – ' + euro(it.p * (it.q || 1)) : '');
+      var it = g[ord[i]][j], op = opcio(it), q = it.q || 1;
+      t += '\n• ' + (q > 1 ? q + '× ' : '') + it.t + (op && it.cq ? ' – ' + op.n : '') + (op && op.p ? ' (' + euro(op.p * q) + ')' : '');
     }
   }
   return t;
