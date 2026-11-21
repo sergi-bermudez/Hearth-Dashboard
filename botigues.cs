@@ -26,14 +26,14 @@ public static class Botigues
         new string[] { "peix", "peix", "pescad", "fish", "poisson", "fisch", "pesce", "marisc", "seafood" },
         new string[] { "pa", "padaria", "pastelaria", "p\u00e3o", "pao", "panader", "forn", "bread", "bakery", "boulang", "brot", "pane" },
         new string[] { "xarcuteria", "charcut", "queijo", "formatg", "queso", "cheese", "fromage", "k\u00e4se", "kase", "embutid", "fiambre", "deli" },
-        new string[] { "lactis", "latic", "lactic", "l\u00e0ctic", "leite", "ovos", "dairy", "milk", "iogurt", "yogur", "yaourt", "egg", "oeuf", "huevo", "milch", "latte" },
-        new string[] { "begudes", "bebida", "beguda", "drink", "boisson", "getr\u00e4nk", "getrank", "bevand", "agua", "\u00e1gua", "vinho", "vino", "vin", "cervej", "cervez", "beer" },
+        new string[] { "lactis", "latic", "lactic", "l\u00e0ctic", "leite", "ovos", "dairy", "milk", "iogurt", "yogur", "yaourt", "egg", "oeuf", "huevo", "milch", "latte", "manteiga", "natas", "mantequilla", "iogurte", "sobremesa" },
+        new string[] { "begudes", "bebida", "beguda", "drink", "boisson", "getr\u00e4nk", "getrank", "bevand", "agua", "\u00e1gua", "vinho", "vino", "vin", "cervej", "cervez", "beer", "espirituos", "sumos", "refrigerante" },
         new string[] { "congelats", "congel", "frozen", "surgel", "tiefk", "gelad" },
         new string[] { "neteja", "limpeza", "neteja", "limpieza", "cleaning", "household", "entretien", "drogeri", "detergen", "lar-e" },
         new string[] { "higiene", "higiene", "higien", "beleza", "belleza", "bellesa", "beauty", "hygi", "perfum", "cuidado-pessoal", "cuidado pessoal", "parafarm" },
         new string[] { "bebe", "beb\u00e9", "bebe", "baby", "nad\u00f3", "b\u00e9b\u00e9", "infantil" },
         new string[] { "animals", "animais", "animal", "mascot", "pets", "petshop", "animaux" },
-        new string[] { "rebost", "mercearia", "despensa", "alimentaci", "pantry", "grocer", "\u00e9picerie", "epicerie", "rebost", "conserv", "arroz", "massa", "azeite", "aceite", "cereais", "cereal", "snack", "bolacha", "galleta" }
+        new string[] { "rebost", "mercearia", "despensa", "alimentaci", "pantry", "grocer", "\u00e9picerie", "epicerie", "rebost", "conserv", "arroz", "massa", "azeite", "aceite", "cereais", "cereal", "snack", "bolacha", "galleta", "cafe", "cha-", "achocolat", "guloseima" }
     };
 
     static string Ruta(string n) { return Path.Combine(CasaServidor.DirDades, n); }
@@ -176,6 +176,13 @@ public static class Botigues
                             try
                             {
                                 Navega(c, cu[0]);
+                                // Botigues fetes amb Salesforce Commerce Cloud (Continente, Pingo Doce...): es poden demanar m\u00e9s productes per p\u00e0gina
+                                try
+                                {
+                                    object sf = Crida(c, "sfcc()", 8000);
+                                    if (sf is bool && (bool)sf && !cu[0].Contains("sz=")) Navega(c, cu[0] + (cu[0].Contains("?") ? "&" : "?") + "start=0&sz=120");
+                                }
+                                catch { }
                                 for (int pg = 0; pg < maxPag; pg++)
                                 {
                                     object r = Crida(c, "mes()", 12000);
