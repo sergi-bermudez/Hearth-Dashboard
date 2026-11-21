@@ -765,3 +765,5 @@ TR.en["(en falten {1})"]="({1} missing)";
 TR.en["No el trobo a les botigues."]="Not found in the shops.";
 TR.en["Afegeix les teves botigues a Configuració ▸ Compra per veure on és més barat."]="Add your shops in Settings ▸ Shopping to see where things are cheapest.";
 TR.en["Torna a «el més barat»"]="Back to «cheapest»";
+TR.en["A {1}"]="At {1}";
+TR.en["Sense preu"]="No price";

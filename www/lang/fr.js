@@ -765,3 +765,5 @@ TR.fr["(en falten {1})"]="({1} manquants)";
 TR.fr["No el trobo a les botigues."]="Introuvable dans les magasins.";
 TR.fr["Afegeix les teves botigues a Configuració ▸ Compra per veure on és més barat."]="Ajoutez vos magasins dans Réglages ▸ Courses pour voir où c'est le moins cher.";
 TR.fr["Torna a «el més barat»"]="Revenir au « moins cher »";
+TR.fr["A {1}"]="Chez {1}";
+TR.fr["Sense preu"]="Sans prix";

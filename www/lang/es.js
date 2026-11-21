@@ -765,3 +765,5 @@ TR.es["(en falten {1})"]="(faltan {1})";
 TR.es["No el trobo a les botigues."]="No lo encuentro en las tiendas.";
 TR.es["Afegeix les teves botigues a Configuració ▸ Compra per veure on és més barat."]="Añade tus tiendas en Configuración ▸ Compra para ver dónde es más barato.";
 TR.es["Torna a «el més barat»"]="Volver a «el más barato»";
+TR.es["A {1}"]="En {1}";
+TR.es["Sense preu"]="Sin precio";
