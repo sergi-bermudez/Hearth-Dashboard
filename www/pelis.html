@@ -65,6 +65,10 @@
 .op .nm small{display:block;color:#8d95a1}
 .op.sug .im{box-shadow:0 0 0 3px #ffab3d}
 .op .sg{position:absolute;left:5px;top:5px;background:#ffab3d;color:#111;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700}
+#desfer{display:none;position:fixed;left:50%;bottom:24px;width:520px;margin-left:-260px;z-index:60;background:#2c2c2e;border-radius:14px;padding:12px 12px 12px 18px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#desfer span{display:inline-block;vertical-align:middle;width:370px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#desfer button{float:right;padding:9px 16px}
+@media (max-width:600px){#desfer{left:10px;right:10px;width:auto;margin-left:0}#desfer span{width:65%}}
 /* fitxa */
 .fx-avis{background:rgba(255,171,61,.12);border-left:3px solid #ffab3d;padding:8px 12px;border-radius:6px;color:#e6d2b0;font-size:14px;margin:12px 0}
 .fx-fitxer{color:#6f7782;font-size:13px;margin-top:4px;word-break:break-all}
@@ -107,6 +111,7 @@
   <div style="position:absolute;top:16px;left:16px;z-index:3"><button onclick="tancaFitxa()">‹ Tornar</button></div>
   <div id="fx-cos"><div id="fx-poster"></div><div id="fx-info"></div></div>
 </div>
+<div id="desfer"></div>
 <div id="tria">
   <div class="tr-cap"><button onclick="tancaTria()">‹</button><input id="tr-q" type="search" onkeydown="if(event.keyCode==13)busca()"><button class="pri" onclick="busca()">Busca</button></div>
   <div class="gris" id="tr-nota" style="margin-bottom:12px"></div>
@@ -274,7 +279,7 @@ function revSeg(gen) {
       var el = $(id); if (!el) return;
       var p = el.getAttribute('data-p');
       REV.actius++;
-      getJson(api('peli-opcions', { p: p }), function (d) {
+      getJson(api('peli-opcions', { p: p, rapid: 1 }), function (d) {
         REV.actius--; if (gen != REV.gen) return;
         var o = el.getElementsByClassName('ops')[0];
         if (o) o.innerHTML = opcionsHtml(d.opcions || [], p, id) || '<span class="gris">' + T('No he trobat cap opció. Busca-la pel títol.') + '</span>';
@@ -300,13 +305,31 @@ function confirmaActual(p, idEl) { getJson(api('peli-tria', { p: p, id: 'actual'
 function fet(p, d, idEl) {
   var e = P.tots[p];
   if (e) { e.titol = d.titol; e.any = d.any; e.genere = d.genere; e.nota = d.nota; e.trobada = true; e.dubte = false; e.ok = true; e.fons = !!d.fons; e.poster = !!d.poster; }
-  avis(Tf('Desada: {1}', d.titol + (d.any ? ' (' + d.any + ')' : '')));
+  barraDesfer(p, Tf('Desada: {1}', d.titol + (d.any ? ' (' + d.any + ')' : '')));
   var el = idEl && $(idEl);
   if (el) { el.style.opacity = '.35'; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600); }
   if ($('tria').style.display == 'block') tancaTria();
   if (FX.p == p) { FX.d = d; pintaFitxa(d, (ls('veient') || {})[p]); $('fx-poster').style.backgroundImage = bg(api('caratula', { p: p, m: 460, v: Date.now() })); }
   pintaPest();
 }
+/* desfer la darrera tria (si t'equivoques de pel·lícula) */
+var DF = { t: null };
+function barraDesfer(p, txt) {
+  var b = $('desfer');
+  b.innerHTML = '<span>' + esc(txt) + '</span><button onclick="desfes(' + js(p).replace(/"/g, '&quot;') + ')">' + T('Desfés') + '</button>';
+  b.style.display = 'block';
+  clearTimeout(DF.t); DF.t = setTimeout(function () { b.style.display = 'none'; }, 12000);
+}
+function desfes(p) {
+  $('desfer').style.display = 'none';
+  getJson(api('peli-desfes', { p: p }), function (d) {
+    avis(T('Desfet.'));
+    if (FX.p == p) { FX.d = d; pintaFitxa(d, (ls('veient') || {})[p]); $('fx-poster').style.backgroundImage = bg(api('caratula', { p: p, m: 460, v: Date.now() })); }
+    if (P.pest == 'revisa') $('vista').innerHTML = '';
+    carregaLlista();
+  }, errXarxa(T('desfer')));
+}
+
 /* buscar a mà, amb resultats per triar */
 var TR = { p: null };
 function obreTria(p, text) {
@@ -320,7 +343,7 @@ function obreTria(p, text) {
 function busca() { carregaOpcions(retalla($('tr-q').value || '')); }
 function carregaOpcions(text) {
   var p = TR.p;
-  $('tr-nota').textContent = T('Buscant…');
+  $('tr-nota').textContent = T('Buscant a TMDB, iTunes, Viquipèdia i Wikidata, en diversos idiomes…');
   getJson(api('peli-opcions', { p: p, q: text }), function (d) {
     if (TR.p != p) return;
     if (!$('tr-q').value && d.cerca && d.cerca.length) $('tr-q').value = d.cerca[0];
@@ -400,6 +423,7 @@ function pintaFitxa(d, v) {
   else if (v && v.d) h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + Tf('Continuar ({1})', durada(v.t)) + '</button><button onclick="reprodueix(true)">' + T('Des del principi') + '</button>';
   else h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + T('Reproduir') + '</button>';
   if (d.fontNom && !d.confirmada && parseFloat(d.conf) < 0.75) h += '<button onclick="confirmaActual(FX.p)">' + T('Sí, és aquesta') + '</button>';
+  if (d.triada) h += '<button onclick="desfes(FX.p)">↶ ' + T('Desfés la tria') + '</button>';
   h += '<button onclick="obreTria(FX.p)">' + svg(IC.cerca) + ' ' + T('No és aquesta? Torna a buscar') + '</button></div>';
   if (e) h += '<div class="fx-fitxer">' + esc(e.p) + ' · ' + mida(e.mida) + (d.fontNom ? ' · ' + esc(d.fontNom) : '') + '</div>';
   $('fx-info').innerHTML = h;
