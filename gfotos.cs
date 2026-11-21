@@ -31,8 +31,16 @@ public static class GFotos
         return d.TryGetValue(k, out v) && v != null && v.ToString() != "" ? v.ToString() : def;
     }
 
+    static string FitxerDarrera { get { return Path.Combine(CasaServidor.DirDades, "gfotos-darrera.txt"); } }
+    static DateTime DarreraDesada()
+    {
+        try { if (File.Exists(FitxerDarrera)) return File.GetLastWriteTime(FitxerDarrera); } catch { }
+        return DateTime.MinValue;
+    }
+
     public static void AlArrencar()
     {
+        DateTime arrencada = DateTime.Now;
         rellotge = new Timer(delegate
         {
             try
@@ -41,7 +49,10 @@ public static class GFotos
                 if (A(a, "actiu", "").ToLowerInvariant() != "true") return;
                 string[] h = A(a, "hora", "03:30").Split(':');
                 DateTime ara = DateTime.Now;
-                if (ara.Hour == int.Parse(h[0]) && ara.Minute == int.Parse(h[1]) && (ara - darreraAuto).TotalHours > 2)
+                // A l'hora triada; o, si el PC estava apagat a aquella hora i fa m\u00e9s d'un dia, ara (uns minuts despr\u00e9s d'arrencar)
+                bool aHora = ara.Hour == int.Parse(h[0]) && ara.Minute == int.Parse(h[1]);
+                bool endarrerit = (ara - DarreraDesada()).TotalHours > 26 && (ara - arrencada).TotalMinutes > 3;
+                if ((aHora || endarrerit) && (ara - darreraAuto).TotalHours > 2)
                 {
                     darreraAuto = ara;
                     Comenca();
@@ -96,7 +107,7 @@ public static class GFotos
         {
             try { Sincronitza(); }
             catch (Exception e) { estat = "Error: " + e.Message; Console.WriteLine("  Google Fotos: " + e.Message); }
-            finally { enMarxa = false; darrera = DateTime.Now; }
+            finally { enMarxa = false; darrera = DateTime.Now; try { File.WriteAllText(FitxerDarrera, darrera.ToString("o")); } catch { } }
         });
     }
 

@@ -74,14 +74,16 @@ public static class Botigues
         {
             try
             {
-                if (DateTime.Now.Hour != 6 || enMarxa) return;
+                if (enMarxa) return;
                 // Nom\u00e9s les botigues amb la casella \u00abRevisa-la cada dia\u00bb marcada
                 bool alguna = false;
                 foreach (object ob in Config()) { Dictionary<string, object> b = ob as Dictionary<string, object>; if (b != null && S(b, "auto") == "True") alguna = true; }
                 if (!alguna) return;
                 Dictionary<string, object> c = Cataleg();
                 double t = c != null && c.ContainsKey("tAuto") ? Convert.ToDouble(c["tAuto"]) : 0;
-                if ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds - t < 20 * 3600 * 1000) return;
+                double hores = ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds - t) / 3600000.0;
+                // De matinada (cap a les 6) si fa m\u00e9s de 20 h; a qualsevol hora si se n'ha saltat una (PC apagat): m\u00e9s de 26 h
+                if (!((DateTime.Now.Hour == 6 && hores > 20) || hores > 26)) return;
                 Recorre("*auto");
             }
             catch { }

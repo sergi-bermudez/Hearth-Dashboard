@@ -124,6 +124,8 @@ public static class Actualitza
     }
 
     // Cada hora mira si hi ha versio nova; l'aplica de matinada (entre les 3 i les 5) si l'automatic esta activat
+    static string FitxerVista { get { return Path.Combine(CasaServidor.DirDades, "versio-vista.txt"); } }
+
     public static void Inicia()
     {
         rellotge = new Timer(delegate
@@ -132,10 +134,14 @@ public static class Actualitza
             {
                 if (!Auto()) return;
                 int h = DateTime.Now.Hour;
-                if (h < 3 || h >= 5) return;
                 string r = Mira(true);
                 string m;
-                if (r != "" && Compara(Local(), r) < 0) Aplica(out m);
+                if (r == "" || Compara(Local(), r) >= 0) { try { File.Delete(FitxerVista); } catch { } return; }
+                // Primer cop que es veu aquesta versio: s'apunta. S'aplica de matinada (3-5 h) o, si el PC
+                // estava apagat a aquella hora i ja fa mes d'un dia que hi es, ara mateix
+                DateTime vista = DateTime.Now;
+                try { if (File.Exists(FitxerVista) && File.ReadAllText(FitxerVista).Trim() == r) vista = File.GetLastWriteTime(FitxerVista); else File.WriteAllText(FitxerVista, r); } catch { }
+                if ((h >= 3 && h < 5) || (DateTime.Now - vista).TotalHours > 24) Aplica(out m);
             }
             catch { }
         }, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(60));
