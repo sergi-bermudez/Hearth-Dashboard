@@ -16,6 +16,7 @@ public static class Botigues
     static volatile bool enMarxa;
     static string estatText = "";
     static volatile string llegintB = "";
+    static readonly Dictionary<string, string> obertes = new Dictionary<string, string>();
     static Dictionary<string, object> cataleg; // en mem\u00f2ria
 
     // Categories comunes per a totes les botigues, amb paraules clau en diversos idiomes
@@ -393,6 +394,40 @@ public static class Botigues
             object d = Js().DeserializeObject(text);
             File.WriteAllText(Ruta("botigues_cfg.json"), Js().Serialize(d), new UTF8Encoding(false));
             CasaServidor.Json(res, CasaServidor.Dic("ok", true));
+            return;
+        }
+        // Obre la botiga en una finestra visible de l'Edge del PC perqu\u00e8 s'hi pugui triar la zona o la botiga
+        // (p. ex. Funchal). Les galetes es queden a l'Edge i la lectura de cada nit ja hi entra aix\u00ed.
+        if (nom == "obre")
+        {
+            string id = CasaServidor.Q(q, "b"), url = "";
+            foreach (object ob in Config()) { Dictionary<string, object> b = ob as Dictionary<string, object>; if (b != null && S(b, "id") == id) url = S(b, "url"); }
+            if (url == "") { CasaServidor.Error(res, 404, "No trobo la botiga"); return; }
+            Edge.Assegura();
+            string t;
+            lock (lk) { if (obertes.TryGetValue(id, out t)) { try { Edge.TancaPagina(t); } catch { } } }
+            t = Edge.NovaPagina(url);
+            try { Edge.Finestra(t, true); } catch { }
+            lock (lk) obertes[id] = t;
+            CasaServidor.Json(res, CasaServidor.Dic("ok", true));
+            return;
+        }
+        // Fet: desa com a adre\u00e7a de la botiga la p\u00e0gina on s'ha quedat la finestra, i la tanca
+        if (nom == "agafa")
+        {
+            string id = CasaServidor.Q(q, "b"), t;
+            lock (lk) { if (!obertes.TryGetValue(id, out t)) t = null; obertes.Remove(id); }
+            if (t == null) { CasaServidor.Error(res, 400, "La botiga no est\u00e0 oberta al PC"); return; }
+            string href = "";
+            try { Cdp c = new Cdp(); c.Connecta(Edge.WsPagina(t)); href = Edge.Avalua(c, "location.href", 5000) as string ?? ""; c.Tanca(); } catch { }
+            try { Edge.TancaPagina(t); } catch { }
+            if (!href.StartsWith("http")) { CasaServidor.Error(res, 400, "No he pogut llegir l'adre\u00e7a"); return; }
+            List<object> l = Config();
+            foreach (object ob in l) { Dictionary<string, object> b = ob as Dictionary<string, object>; if (b != null && S(b, "id") == id) b["url"] = href; }
+            Dictionary<string, object> d = new Dictionary<string, object>();
+            d["botigues"] = l.ToArray();
+            File.WriteAllText(Ruta("botigues_cfg.json"), Js().Serialize(d), new UTF8Encoding(false));
+            CasaServidor.Json(res, CasaServidor.Dic("ok", true, "url", href));
             return;
         }
         if (nom == "actualitza")

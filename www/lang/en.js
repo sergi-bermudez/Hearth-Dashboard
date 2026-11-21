@@ -778,3 +778,7 @@ TR.en["Pa"]="Bread";
 TR.en["Neteja i casa"]="Cleaning & home";
 TR.en["Higiene"]="Toiletries";
 TR.en["Toca per veure la llista"]="Tap to see the list";
+TR.en["Fet"]="Done";
+TR.en["Obre al PC"]="Open on PC";
+TR.en["S'ha obert la botiga a la pantalla del PC. Tria-hi la teva zona o botiga i ves a una secció amb productes; després prem «Fet»."]="The shop opened on the PC screen. Choose your area or store there and go to a section with products; then press «Done».";
+TR.en["Si la botiga ensenya preus diferents segons la zona (per exemple a Madeira), prem «Obre al PC», tria-hi la teva botiga o codi postal i prem «Fet»: a partir d'aleshores la llegirà amb aquella zona."]="If the shop shows different prices by area, press «Open on PC», choose your store or postcode there and press «Done»: from then on it will be read for that area.";

@@ -778,3 +778,7 @@ TR.fr["Pa"]="Pain";
 TR.fr["Neteja i casa"]="Entretien et maison";
 TR.fr["Higiene"]="Hygiène";
 TR.fr["Toca per veure la llista"]="Touchez pour voir la liste";
+TR.fr["Fet"]="Terminé";
+TR.fr["Obre al PC"]="Ouvrir sur le PC";
+TR.fr["S'ha obert la botiga a la pantalla del PC. Tria-hi la teva zona o botiga i ves a una secció amb productes; després prem «Fet»."]="Le magasin s’est ouvert sur l’écran du PC. Choisissez-y votre zone ou magasin et allez dans un rayon avec des produits ; puis touchez « Terminé ».";
+TR.fr["Si la botiga ensenya preus diferents segons la zona (per exemple a Madeira), prem «Obre al PC», tria-hi la teva botiga o codi postal i prem «Fet»: a partir d'aleshores la llegirà amb aquella zona."]="Si le magasin affiche des prix différents selon la zone, touchez « Ouvrir sur le PC », choisissez-y votre magasin ou code postal puis « Terminé » : il sera ensuite lu pour cette zone.";

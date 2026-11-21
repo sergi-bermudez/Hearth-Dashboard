@@ -265,6 +265,7 @@ body{background:#000}
 
   <div class="sec" id="s-compra">
     <h2>Compra</h2>
+    <div class="desc">Si la botiga ensenya preus diferents segons la zona (per exemple a Madeira), prem «Obre al PC», tria-hi la teva botiga o codi postal i prem «Fet»: a partir d'aleshores la llegirà amb aquella zona.</div>
     <div class="desc">Les botigues on compres. Cada nit (cap a les 6) el servidor en llegeix els productes, els preus i les promocions de la web, i l'app Compra els mostra per categories. Funciona amb qualsevol supermercat amb botiga online, de qualsevol país: només cal l'adreça. És experimental: no totes les webs es deixen llegir.</div>
     <div id="bt-llista"></div>
     <div class="fila"><label>Afegeix</label><select id="bt-preset" class="sel" onchange="btPreset()"></select></div>
@@ -1014,7 +1015,7 @@ function btPinta() {
   for (var i = 0; i < BT.l.length; i++) {
     var b = BT.l[i], s = e[b.id] || {};
     h += '<div class="fila"><label style="min-width:0;-webkit-flex:1;flex:1"><b>' + esc(b.nom) + '</b><br><span class="gris petit">' + esc(b.url) + '</span><br><span class="petit' + (s.error ? '" style="color:#ff453a">' : ' gris">') +
-      (s.error ? esc(T(s.error)) : s.n ? Tf('{1} productes', s.n) : T('Encara no llegit')) + '</span></label>' + (BT.est && BT.est.enMarxa && BT.est.llegint == b.id ? '<span class="gris petit" style="margin-right:8px">' + T('Llegint…') + '</span>' : '<button onclick="btActualitza(\'' + b.id + '\')" style="margin-right:8px">' + T('Llegeix') + '</button>') + '<button onclick="btTreu(' + i + ')">' + T('Treu') + '</button></div>';
+      (s.error ? esc(T(s.error)) : s.n ? Tf('{1} productes', s.n) : T('Encara no llegit')) + '</span></label>' + (BT.est && BT.est.enMarxa && BT.est.llegint == b.id ? '<span class="gris petit" style="margin-right:8px">' + T('Llegint…') + '</span>' : (BT.obert == b.id ? '<button class="pri" onclick="btAgafa(\'' + b.id + '\')" style="margin-right:8px">' + T('Fet') + '</button>' : '<button onclick="btObre(\'' + b.id + '\')" style="margin-right:8px">' + T('Obre al PC') + '</button>') + '<button onclick="btActualitza(\'' + b.id + '\')" style="margin-right:8px">' + T('Llegeix') + '</button>') + '<button onclick="btTreu(' + i + ')">' + T('Treu') + '</button></div>';
   }
   if (!h) h = '<div class="gris" style="margin:10px 0">' + T('Encara no hi ha cap botiga.') + '</div>';
   $('bt-llista').innerHTML = h;
@@ -1044,6 +1045,14 @@ function btAfegeix() {
   $('bt-nom').value = ''; $('bt-url').value = ''; $('bt-preset').value = '';
   /* desa i llegeix només la botiga nova */
   post(api('admin/compra/botigues'), JSON.stringify({ botigues: BT.l }), function () { btActualitza(id); }, errXarxa('desar'));
+}
+/* Obre la botiga en una finestra de l'Edge del PC per triar-hi la zona (p. ex. Funchal) o anar a la secció de productes.
+   En prémer «Fet», l'adreça on s'ha quedat passa a ser la de la botiga; la zona triada queda guardada a l'Edge. */
+function btObre(id) {
+  post(api('admin/compra/obre', { b: id }), '', function () { BT.obert = id; btPinta(); avis(T('S\'ha obert la botiga a la pantalla del PC. Tria-hi la teva zona o botiga i ves a una secció amb productes; després prem «Fet».'), 8000); }, errXarxa('obrir'));
+}
+function btAgafa(id) {
+  postJson(api('admin/compra/agafa', { b: id }), {}, function (d) { BT.obert = ''; avis(T('Desat') + (d && d.url ? ': ' + d.url : '')); btCarrega(); }, errXarxa('desar'));
 }
 function btTreu(i) { BT.l.splice(i, 1); btDesa(); }
 function btActualitza(b) {
