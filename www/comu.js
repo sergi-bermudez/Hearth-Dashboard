@@ -319,7 +319,7 @@ function nomDispositiuDefecte() {
   return 'Navegador';
 }
 /* Ajustos que poden ser propis de cada dispositiu */
-var AJ_DISP = ['estil', 'foscor', 'fonsSeg', 'marcSeg', 'marcMin', 'targeta', 'nom', 'passi', 'nit', 'nitDes', 'nitFins', 'lleuger', 'fonsPassi'];
+var AJ_DISP = ['estil', 'foscor', 'fonsSeg', 'marcSeg', 'marcMin', 'targeta', 'nom', 'passi', 'nit', 'nitDes', 'nitFins', 'lleuger', 'fonsPassi', 'tele'];
 /* Llegeix els ajustos generals i hi aplica els d'aquest dispositiu (si en té) */
 function ajustosDispositiu(ok) {
   dades('ajustos', function (g) {
@@ -386,4 +386,105 @@ function desaInf(v, ok) { desaDades('inf_' + DISP.id, v, ok); }
       el = el.parentNode;
     }
   }, { passive: false });
+})();
+
+/* ---------- Mode tele: navegar amb les fletxes del comandament (i l'OK / enrere) ----------
+   Per a la tele (Hearth al PC projectat amb Miracast, o al navegador de la tele). Funciona a la pantalla
+   principal i a dins de cada app; quan no hi ha res més en una direcció, salta d'una a l'altra. */
+var TELE = (function () {
+  var actiu = false, cur = null;
+  try { actiu = /[?&]tele=1/.test(location.search) || /[?&]tele=1/.test(window.top.location.search) || ls('modeTele') === true; } catch (e) { actiu = ls('modeTele') === true; }
+  function visible(el) {
+    if (!el || !el.getBoundingClientRect) return false;
+    var r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4) return false;
+    if (r.bottom < 0 || r.right < 0 || r.top > (window.innerHeight || 0) + 400 || r.left > (window.innerWidth || 0)) return false;
+    var s = window.getComputedStyle(el);
+    return s.visibility != 'hidden' && s.display != 'none' && el.offsetParent !== null && !el.disabled;
+  }
+  function candidats() {
+    var l = document.querySelectorAll('button, a[href], input, select, textarea, [onclick], [tabindex]'), r = [];
+    /* si hi ha una finestra emergent oberta, només el que hi ha a dins */
+    var modal = null, ms = document.querySelectorAll('#tria, #cast, #pin, .modal');
+    for (var j = 0; j < ms.length; j++) if (visible(ms[j]) || (ms[j].style.display == 'block')) modal = ms[j];
+    for (var i = 0; i < l.length; i++) if (visible(l[i]) && (!modal || modal.contains(l[i]))) r.push(l[i]);
+    return r;
+  }
+  function centre(el) { var b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, b: b }; }
+  function marca(el) {
+    if (cur && cur.classList) cur.classList.remove('tele-focus');
+    cur = el;
+    if (!el) return;
+    el.classList.add('tele-focus');
+    try { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { try { el.scrollIntoView(false); } catch (x) { } }
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) { try { el.focus(); } catch (e) { } }
+  }
+  function mou(dx, dy, des) {
+    var l = candidats();
+    if (!l.length) return false;
+    var o = des ? null : (cur && document.body.contains(cur) && visible(cur) ? centre(cur) : null), millor = null, mp = 1e9;
+    if (!o) {
+      /* entrant des d'una altra part (o el primer cop): el més proper a la vora per on s'entra */
+      var W = window.innerWidth, H = window.innerHeight;
+      o = { x: des && des.x != null ? des.x : (dx > 0 ? -1 : dx < 0 ? W + 1 : W / 2), y: dy > 0 ? -1 : dy < 0 ? H + 1 : (des && des.y != null ? des.y : H / 2) };
+    }
+    for (var i = 0; i < l.length; i++) {
+      if (l[i] == cur) continue;
+      var c = centre(l[i]), px = (c.x - o.x) * dx + (c.y - o.y) * dy, sx = Math.abs((c.x - o.x) * dy) + Math.abs((c.y - o.y) * dx);
+      if (px <= 2) continue;
+      var p = px + sx * 2.2;
+      if (p < mp) { mp = p; millor = l[i]; }
+    }
+    if (millor) { marca(millor); return true; }
+    return false;
+  }
+  function frameActiu() {
+    var fs = document.querySelectorAll('iframe');
+    for (var i = 0; i < fs.length; i++) if (visible(fs[i])) return fs[i];
+    return null;
+  }
+  function entra(dx, dy, x, y) { if (cur) { cur.classList.remove('tele-focus'); cur = null; } return mou(dx, dy, { x: x, y: y }); }
+  function tecla(e) {
+    if (!actiu) return;
+    var k = e.keyCode || e.which, dx = 0, dy = 0;
+    if (k == 37) dx = -1; else if (k == 39) dx = 1; else if (k == 38) dy = -1; else if (k == 40) dy = 1;
+    var t = e.target, escrivint = t && (/^(INPUT|TEXTAREA)$/.test(t.tagName) && !/^(checkbox|radio|range|button)$/.test(t.type));
+    if (dx || dy) {
+      if (escrivint && dx) return;
+      e.preventDefault();
+      if (mou(dx, dy)) return;
+      /* res més en aquesta direcció: passa a la pantalla de fora (si som una app) o a l'app oberta */
+      var o = cur ? centre(cur) : { x: 0, y: 0 };
+      try {
+        if (window.parent !== window && window.parent.TELE) {
+          var fr = window.frameElement.getBoundingClientRect();
+          if (cur) cur.classList.remove('tele-focus'), cur = null;
+          window.parent.TELE.entra(dx, dy, fr.left + o.x, fr.top + o.y);
+          window.parent.focus();
+        } else {
+          var f = frameActiu();
+          if (f && f.contentWindow.TELE) { var fb = f.getBoundingClientRect(); if (f.contentWindow.TELE.entra(dx, dy, o.x - fb.left, o.y - fb.top)) { if (cur) cur.classList.remove('tele-focus'), cur = null; f.contentWindow.focus(); } }
+        }
+      } catch (x) { }
+      return;
+    }
+    if ((k == 13 || k == 32) && cur && !escrivint) { e.preventDefault(); if (/^(SELECT)$/.test(cur.tagName)) { try { cur.focus(); } catch (x) { } } else cur.click(); return; }
+    /* Enrere: Esc, Retrocés (si no s'escriu), o la tecla enrere del navegador/comandament */
+    if (k == 27 || (k == 8 && !escrivint) || k == 166 || k == 461 || k == 10009) {
+      e.preventDefault();
+      var ms = document.querySelectorAll('#tria, #cast');
+      for (var i = 0; i < ms.length; i++) if (ms[i].style.display == 'block') { ms[i].style.display = 'none'; return; }
+      try {
+        var top = window.top;
+        if (top.navInici && top.A && top.A.vista != 'dash') { top.navInici(); top.focus(); if (top.TELE) top.TELE.entra(0, 1, top.innerWidth / 2, 0); }
+      } catch (x) { }
+    }
+  }
+  if (actiu) {
+    var st = document.createElement('style');
+    st.textContent = '.tele-focus{outline:4px solid #0a84ff !important;outline-offset:2px;box-shadow:0 0 0 8px rgba(10,132,255,.35) !important;border-radius:10px;position:relative;z-index:5}';
+    (document.head || document.documentElement).appendChild(st);
+    document.addEventListener('keydown', tecla, true);
+  }
+  return { actiu: actiu, entra: entra, mou: mou };
 })();

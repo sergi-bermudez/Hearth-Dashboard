@@ -184,6 +184,9 @@ body{background:#000}
     <div class="fila"><label>Fons: segons</label><input type="number" id="aj-fons" min="8" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto del fons</span></div>
     <h2>Mode lleuger</h2>
     <div class="fila"><label>Mode lleuger</label><select id="aj-lleuger" class="sel"><option value="">Automàtic (iPads amb iOS 9 o anterior)</option><option value="si">Sempre activat</option><option value="no">Desactivat</option></select></div>
+    <div class="fila"><label>Mode tele</label><label class="check"><input type="checkbox" id="aj-tele"> Per a la tele: tot més gran i navegació amb les fletxes del comandament</label></div>
+    <div class="fila"><label></label><button onclick="teleObre()">Obre Hearth en mode tele a la pantalla del PC</button></div>
+    <div class="desc petit">Per veure Hearth a la tele i fer-lo servir amb el comandament: obre'l en mode tele al PC i projecta la pantalla a la tele (Windows + K, Miracast). Amb una LG, el comandament controla el PC. Esc o Enrere tornen a l'inici; Alt + F4 el tanca.</div>
     <div class="gris petit" style="margin:-4px 0 10px">Treu animacions i ombres, fa servir fotos de fons més petites i les canvia menys sovint. Ajuda els iPads antics a anar més fluids i a no tancar Safari.</div>
     <h2>Mode nit</h2>
     <label class="check"><input type="checkbox" id="aj-nit"> <span>De nit, només un rellotge fosc i tènue (es desperta tocant la pantalla)</span></label>
@@ -504,6 +507,7 @@ function desaInici() {
   v.foscor = parseInt($('aj-foscor').value, 10) || 0;
   v.estil = v.estil || 'ambient';
   v.lleuger = $('aj-lleuger').value;
+  v.tele = $('aj-tele').checked;
   v.fonsPassi = $('aj-fonspassi').checked;
   v.nit = $('aj-nit').checked; v.nitDes = $('aj-nit-des').value || '22:00'; v.nitFins = $('aj-nit-fins').value || '07:00';
   desaDades('ajustos', a, function () {
@@ -1084,6 +1088,7 @@ function btAgafa(id) {
   postJson(api('admin/compra/agafa', { b: id }), {}, function (d) { BT.obert = ''; avis(T('Desat') + (d && d.url ? ': ' + d.url : '')); btCarrega(); }, errXarxa('desar'));
 }
 function btAtura() { post(api('admin/compra/atura'), '', function () { avis(T('Aturant… acabarà la pàgina que està llegint.')); setTimeout(btCarrega, 1500); }, errXarxa('aturar')); }
+function teleObre() { post(api('admin/tele/obre'), '', function () { avis(T('Obert a la pantalla del PC.')); }, errXarxa('obrir')); }
 function btAuto(i, v) { BT.l[i].auto = v; btDesa(); }
 function btTreu(i) { BT.l.splice(i, 1); btDesa(); }
 function btActualitza(b) {
@@ -1121,6 +1126,7 @@ function omplInici() {
   $('aj-min').value = v.marcMin || 0;
   $('aj-fons').value = v.fonsSeg || 20;
   $('aj-lleuger').value = v.lleuger === true ? 'si' : v.lleuger === false ? '' : (v.lleuger || '');
+  $('aj-tele').checked = v.tele === true;
   $('aj-fonspassi').checked = v.fonsPassi !== false;
   $('aj-nit').checked = !!v.nit; $('aj-nit-des').value = v.nitDes || '22:00'; $('aj-nit-fins').value = v.nitFins || '07:00';
   $('aj-foscor').value = v.foscor == null ? 25 : v.foscor; $('aj-foscor-v').textContent = $('aj-foscor').value + '%';

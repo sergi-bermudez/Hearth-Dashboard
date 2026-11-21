@@ -9,7 +9,7 @@ using System.Web.Script.Serialization;
 
 public static class Pantalles
 {
-    class P { public string Nom = ""; public DateTime Vist; public List<object> Ordres = new List<object>(); }
+    class P { public string Nom = ""; public bool Tele; public DateTime Vist; public List<object> Ordres = new List<object>(); }
     static readonly Dictionary<string, P> llista = new Dictionary<string, P>();
     static readonly object lk = new object();
 
@@ -29,6 +29,7 @@ public static class Pantalles
                 p.Vist = DateTime.Now;
                 string n = CasaServidor.Q(q, "nom");
                 if (n != "") p.Nom = n;
+                p.Tele = CasaServidor.Q(q, "tele") == "1";
                 ordres = p.Ordres.ToArray();
                 p.Ordres.Clear();
             }
@@ -41,7 +42,7 @@ public static class Pantalles
             lock (lk)
                 foreach (KeyValuePair<string, P> kv in llista)
                     if (kv.Key != d && (DateTime.Now - kv.Value.Vist).TotalSeconds < 25)
-                        r.Add(CasaServidor.Dic("id", kv.Key, "nom", kv.Value.Nom));
+                        r.Add(CasaServidor.Dic("id", kv.Key, "nom", kv.Value.Nom, "tele", kv.Value.Tele));
             CasaServidor.Json(res, r.ToArray());
             return;
         }

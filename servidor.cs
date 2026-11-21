@@ -374,6 +374,19 @@ public static class CasaServidor
         if (nom == "tuya/ajustos") { Tuya.Ajusta(ctx); return; }
         if (nom.StartsWith("actualitza/")) { Actualitza.Api(nom, q, ctx); return; }
         if (nom == "diagnosi") { Diagnosi.Api(ctx); return; }
+        if (nom == "tele/obre")
+        {
+            // Hearth a pantalla completa (mode quiosc) a la pantalla del PC, en mode tele, per projectar-lo a la tele
+            try
+            {
+                string perfil = Path.Combine(Dades, "edge-tele");
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Edge.Ruta(),
+                    "--kiosk \"http://localhost:" + Port + "/?tele=1\" --edge-kiosk-type=fullscreen --no-first-run --autoplay-policy=no-user-gesture-required --user-data-dir=\"" + perfil + "\"") { UseShellExecute = false });
+                Json(res, Dic("ok", true));
+            }
+            catch (Exception ex) { Error(res, 500, ex.Message); }
+            return;
+        }
         if (nom.StartsWith("compra/")) { Botigues.Api(nom.Substring(7), q, ctx, true); return; }
         if (nom.StartsWith("wa/")) { if (nom != "wa/atura" && !FuncioActiva("whatsapp")) { Error(ctx.Response, 403, "WhatsApp est\u00e0 desactivat (Configuraci\u00f3 \u25b8 Funcions opcionals)"); return; } WhatsApp.Api(nom.Substring(3), q, ctx); return; }
         switch (nom)
