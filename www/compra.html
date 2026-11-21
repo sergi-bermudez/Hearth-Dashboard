@@ -36,6 +36,9 @@ html,body{height:100%;overflow:hidden}
 .t .st{position:absolute;right:4px;top:64px;width:34px;height:34px;line-height:34px;text-align:center;font-size:20px;color:#ffd60a;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .t .qt{position:absolute;left:8px;top:64px;min-width:28px;height:28px;line-height:28px;border-radius:14px;background:#30d158;color:#04210f;font-weight:700;text-align:center;font-size:15px;padding:0 6px}
 .t.esg{opacity:.5}
+.t .qc{position:absolute;left:6px;right:40px;top:58px;height:36px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;background:rgba(20,20,22,.88);border-radius:18px;border:1.5px solid #30d158}
+.t .qc b{width:40px;height:34px;line-height:32px;text-align:center;font-size:24px;font-weight:400;color:#30d158;-webkit-flex:none;flex:none}
+.t .qc span{-webkit-flex:1;flex:1;text-align:center;font-weight:700;font-size:17px;color:#fff}
 .t.lliure .em{font-size:30px}
 .buit{padding:30px 10px;color:#8d95a1;text-align:center}
 #dre .cap h2{margin:0;font-size:22px}
@@ -267,7 +270,7 @@ function htmlTile(p, i) {
   if (p.b) h += '<span class="bt" style="background:' + colorBot(p.b) + '">' + esc(nomBot(p.b) || p.b) + '</span>';
   if (p.pv && p.pv > p.p) h += '<span class="dc">-' + Math.round((1 - p.p / p.pv) * 100) + '%</span>';
   if (!p.nou) h += '<span class="st" onclick="event.stopPropagation();commutaFav(' + i + ')">' + (esFav(k) ? '★' : '☆') + '</span>';
-  h += '<span class="qt" style="display:none"></span>';
+  h += '<span class="qt" style="display:none"></span><div class="qc" style="display:none"><b onclick="event.stopPropagation();treuTile(' + i + ')">−</b><span></span><b onclick="event.stopPropagation();tocaTile(' + i + ')">+</b></div>';
   h += '<div class="tx"><div class="nm">' + esc(p.n) + '</div>';
   if (p.cc) h += '<div class="ds"></div>';
   else {
@@ -334,8 +337,10 @@ function marcaQuantitats() {
   for (i = 0; i < L.items.length; i++) if (!L.items[i].fet) q[L.items[i].k] = (q[L.items[i].k] || 0) + (L.items[i].q || 1);
   var ts = document.querySelectorAll('#graella .t');
   for (i = 0; i < ts.length; i++) {
-    var n = q[ts[i].getAttribute('data-k')], b = ts[i].querySelector('.qt');
-    b.style.display = n ? '' : 'none'; b.textContent = n || '';
+    var n = q[ts[i].getAttribute('data-k')], b = ts[i].querySelector('.qt'), c = ts[i].querySelector('.qc');
+    b.style.display = 'none';
+    if (c) { c.style.display = n ? '' : 'none'; c.children[1].textContent = n ? String(Math.round(n * 100) / 100).replace('.', ',') : ''; }
+    else { b.style.display = n ? '' : 'none'; b.textContent = n || ''; }
   }
 }
 /* Clic dret (o mantenir premut a la tauleta) en treu una unitat */
