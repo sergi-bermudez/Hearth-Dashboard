@@ -78,7 +78,7 @@ var CONCEPTES = [
   ['lactis', '🍶', 'Iogurt grec', 'Yogur griego', 'Iogurte grego|Oikos', 'Greek yoghurt', 'Yaourt grec', '~oikos ~natural'],
   ['lactis', '🥛', 'Llet', 'Leche semidesnatada', 'Leite meio gordo', 'Semi-skimmed milk', 'Lait demi-écrémé', '@lactis -chocolate -achocolatado -cacau -infantil -pó -sabor ~pingo'],
   ['lactis', '🥛', 'Llet amb xocolata', 'Batido de chocolate', 'Leite chocolate|Leite com chocolate|Achocolatado', 'Chocolate milk', 'Lait chocolaté', '~pingo'],
-  ['lactis', '🥚', 'Ous', 'Huevos', 'Ovos', 'Eggs', 'Oeufs', '-chocolate -kinder -páscoa -pascoa -codorniz -massa -mexidos'],
+  ['lactis', '🥚', 'Ous', 'Huevos', 'Ovos', 'Eggs', 'Oeufs', '-chocolate -kinder -páscoa -pascoa -codorniz -massa -mexidos -bolacha -bolachas -galleta -dinosaurus -biscoito'],
   ['lactis', '🧈', 'Mantega', 'Mantequilla', 'Manteiga', 'Butter', 'Beurre', '-amendoim -bolacha'],
   /* Pa */
   ['pa', '🥖', 'Panets', 'Panecillos', 'Carcaça|Pão padeirinho|Papo-seco', 'Bread rolls', 'Petits pains', '~carcaça ~aldeia'],
