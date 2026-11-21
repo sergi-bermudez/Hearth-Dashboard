@@ -6,7 +6,7 @@
    Ordenats pel que es compra més sovint. Per afegir-ne, n'hi ha prou amb una fila nova. */
 var CONCEPTES = [
   /* Fruita i verdura */
-  ['fruita', '🍌', 'Plàtans', 'Plátanos', 'Banana', 'Bananas', 'Bananes', '@fruita -chips -seca -bebida -iogurte -yogur -bolsa -saqueta -puré'],
+  ['fruita', '🍌', 'Bananes', 'Plátanos', 'Banana', 'Bananas', 'Bananes', '@fruita -chips -seca -bebida -iogurte -yogur -bolsa -saqueta -puré'],
   ['fruita', '🍊', 'Mandarines', 'Mandarinas', 'Mandarina|Tangerina', 'Mandarins', 'Mandarines', '@fruita -sumo -zumo -iogurte'],
   ['fruita', '🍑', 'Préssecs', 'Melocotones', 'Pêssego', 'Peaches', 'Pêches', '@fruita -calda -almíbar -iogurte -sumo -néctar'],
   ['fruita', '🥒', 'Cogombre', 'Pepino', 'Pepino', 'Cucumber', 'Concombre', '@fruita'],
