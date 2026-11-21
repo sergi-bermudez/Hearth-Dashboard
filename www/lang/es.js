@@ -798,3 +798,5 @@ TR.es["Atura"]="Parar";
 TR.es["aturat"]="parado";
 TR.es["Aturant… acabarà la pàgina que està llegint."]="Parando… acabará la página que está leyendo.";
 TR.es["Aturat"]="Parado";
+TR.es["Toca per canviar entre peces i kg"]="Toca para cambiar entre piezas y kg";
+TR.es["peces"]="piezas";

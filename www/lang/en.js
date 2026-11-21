@@ -798,3 +798,5 @@ TR.en["Atura"]="Stop";
 TR.en["aturat"]="stopped";
 TR.en["Aturant… acabarà la pàgina que està llegint."]="Stopping… it will finish the page it is reading.";
 TR.en["Aturat"]="Stopped";
+TR.en["Toca per canviar entre peces i kg"]="Tap to switch between pieces and kg";
+TR.en["peces"]="pieces";

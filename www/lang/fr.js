@@ -798,3 +798,5 @@ TR.fr["Atura"]="Arrêter";
 TR.fr["aturat"]="arrêté";
 TR.fr["Aturant… acabarà la pàgina que està llegint."]="Arrêt… il termine la page en cours.";
 TR.fr["Aturat"]="Arrêté";
+TR.fr["Toca per canviar entre peces i kg"]="Touchez pour passer de pièces à kg";
+TR.fr["peces"]="pièces";

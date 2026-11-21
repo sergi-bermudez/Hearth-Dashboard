@@ -52,7 +52,8 @@ html,body{height:100%;overflow:hidden}
 .ci .qb{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex:none;flex:none;margin-right:6px}
 .ci .qb button{width:34px;height:34px;padding:0;border-radius:17px;font-size:18px;line-height:34px;background:#2c2c2e}
 .ci .qb span{min-width:24px;text-align:center;font-weight:700}
-.ci .qb span.kg{min-width:54px;font-size:14px}
+.ci .qb span.kg{min-width:58px;font-size:14px;cursor:pointer;text-decoration:underline dotted;line-height:1.1}
+.ci .qb span.kg small{display:block;font-size:10px;font-weight:400;color:#8d95a1;text-decoration:none}
 .sec{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#8d95a1;margin:14px 4px 6px}
 .peu{padding:10px;-webkit-flex:none;flex:none;border-top:1px solid rgba(255,255,255,.07)}
 .peu button{margin:0 6px 6px 0}
@@ -387,8 +388,26 @@ function afegeixText() {
 }
 /* Productes a pes (fruita a granel, carn, peix...): la quantitat és en kg, de mig en mig */
 function esPes(it) { var o = opcio(it); return !!(o && o.g); }
-function pas(it) { return esPes(it) ? 0.5 : 1; }
-function qText(it) { var q = it.q || 1; return esPes(it) ? String(q).replace('.', ',') + ' kg' : String(q); }
+/* A pes es pot demanar per peces («3 plàtans») o per pes («0,75 kg»): tocant la quantitat es canvia */
+function enKg(it) { return esPes(it) && it.mode == 'kg'; }
+function pas(it) { return enKg(it) ? 0.25 : 1; }
+function pesUnitat(o) { var m = o && /([\d.,]+)\s*kg/i.exec(o.q || ''); var w = m ? parseFloat(m[1].replace(',', '.')) : 0; return w > 0 && w < 5 ? w : 0; }
+function kgsDe(it, o) { var q = it.q || 1; if (!o || !o.g) return 0; return it.mode == 'kg' ? q : q * pesUnitat(o); }
+function kgTxt(k) { return (Math.round(k * 100) / 100).toString().replace('.', ',') + ' kg'; }
+/* Preu d'un article amb l'opció donada (0 si no se sap: peces sense pes per peça) */
+function preuItem(it, o) {
+  if (!o || !o.p) return 0;
+  if (!o.g) return o.p * (it.q || 1);
+  return o.p * kgsDe(it, o);
+}
+function qText(it) { var q = it.q || 1; return enKg(it) ? kgTxt(q) : String(q); }
+function canviaMode(id) {
+  var i = troba(id); if (i < 0 || !esPes(L.items[i])) return;
+  var it = L.items[i], o = opcio(it), w = pesUnitat(o) || 0.25;
+  if (it.mode == 'kg') { it.mode = 'u'; it.q = Math.max(1, Math.round((it.q || 1) / w)); }
+  else { it.mode = 'kg'; it.q = Math.max(0.25, Math.round((it.q || 1) * w * 4) / 4); }
+  desa(); pintaLlista(); marcaQuantitats();
+}
 function troba(id) { for (var i = 0; i < L.items.length; i++) if (L.items[i].id == id) return i; return -1; }
 function commuta(id) { var i = troba(id); if (i >= 0) L.items[i].fet = !L.items[i].fet; desa(); pintaLlista(); marcaQuantitats(); }
 function quant(id, d) {
@@ -407,11 +426,11 @@ function opcio(it) {
 }
 function htmlItem(it) {
   var o = opcio(it), sub = '';
-  if (o) sub = '<small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b) || '') + '</span>' + (it.cq ? ' · ' + esc(o.n) : '') + (o.q && !o.g ? ' · ' + esc(o.q) : '') + (o.g ? ' · ' + euro(o.p) + '/kg' : '') + ' · <b>' + (o.g ? '≈ ' : '') + euro(o.p * (it.q || 1)) + '</b>' + (it.cq && !it.tria ? ' ' + T('(el més barat)') : '') + '</small>';
+  if (o) sub = '<small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b) || '') + '</span>' + (it.cq ? ' · ' + esc(o.n) : '') + (o.q && !o.g ? ' · ' + esc(o.q) : '') + (o.g ? ' · ' + euro(o.p) + '/kg' : '') + (o.g && !enKg(it) && kgsDe(it, o) ? ' · ≈ ' + kgTxt(kgsDe(it, o)) : '') + (preuItem(it, o) ? ' · <b>' + (o.g ? '≈ ' : '') + euro(preuItem(it, o)) + '</b>' : '') + (it.cq && !it.tria ? ' ' + T('(el més barat)') : '') + '</small>';
   else if (it.cq && MILL[it.cq]) sub = '<small>' + T('No el trobo a les botigues') + '</small>';
   return '<div class="ci' + (it.fet ? ' fet' : '') + '"><div class="ck" onclick="commuta(\'' + it.id + '\')"><i></i></div>' +
     '<div class="tx" onclick="' + (it.cq && !it.fet ? 'opcions(\'' + it.id + '\')' : 'commuta(\'' + it.id + '\')') + '"><b>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</b>' + sub + '</div>' +
-    (it.fet ? '' : '<div class="qb"><button onclick="quant(\'' + it.id + '\',-1)">−</button><span' + (esPes(it) ? ' class="kg"' : '') + '>' + qText(it) + '</span><button onclick="quant(\'' + it.id + '\',1)">+</button></div>') + '</div>';
+    (it.fet ? '' : '<div class="qb"><button onclick="quant(\'' + it.id + '\',-1)">−</button><span' + (esPes(it) ? ' class="kg" onclick="canviaMode(\'' + it.id + '\')" title="' + esc(T('Toca per canviar entre peces i kg')) + '"' : '') + '>' + qText(it) + (esPes(it) && !enKg(it) ? '<small>' + T('peces') + '</small>' : '') + '</span><button onclick="quant(\'' + it.id + '\',1)">+</button></div>') + '</div>';
 }
 /* Totals: comprant cada cosa on és més barata, o tot en una sola botiga */
 function resum(p) {
@@ -419,12 +438,12 @@ function resum(p) {
   for (j = 0; j < bl.length; j++) { perB[bl[j].id] = 0; falta[bl[j].id] = 0; }
   for (i = 0; i < p.length; i++) {
     var it = p[i], q = it.q || 1, o = opcio(it);
-    if (o) { mix += o.p * q; nMix++; }
+    if (o) { mix += preuItem(it, o); nMix++; }
     for (j = 0; j < bl.length; j++) {
       var id = bl[j].id, x = null;
       if (it.cq) { var m = MILL[it.cq]; x = it.tria && it.tria.b == id ? it.tria : m && m.perBotiga ? m.perBotiga[id] : null; }
       else if (it.b == id) x = it;
-      if (x) perB[id] += x.p * q; else falta[id]++;
+      if (x) perB[id] += preuItem(it, x); else falta[id]++;
     }
   }
   return { mix: mix, nMix: nMix, perB: perB, falta: falta };
@@ -442,7 +461,7 @@ function pintaLlista() {
   ord.sort(function (x, y) { return x && !y ? -1 : !x && y ? 1 : idxBot(x) - idxBot(y); });
   for (i = 0; i < ord.length; i++) {
     var sub = 0, k2;
-    for (k2 = 0; k2 < g[ord[i]].length; k2++) { var o2 = opcio(g[ord[i]][k2]); if (o2 && o2.p) sub += o2.p * (g[ord[i]][k2].q || 1); }
+    for (k2 = 0; k2 < g[ord[i]].length; k2++) { var o2 = opcio(g[ord[i]][k2]); if (o2 && o2.p) sub += preuItem(g[ord[i]][k2], o2); }
     if (ord.length > 1 || ord[i]) h += '<div class="grup"><span><i style="background:' + (ord[i] ? colorBot(ord[i]) : '#636366') + '"></i>' + (ord[i] ? Tf('A {1}', esc(nomBot(ord[i]) || ord[i])) : T('Sense preu')) + ' · ' + g[ord[i]].length + '</span><b>' + euro(sub) + '</b></div>' +
       (ord[i] ? '<button class="carro" onclick="alCarro(\'' + ord[i] + '\')">🛒 ' + esc(Tf('Posa-ho al carro de {1}', nomBot(ord[i]) || ord[i])) + '</button>' : '');
     for (k2 = 0; k2 < g[ord[i]].length; k2++) h += htmlItem(g[ord[i]][k2]);
@@ -489,9 +508,8 @@ function triaOpcio(i) {
 /* Quantes vegades cal prémer «afegir»: a pes, segons el pes de cada unitat a la web (p. ex. «0.5 Kg») */
 function clics(it, o) {
   var q = it.q || 1;
-  if (!o || !o.g) return q;
-  var m = /([\d.,]+)\s*kg/i.exec(o.q || ''), w = m ? parseFloat(m[1].replace(',', '.')) : 0.5;
-  return Math.max(1, Math.round(q / (w || 0.5)));
+  if (!o || !o.g || it.mode != 'kg') return q;
+  return Math.max(1, Math.round(q / (pesUnitat(o) || 0.5)));
 }
 function alCarro(b) {
   var p = pendents(), l = [], i;
@@ -524,7 +542,8 @@ function textLlista() {
     else t += '\n';
     for (j = 0; j < g[ord[i]].length; j++) {
       var it = g[ord[i]][j], op = opcio(it), q = it.q || 1;
-      t += '\n• ' + (esPes(it) ? qText(it) + ' ' : q > 1 ? q + '× ' : '') + it.t + (op && it.cq ? ' – ' + op.n : '') + (op && op.p ? ' (' + euro(op.p * q) + ')' : '');
+      var pi = preuItem(it, op), kk = kgsDe(it, op);
+      t += '\n• ' + (enKg(it) ? qText(it) + ' ' : q > 1 ? q + '× ' : '') + it.t + (op && op.g && !enKg(it) && kk ? ' (≈ ' + kgTxt(kk) + ')' : '') + (op && it.cq ? ' – ' + op.n : '') + (pi ? ' (' + (op.g ? '≈ ' : '') + euro(pi) + ')' : '');
     }
   }
   return t;
