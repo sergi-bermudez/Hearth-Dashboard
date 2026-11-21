@@ -244,6 +244,13 @@ public static class GFotos
                         r["enMarxa"] = enMarxa; r["estat"] = estat; r["fetes"] = fetes; r["total"] = total;
                         r["darrera"] = darrera == DateTime.MinValue ? "" : darrera.ToString("dd/MM/yyyy HH:mm");
                         r["ajustos"] = Ajustos(); r["edge"] = Edge.Ruta() != null;
+                        try
+                        {
+                            // el darrer diagnostic, per poder-lo ensenyar a Configuracio
+                            string fd = Path.Combine(CasaServidor.DirDades, "gfotos-diagnostic.txt");
+                            if (File.Exists(fd)) { string t = File.ReadAllText(fd, Encoding.UTF8); int i = t.LastIndexOf("=== "); r["diag"] = (i >= 0 ? t.Substring(i) : t); if (r["diag"].ToString().Length > 3000) r["diag"] = r["diag"].ToString().Substring(0, 3000); }
+                        }
+                        catch { }
                         CasaServidor.Json(res, r);
                         return;
                     }

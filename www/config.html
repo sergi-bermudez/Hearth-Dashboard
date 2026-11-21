@@ -321,6 +321,7 @@ body{background:#000}
     <h2>Google Fotos</h2>
     <div class="desc">Copia cada nit les teves fotos recents i els àlbums que triïs a la carpeta «Fotos/Google Fotos» del PC. Així surten a l'app Fotos, al marc i als records.</div>
     <div id="gf-estat" class="gris" style="margin-bottom:12px"></div>
+    <details id="gf-diag" style="display:none;margin:-6px 0 12px"><summary class="gris petit" style="cursor:pointer">Detalls de la darrera lectura (per enviar si no troba fotos)</summary><pre id="gf-diag-t" style="white-space:pre-wrap;word-break:break-all;font-size:11px;max-height:260px;overflow:auto;background:rgba(0,0,0,.25);padding:8px;border-radius:8px;-webkit-user-select:text;user-select:text"></pre></details>
     <div style="margin-bottom:16px">
       <button class="pri" onclick="gfAdmin('login','S\'ha obert Google Fotos al PC. Inicia sessió i després prem «Fet».')">Iniciar sessió al PC</button>
       <button onclick="gfAdmin('amaga','Fet')">Fet</button>
@@ -850,6 +851,8 @@ function gfEstat() {
   getJson(api('admin/gfotos/estat'), function (d) {
     GF.aj = d.ajustos || {};
     $('gf-estat').textContent = (d.enMarxa ? '⏳ ' : '') + (d.estat || 'Encara no s\'ha sincronitzat') + (d.darrera ? ' · Darrera: ' + d.darrera : '');
+    $('gf-diag').style.display = d.diag ? '' : 'none';
+    $('gf-diag-t').textContent = d.diag || '';
     if (!GF.carregat) {
       GF.carregat = true;
       $('gf-rec').value = GF.aj.recents != null ? GF.aj.recents : 300;

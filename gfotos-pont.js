@@ -69,6 +69,8 @@ if (!window.__gf) (function () {
     };
   } catch (e) {}
   const RE_FOTO = /\["([A-Za-z0-9_-]{25,})",\["(https:\/\/lh3\.googleusercontent\.com\/[^"\\]+)[^"]*",\d+,\d+[^\]]*\],(\d{13})/g;
+  // Més tolerant: un identificador de Google Fotos (AF1Qip…) seguit d'una adreça d'imatge i, a prop, una data (ms)
+  const RE_FOTO2 = /"(AF1Qip[A-Za-z0-9_-]{20,})",\[?"(https:\/\/[a-z0-9.-]*googleusercontent\.com\/[^"\\]+)/g;
   function deText(txt, l, ids) {
     // El text pot venir escapat una o dues vegades (JSON dins de JSON)
     let t = txt;
@@ -76,6 +78,13 @@ if (!window.__gf) (function () {
       let m;
       RE_FOTO.lastIndex = 0;
       while ((m = RE_FOTO.exec(t))) if (!ids.has(m[1])) { ids.add(m[1]); l.push({ id: m[1], url: m[2].split('=')[0], data: +m[3], label: '' }); }
+      RE_FOTO2.lastIndex = 0;
+      while ((m = RE_FOTO2.exec(t))) {
+        if (ids.has(m[1])) continue;
+        const resta = t.substring(m.index + m[0].length, m.index + m[0].length + 400);
+        const d = (resta.match(/[,\[](1[4-9]\d{11})[,\]]/) || [])[1];
+        ids.add(m[1]); l.push({ id: m[1], url: m[2].split('=')[0], data: d ? +d : 0, label: '' });
+      }
       if (t.indexOf('\\"') < 0 && t.indexOf('\\u003d') < 0) break;
       t = t.replace(/\\u003d/g, '=').replace(/\\u0026/g, '&').replace(/\\\\/g, '\\').replace(/\\"/g, '"');
     }
@@ -107,7 +116,11 @@ if (!window.__gf) (function () {
       }
       r.sort((a, b) => (b.data || 0) - (a.data || 0));
       const enllacos = document.querySelectorAll('a[href*="/photo/"]');
+      const tots = Array.from(document.scripts).map((x) => x.textContent || '').join('\n') + capturades.join('\n');
+      const ai = tots.indexOf('AF1Qip');
       const diag = { url: location.href, titol: document.title, enllacos: enllacos.length, inicials: ini.length, xarxa: xarxa.length, respostes: capturades.length, trobades: r.length,
+        imatges: document.querySelectorAll('img[src*="googleusercontent"], [style*="googleusercontent"]').length,
+        ids: (tots.match(/AF1Qip[A-Za-z0-9_-]{20,}/g) || []).length, prop: ai >= 0 ? tots.substring(ai - 40, ai + 400) : '',
         mostra: enllacos[0] ? enllacos[0].outerHTML.substring(0, 600) : (document.body ? document.body.innerHTML.substring(0, 1500) : '') };
       return { items: r, diag: diag };
     },
