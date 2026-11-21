@@ -777,3 +777,4 @@ TR.fr["Vegetarià"]="Végétarien";
 TR.fr["Pa"]="Pain";
 TR.fr["Neteja i casa"]="Entretien et maison";
 TR.fr["Higiene"]="Hygiène";
+TR.fr["Toca per veure la llista"]="Touchez pour voir la liste";

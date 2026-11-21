@@ -777,3 +777,4 @@ TR.pt["Vegetarià"]="Vegetariano";
 TR.pt["Pa"]="Pão";
 TR.pt["Neteja i casa"]="Limpeza e casa";
 TR.pt["Higiene"]="Higiene";
+TR.pt["Toca per veure la llista"]="Toca para ver a lista";
