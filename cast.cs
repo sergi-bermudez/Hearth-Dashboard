@@ -383,7 +383,19 @@ public static class Cast
         if (string.IsNullOrEmpty(s.Transport)) throw new Exception(x.Nom + " no ha obert el reproductor");
         Envia(s, s.Transport, NsConn, "{\"type\":\"CONNECT\"}");
         Dictionary<string, object> meta = new Dictionary<string, object>();
-        meta["metadataType"] = 0; meta["title"] = titol;
+        // "Canco \u00b7 Artista \u00b7 Disc" en camps separats: el receptor ho pinta en linies curtes en lloc d'una de molt llarga
+        string[] parts = (titol ?? "").Split(new string[] { " \u00b7 " }, StringSplitOptions.RemoveEmptyEntries);
+        if (ct.StartsWith("audio/") && parts.Length >= 2)
+        {
+            meta["metadataType"] = 3; meta["title"] = parts[0]; meta["artist"] = parts[1];
+            if (parts.Length >= 3) meta["albumName"] = parts[2];
+        }
+        else if (parts.Length >= 2)
+        {
+            meta["metadataType"] = ct.StartsWith("video/") ? 1 : 0; meta["title"] = parts[0];
+            meta["subtitle"] = string.Join(" \u00b7 ", parts, 1, parts.Length - 1);
+        }
+        else { meta["metadataType"] = 0; meta["title"] = titol; }
         if (!string.IsNullOrEmpty(img)) { Dictionary<string, object> im = new Dictionary<string, object>(); im["url"] = img; meta["images"] = new object[] { im }; }
         Dictionary<string, object> media = new Dictionary<string, object>();
         media["contentId"] = url; media["contentType"] = ct; media["streamType"] = directe ? "LIVE" : "BUFFERED"; media["metadata"] = meta;
