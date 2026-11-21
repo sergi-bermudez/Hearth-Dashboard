@@ -32,7 +32,7 @@ html,body{height:100%;overflow:hidden}
 #graella{-webkit-flex:1;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 10px 20px}
 .t{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;display:inline-block;vertical-align:top;width:calc(25% - 8px);margin:4px;background:#1c1c1e;border-radius:14px;position:relative;cursor:pointer;overflow:hidden}
 .t .im{height:96px;background:#fff center/contain no-repeat;border-bottom:1px solid rgba(255,255,255,.05)}
-.t .em{height:96px;line-height:96px;text-align:center;font-size:46px;background:#232326}
+.t .em{height:100px;line-height:100px;text-align:center;font-size:54px;background:#232326}
 .t .tx{padding:7px 9px 9px}
 .t .nm{font-size:14px;line-height:1.25;height:2.5em;overflow:hidden}
 .t .qn{font-size:12px;color:#8d95a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:16px}
@@ -176,6 +176,7 @@ var IC_WA = 'M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 
 var CATS = [['fruita', '🍎', 'Fruita i verdura'], ['congelats', '🧊', 'Congelats'], ['xarcuteria', '🧀', 'Formatges i embotit'], ['snacks', '🥜', 'Pica-pica'], ['rebost', '🥫', 'Rebost'],
   ['vegetal', '🌱', 'Vegetarià'], ['lactis', '🥛', 'Làctics i ous'], ['pa', '🥖', 'Pa'], ['begudes', '🧃', 'Begudes'], ['carn', '🥩', 'Carn'], ['peix', '🐟', 'Peix'],
   ['neteja', '🧽', 'Neteja i casa'], ['higiene', '🧴', 'Higiene'], ['bebe', '🍼', 'Bebè'], ['animals', '🐾', 'Animals']];
+for (var ce = 0; ce < CATS.length; ce++) CATS[ce][1] = emo(CATS[ce][1]);
 var COLORS = ['#e3262e', '#2e8b3a', '#0a84ff', '#ff9f0a', '#bf5af2', '#64d2ff', '#ff375f'];
 var L = { items: [], hist: {}, fav: [] }, VERSIO = '', EDITA = 0;
 var V = { cat: 'fruita', bot: '', q: '', res: [], est: null, tq: null };

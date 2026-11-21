@@ -141,3 +141,23 @@ function concCerca(c) {
   var i = CONC_PAIS[typeof PAIS != 'undefined' ? PAIS : ''] || CONC_IDX[LANG] || 5;
   return (c[i] || c[5]) + (c[7] ? ' ' + c[7] : '');
 }
+
+/* iOS 9 (iPad 3) no té els emojis de menjar nous (Unicode 9 o posterior): es canvien pel més semblant que sí que té */
+var EMO_VELL = { '🥐': '🍞', '🥑': '🍐', '🥒': '🌿', '🥔': '🍠', '🥕': '🍠', '🥖': '🍞', '🥚': '🍳', '🥛': '🍼', '🥜': '🌰', '🥣': '🍜', '🥤': '🍹', '🥦': '🌳', '🥩': '🍖', '🥬': '🌿', '🦻': '👂', '🧂': '🍚', '🧃': '🍹', '🧅': '🌰', '🧆': '🍘', '🧈': '🧀', '🧪': '⚗', '🧴': '🍶', '🧷': '📎', '🧻': '🚽', '🧼': '🛁', '🧽': '💦', '🪥': '🚿', '🫒': '🍇', '🫘': '🌰', '🫛': '🌿', '🫧': '💦', '🧊': '❄', '🥫': '🍯', '🥓': '🍖', '🥞': '🍰', '🦐': '🐟', '🦑': '🐙', '🥗': '🍴', '🥘': '🍲', '🥟': '🍘', '🥯': '🍩', '🧇': '🍰', '🧁': '🍰', '🥧': '🍰', '🥨': '🍞', '🦪': '🐚', '🍿': '🍬', '🧹': '🗑', '🧺': '👕', '🧦': '👕', '🦴': '🐶' };
+var EMO_ANTIC = (function () { var m = /OS (\d+)_\d+(_\d+)? like Mac OS X/.exec(navigator.userAgent); return !!(m && +m[1] < 10); })();
+function emo(s) {
+  if (!EMO_ANTIC || !s) return s;
+  var r = '', i = 0;
+  while (i < s.length) {
+    var c = s.charAt(i), n = s.charCodeAt(i);
+    if (n >= 0xD800 && n <= 0xDBFF && i + 1 < s.length) c = s.substring(i, i + 2);
+    r += EMO_VELL.hasOwnProperty(c) ? EMO_VELL[c] : c;
+    i += c.length;
+  }
+  return r;
+}
+(function () {
+  if (!EMO_ANTIC) return;
+  var ls = [typeof CONCEPTES != 'undefined' ? CONCEPTES : [], typeof CONCEPTES_MES != 'undefined' ? CONCEPTES_MES : []];
+  for (var k = 0; k < ls.length; k++) for (var i = 0; i < ls[k].length; i++) if (ls[k][i] && ls[k][i][1]) ls[k][i][1] = emo(ls[k][i][1]);
+})();
