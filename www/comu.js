@@ -299,9 +299,13 @@ function iniciaMandros() {
 }
 
 /* ---------- Dispositiu (cada tauleta pot tenir la seva configuració) ---------- */
+function galeta(n) { var m = new RegExp('(?:^|; )' + n + '=([^;]*)').exec(document.cookie); return m ? decodeURIComponent(m[1]) : ''; }
+function desaGaleta(n, v) { try { document.cookie = n + '=' + encodeURIComponent(v) + '; expires=Fri, 31 Dec 2037 23:59:59 GMT; path=/'; } catch (e) { } }
 var DISP = (function () {
-  var id = ls('disp');
+  /* l'identificador es guarda a dos llocs (emmagatzematge local i una galeta), per si se n'esborra un */
+  var id = ls('disp') || galeta('hdisp');
   if (!id || !/^[a-z0-9]{6,16}$/.test(id)) { id = ''; for (var i = 0; i < 10; i++) id += 'abcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 36)); ls('disp', id); }
+  desaGaleta('hdisp', id); if (ls('disp') != id) ls('disp', id);
   return { id: id };
 })();
 function nomDispositiuDefecte() {
@@ -327,17 +331,42 @@ function ajustosDispositiu(ok) {
     });
   });
 }
-/* Registra el dispositiu (nom i darrera connexió) perquè surti a Configuració */
+/* Registra el dispositiu (nom i darrera connexió) perquè surti a Configuració.
+   Un mateix aparell es reconeix per la seva adreça a la xarxa i el seu navegador: si s'obre Hearth amb una
+   altra adreça (IP o hearth.local) o se n'esborren les dades, no surt duplicat, sinó que torna a ser el mateix.
+   ok(d, canviat): canviat = true si aquest aparell ha recuperat el seu identificador d'abans */
 function registraDispositiu(ok) {
+  getJson(api('jo', { _: Date.now() }), function (jo) { registraAmb(jo && jo.ip, ok); }, function () { registraAmb('', ok); });
+}
+function registraAmb(ip, ok) {
   dades('dispositius', function (d) {
     d = d || {};
+    var ua = navigator.userAgent.substring(0, 160), k, canviat = false;
+    /* el mateix aparell amb un altre identificador: es queda el més antic (és el que té els ajustos) */
+    if (ip) {
+      var millor = d[DISP.id] && d[DISP.id].ip == ip ? DISP.id : '', dups = [];
+      for (k in d) if (d.hasOwnProperty(k) && k != DISP.id && d[k].ua == ua && (d[k].ip == ip || !d[k].ip)) dups.push(k);
+      if (dups.length) {
+        dups.push(DISP.id);
+        dups.sort(function (a, b) { return (d[a] ? d[a].des || d[a].vist || 0 : 9e15) - (d[b] ? d[b].des || d[b].vist || 0 : 9e15); });
+        millor = dups[0];
+        for (var i = 1; i < dups.length; i++) {
+          var x = d[dups[i]];
+          if (x && x.nom && d[millor] && !d[millor].nomPropi && x.nomPropi) { d[millor].nom = x.nom; d[millor].nomPropi = 1; }
+          delete d[dups[i]];
+        }
+        if (millor != DISP.id) { DISP.id = millor; ls('disp', millor); desaGaleta('hdisp', millor); canviat = true; }
+      }
+    }
     var e = d[DISP.id] || {};
     e.nom = e.nom || nomDispositiuDefecte();
+    if (!e.des) e.des = new Date().getTime();
     e.vist = new Date().getTime();
-    e.ua = navigator.userAgent.substring(0, 160);
+    e.ua = ua;
+    if (ip) e.ip = ip;
     d[DISP.id] = e;
     DISP.nom = e.nom;
-    post(api('dades', { n: 'dispositius' }), JSON.stringify(d), function () { if (ok) ok(d); }, function () { });
+    post(api('dades', { n: 'dispositius' }), JSON.stringify(d), function () { if (ok) ok(d, canviat); }, function () { });
   });
 }
 /* El mode infantil és de cada dispositiu (si encara no en té, es fa servir el general d'abans) */

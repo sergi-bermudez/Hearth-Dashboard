@@ -1161,7 +1161,7 @@ function dpDesaNom() {
   var n = retalla($('dp-nom').value);
   if (!n) return;
   dades('dispositius', function (d) {
-    d = d || {}; d[DISP.id] = d[DISP.id] || {}; d[DISP.id].nom = n.substring(0, 40);
+    d = d || {}; d[DISP.id] = d[DISP.id] || {}; d[DISP.id].nom = n.substring(0, 40); d[DISP.id].nomPropi = 1;
     desaDades('dispositius', d, function () { avis(T('Desat')); dpPinta(); });
   });
 }

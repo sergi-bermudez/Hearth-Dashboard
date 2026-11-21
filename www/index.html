@@ -1994,7 +1994,7 @@ window.Casa = {
   setInterval(rellotge, 10000);
   estatCos();
   carregaAjustos();
-  registraDispositiu();
+  registraDispositiu(function (d, canviat) { if (canviat) location.reload(); });
   carregaSuggeriments();
   carregaAgenda();
   carregaInfantil();
@@ -2071,14 +2071,52 @@ function cuaVes(i) {
   if (i == R.pos) { castTanca(); return; }
   R.pos = i; repToca(); castTanca();
 }
+/* ---------- Altres pantalles de Hearth (iPad, mòbil, PC...) ---------- */
+var PANT = { l: [], ordre: null };
+var IC_PANT = 'M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z';
+function pantHola() {
+  getJson(api('pantalles/hola', { d: DISP.id, nom: DISP.nom || nomDispositiuDefecte(), _: Date.now() }), function (l) {
+    if (l && l.length) rebOrdre(l[l.length - 1]);
+  }, function () { });
+}
+setInterval(function () { if (!document.hidden) pantHola(); }, 4000);
+setTimeout(pantHola, 1500);
+function pantEnvia(i) {
+  var p = PANT.l[i]; if (!p) return;
+  var o = null;
+  if (TV.canal) { var c = {}, k; for (k in TV.canal) if (TV.canal.hasOwnProperty(k) && typeof TV.canal[k] != 'object' || k == 'urls') c[k] = TV.canal[k]; o = { tipus: 'tv', canal: c, t: TV.canal.nom, de: DISP.nom }; }
+  else if (R.cua.length) o = { tipus: 'cua', cua: R.cua, pos: R.pos, t: R.cua[R.pos].t, de: DISP.nom };
+  if (!o) { avis(T('Primer posa alguna cosa a sonar (ràdio, música, TV o una pel·lícula).'), 4000); return; }
+  post(api('pantalles/envia', { a: p.id }), JSON.stringify(o), function () {
+    avis(Tf('Enviat a {1}', p.nom)); castTanca();
+    if (TV.canal) tvAtura(); else if (R.cua.length) repAtura();
+  }, function () { avis(T('Aquella pantalla ja no està connectada')); });
+}
+/* Ordre rebuda d'una altra pantalla: als iPad/iPhone cal un toc per poder fer sonar res, així que es demana */
+function rebOrdre(o) {
+  if (!o || !o.tipus) return;
+  PANT.ordre = o;
+  $('cast').style.display = 'block';
+  $('cast-c').innerHTML = '<h3>' + esc(Tf('Des de {1}', o.de || '')) + '</h3><div style="font-size:18px;margin:6px 0 16px">' + esc(o.t || '') + '</div>' +
+    '<div style="text-align:right"><button onclick="castTanca();PANT.ordre=null">' + T('Ara no') + '</button> <button class="pri" onclick="castTanca();fesOrdre()">▶ ' + T('Reprodueix aquí') + '</button></div>';
+}
+function fesOrdre() {
+  var o = PANT.ordre; PANT.ordre = null; if (!o) return;
+  if (o.tipus == 'tv' && o.canal) tvObre(o.canal);
+  else if (o.tipus == 'cua' && o.cua && o.cua.length) repInicia(o.cua, o.pos || 0);
+}
 function castObre() {
   $('cast').style.display = 'block';
+  PANT.l = [];
+  getJson(api('pantalles/llista', { d: DISP.id, _: Date.now() }), function (l) { PANT.l = l || []; castPinta(false); }, function () { });
   castPinta(true);
   getJson(api('cast/dispositius', { ara: CAST.llista.length ? 0 : 1 }), function (l) { CAST.llista = l || []; castPinta(false); }, function () { castPinta(false); });
 }
 function castPinta(cercant) {
   var h = '<h3>' + T('Envia a…') + '</h3>', l = CAST.llista;
   h += '<div class="ce' + (!CAST.dev ? ' on' : '') + '" onclick="castAtura();castTanca()">' + svg('M18 0H6C4.34 0 3 1.34 3 3v18c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V3c0-1.66-1.34-3-3-3zm-6 22.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 18H5V3h14v15z') + '<div>' + T('Aquest aparell') + '</div></div>';
+  for (var j = 0; j < PANT.l.length; j++)
+    h += '<div class="ce" onclick="pantEnvia(' + j + ')">' + svg(IC_PANT) + '<div>' + esc(PANT.l[j].nom || T('Pantalla')) + '<small>' + T('Hearth') + '</small></div></div>';
   for (var i = 0; i < l.length; i++)
     h += '<div class="ce' + (CAST.dev == l[i].id ? ' on' : '') + '" onclick="castEnvia(' + i + ')">' + svg(l[i].tipus == 'dlna' ? IC.tv : /audio|mini|home|speaker|nest/i.test(l[i].model) ? IC.radio : IC_CAST) + '<div>' + esc(l[i].nom) + '<small>' + esc(l[i].model || (l[i].tipus == 'dlna' ? 'DLNA' : 'Chromecast')) + '</small></div></div>';
   if (cercant) h += '<div class="gris" style="padding:12px 6px">' + T('Buscant aparells a la xarxa…') + '</div>';
