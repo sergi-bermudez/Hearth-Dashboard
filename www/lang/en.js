@@ -804,3 +804,7 @@ TR.en["un"]="pcs";
 TR.en["toca: unitats"]="tap: pieces";
 TR.en["toca: kg"]="tap: kg";
 TR.en["(com el que sols comprar)"]="(like what you usually buy)";
+TR.en["Quin vols? Ho recordaré per a la propera vegada."]="Which one? I'll remember it for next time.";
+TR.en["Que triï Hearth cada vegada (el més semblant i barat)"]="Let Hearth pick each time (most similar and cheapest)";
+TR.en["Suggerit: com el que sols comprar"]="Suggested: like what you usually buy";
+TR.en["Suggerit: el més barat"]="Suggested: cheapest";

@@ -804,3 +804,7 @@ TR.es["un"]="ud";
 TR.es["toca: unitats"]="toca: unidades";
 TR.es["toca: kg"]="toca: kg";
 TR.es["(com el que sols comprar)"]="(como el que sueles comprar)";
+TR.es["Quin vols? Ho recordaré per a la propera vegada."]="¿Cuál quieres? Lo recordaré para la próxima vez.";
+TR.es["Que triï Hearth cada vegada (el més semblant i barat)"]="Elígelo tú cada vez (el más parecido y barato)";
+TR.es["Suggerit: com el que sols comprar"]="Sugerido: como el que sueles comprar";
+TR.es["Suggerit: el més barat"]="Sugerido: el más barato";

@@ -413,7 +413,7 @@ public static class Botigues
                     foreach (Dictionary<string, object> p in r) { string b = S(p, "b"); if (!perB.ContainsKey(b)) perB[b] = p; }
                     Dictionary<string, object> e = new Dictionary<string, object>();
                     e["n"] = r.Count;
-                    e["top"] = (r.Count > 8 ? r.GetRange(0, 8) : r).ToArray();
+                    e["top"] = (r.Count > 12 ? r.GetRange(0, 12) : r).ToArray();
                     e["perBotiga"] = perB;
                     sortida.Add(e);
                 }

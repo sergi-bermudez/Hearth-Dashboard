@@ -85,6 +85,7 @@ html,body{height:100%;overflow:hidden}
 #tria .op div b{font-weight:500;font-size:15px}
 #tria .op .oi{width:48px;height:48px;-webkit-flex:none;flex:none;border-radius:8px;background:#fff center/contain no-repeat;margin-right:10px}
 #tria .op .pp{margin-left:10px}
+.sug-b{display:inline-block;font-size:11px;font-weight:700;color:#04210f;background:#30d158;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:1px}
 #tria .op.on{background:rgba(48,209,88,.12);border-radius:10px}
 #dre .cap{position:relative;padding-left:58px}
 #b-pleg{position:absolute;left:10px;top:12px;width:40px;height:40px;padding:0;border-radius:20px;font-size:20px;line-height:40px}
@@ -376,12 +377,22 @@ function tocaTile(i) {
     if (!L.conc) L.conc = [];
     if (p.cat) L.conc.push({ n: p.n, cat: p.cat, e: '📝' });
   }
+  var ja = false, k = clauP(p);
+  for (var j = 0; j < L.items.length; j++) if (L.items[j].k == k && !L.items[j].fet) ja = true;
   afegeixProducte(p);
-  if (p.cc) {
-    var it = L.items[troba(ultimId)];
-    var ensenya = function () { var b = millor(MILL[p.cq]); if (b) avis(p.n + ': ' + T('més barat a') + ' ' + nomBot(b.b) + ', ' + euro(b.p) + ' (' + b.n + ')', 4000); };
-    if (MILL[p.cq]) ensenya(); else if (V.est && V.est.n) millors([p.cq], function () { pintaLlista(); ensenya(); });
+  if (p.cc && !ja) {
+    var id = ultimId, it = L.items[troba(id)];
+    if (!L.prefs) L.prefs = {};
+    var pr = L.prefs[k];
+    if (pr) { it.tria = pr; desa(); pintaLlista(); return fiTile(p); }
+    /* primer cop: ensenya les alternatives perquè triïs quina vols; Hearth ho recorda per a la propera vegada */
+    if (V.est && V.est.n) {
+      if (MILL[p.cq]) opcions(id, true); else millors([p.cq], function () { pintaLlista(); opcions(id, true); });
+    }
   }
+  fiTile(p);
+}
+function fiTile(p) {
   if (p.nou) { $('q').value = ''; V.q = ''; carregaGraella(); }
 }
 function commutaFav(i) {
@@ -464,7 +475,12 @@ function pendents() { var r = []; for (var i = 0; i < L.items.length; i++) if (!
 /* L'opció que toca per a un article: la que s'ha triat, o la més barata */
 function opcio(it) {
   if (!it.cq) return it.p ? { n: it.t, p: it.p, b: it.b, q: it.qn } : null;
-  if (it.tria) return it.tria;
+  if (it.tria) {
+    /* el producte triat, amb el preu d'avui si torna a sortir al catàleg */
+    var m = MILL[it.cq];
+    if (m && m.top) for (var i = 0; i < m.top.length; i++) if (m.top[i].u == it.tria.u) return m.top[i];
+    return it.tria;
+  }
   return millor(MILL[it.cq]);
 }
 function htmlItem(it) {
@@ -528,22 +544,25 @@ function pintaLlista() {
 }
 /* Tria entre les opcions d'un concepte */
 var OPC = null;
-function opcions(id) {
+function opcions(id, primer) {
   var it = L.items[troba(id)]; if (!it) return;
-  var m = MILL[it.cq], h = '<h3>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</h3>';
+  var m = MILL[it.cq], h = '<h3>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</h3>' + (primer ? '<div class="gris petit" style="margin:-4px 0 8px">' + T('Quin vols? Ho recordaré per a la propera vegada.') + '</div>' : '');
   OPC = { id: id, l: m && m.top ? m.top : [] };
+  if (primer && !OPC.l.length) return;
   if (!OPC.l.length) h += '<div class="gris">' + (V.est && V.est.n ? T('No el trobo a les botigues.') : T('Afegeix les teves botigues a Configuració ▸ Compra per veure on és més barat.')) + '</div>';
   for (var i = 0; i < OPC.l.length; i++) {
     var o = OPC.l[i], on = it.tria ? it.tria.u == o.u : i == 0;
     h += '<div class="xt op' + (on ? ' on' : '') + '" onclick="triaOpcio(' + i + ')">' + (o.img ? '<span class="oi" style="background-image:' + bg(imgx(o.img, 96)) + '"></span>' : '') +
-      '<div><b>' + esc(o.n) + '</b><small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b)) + '</span>' + (o.q ? ' · ' + esc(o.q) : '') + (o.pu ? ' · ' + euro(o.pu) + '/' + esc(o.uu || '') : '') + '</small></div><b class="pp">' + euro(o.p) + '</b></div>';
+      '<div><b>' + esc(o.n) + '</b>' + (i == 0 ? ' <span class="sug-b">' + (o.s > 0 ? T('Suggerit: com el que sols comprar') : T('Suggerit: el més barat')) + '</span>' : '') + '<small><span style="color:' + colorBot(o.b) + '">' + esc(nomBot(o.b)) + '</span>' + (o.q ? ' · ' + esc(o.q) : '') + (o.pu ? ' · ' + euro(o.pu) + '/' + esc(o.uu || '') : '') + '</small></div><b class="pp">' + euro(o.p) + '</b></div>';
   }
-  if (it.tria) h += '<p><button onclick="triaOpcio(-1)">' + T('Torna a «el més barat»') + '</button></p>';
+  if (it.tria || primer) h += '<p><button onclick="triaOpcio(-1)">' + T('Que triï Hearth cada vegada (el més semblant i barat)') + '</button></p>';
   $('tria-c').innerHTML = h; $('tria').style.display = 'block';
 }
 function triaOpcio(i) {
   var it = L.items[troba(OPC.id)]; if (!it) return;
-  if (i < 0) delete it.tria; else { var o = OPC.l[i]; it.tria = { n: o.n, p: o.p, b: o.b, u: o.u, q: o.q, img: o.img }; }
+  if (!L.prefs) L.prefs = {};
+  if (i < 0) { delete it.tria; delete L.prefs[it.k]; }
+  else { var o = OPC.l[i]; it.tria = { n: o.n, p: o.p, b: o.b, u: o.u, q: o.q, img: o.img, g: o.g, pu: o.pu, uu: o.uu }; L.prefs[it.k] = it.tria; }
   $('tria').style.display = 'none'; desa(); pintaLlista();
 }
 /* Text per enviar: agrupat per la botiga on és més barat cada cosa */

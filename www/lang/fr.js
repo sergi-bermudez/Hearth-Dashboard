@@ -804,3 +804,7 @@ TR.fr["un"]="pc";
 TR.fr["toca: unitats"]="touchez : pièces";
 TR.fr["toca: kg"]="touchez : kg";
 TR.fr["(com el que sols comprar)"]="(comme ce que vous achetez d'habitude)";
+TR.fr["Quin vols? Ho recordaré per a la propera vegada."]="Lequel voulez-vous ? Je m’en souviendrai la prochaine fois.";
+TR.fr["Que triï Hearth cada vegada (el més semblant i barat)"]="Laisser Hearth choisir (le plus proche et le moins cher)";
+TR.fr["Suggerit: com el que sols comprar"]="Suggéré : comme d'habitude";
+TR.fr["Suggerit: el més barat"]="Suggéré : le moins cher";
