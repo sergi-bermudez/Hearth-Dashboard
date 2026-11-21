@@ -1328,8 +1328,6 @@ function tvAtura(silenci) {
   tvVideoNou();
   TV.mode = 'normal';
   if (!silenci) { estatCos(); if (A.vista == 'dash') { pintaSona(); pintaRapid(); } notifica(); }
-  /* iOS 9: després de la TV, si no sona res més, es recarrega per treure capes que bloquegen tocs */
-  if (!silenci && IOS_VELL && !R.cua.length) recarrega(true);
 }
 function tvCanvia(d) {
   if (TV.canal && TV.canal.vod) { vodSalta(d > 0 ? 30 : -15); return; }
