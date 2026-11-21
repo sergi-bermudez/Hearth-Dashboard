@@ -810,3 +810,7 @@ TR.es["Suggerit: com el que sols comprar"]="Sugerido: como el que sueles comprar
 TR.es["Suggerit: el més barat"]="Sugerido: el más barato";
 TR.es["{1} preus dubtosos"]="{1} precios dudosos";
 TR.es["Preus que no quadren amb el preu per kg/litre de la mateixa fitxa: no surten als suggeriments."]="Precios que no cuadran con el precio por kg/litro de la misma ficha: no salen en las sugerencias.";
+TR.es["1 problema"]="1 problema";
+TR.es["{1} problemes"]="{1} problemas";
+TR.es["Versió {1}"]="Versión {1}";
+TR.es["Actualitzant…"]="Actualizando…";

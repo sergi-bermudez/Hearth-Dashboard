@@ -189,8 +189,17 @@ body.amb-pest #apps iframe{height:-webkit-calc(100% - 52px);height:calc(100% - 5
 #pest span .ic{width:20px;height:20px;margin:-2px 6px 0 0}
 #pest span.on{background:#fff;color:#111;font-weight:600}
 #nav .nv-cfg{-webkit-flex:none;flex:none;width:72px}
-#cfg{position:absolute;z-index:6;top:-6px;left:-6px;width:44px;height:44px;padding:9px;box-sizing:border-box;opacity:.8;cursor:pointer;border-radius:50%;background:rgba(255,255,255,.14);-webkit-tap-highlight-color:rgba(255,255,255,.3)}
-#cfg .ic{width:26px;height:26px;display:block}
+/* Fila de la salutació: l'engranatge al costat, sense trepitjar el rellotge, i els avisos (actualització, problemes) */
+.salut-fila{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-bottom:2px;min-height:36px}
+.salut-fila #salut{-webkit-flex:none;flex:none}
+#cfg-av{display:none;margin-left:10px;padding:4px 10px;border-radius:14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+#cfg-av.act{display:block;background:#0a84ff;color:#fff}
+#cfg-av.err{display:block;background:#ff9f0a;color:#1c1300}
+@media (max-width:480px){ #cfg-av span{display:none} #cfg-av{padding:3px 7px;margin-left:6px} }
+#cfg.punt:after{content:'';position:absolute;top:0;right:0;width:10px;height:10px;border-radius:5px;background:#ff9f0a;box-shadow:0 0 0 2px rgba(0,0,0,.4)}
+#cfg.punt.act:after{background:#0a84ff}
+#cfg{position:relative;-webkit-flex:none;flex:none;margin-right:10px;width:36px;height:36px;padding:6px;box-sizing:border-box;opacity:.8;cursor:pointer;border-radius:50%;background:rgba(255,255,255,.14);-webkit-tap-highlight-color:rgba(255,255,255,.3)}
+#cfg .ic{width:24px;height:24px;display:block}
 body.e-fosc #cfg{background:rgba(255,255,255,.08)}
 @media (orientation:portrait){#pest span{padding:6px 11px;font-size:14px}}
 
@@ -482,8 +491,7 @@ body:not(.en-app) #apps{top:-30000px;bottom:auto;height:10px}
 <div id="dash">
   <div class="d-cap">
     <div class="d-hora ombrat panell" style="position:relative">
-      <div id="cfg" onclick="obreConfig()"></div>
-      <div id="salut" style="padding-left:46px"></div>
+      <div class="salut-fila"><div id="cfg" onclick="obreConfig()"></div><div id="salut"></div><div id="cfg-av" onclick="obreAvis()"></div></div>
       <div id="hora">--:--</div>
       <div id="data"></div>
     </div>
@@ -1846,6 +1854,29 @@ function clicNotif() {
 
 /* ---------- Mode infantil ---------- */
 var INF = { actiu: false, pin: '', apps: [] };
+/* Avisos al costat de l'engranatge: actualització disponible o algun problema del diagnòstic */
+var AVIS = { sec: '' };
+function comprovaAvisos() {
+  getJson(api('admin/actualitza/estat'), function (u) {
+    getJson(api('admin/diagnosi'), function (d) {
+      var errs = 0, l = (d && d.comprovacions) || [];
+      for (var i = 0; i < l.length; i++) if (l[i].estat == 'error') errs++;
+      posaAvis(u, errs);
+    }, function () { posaAvis(u, 0); });
+  }, function () { });
+}
+function posaAvis(u, errs) {
+  var e = $('cfg-av'), g = $('cfg');
+  if (INF.actiu) { errs = 0; u = null; }
+  if (errs) { e.className = 'err'; e.innerHTML = '⚠️<span> ' + esc(errs == 1 ? T('1 problema') : Tf('{1} problemes', errs)) + '</span>'; AVIS.sec = 'diagnosi'; }
+  else if (u && u.hiHa && !u.aplicant) { e.className = 'act'; e.innerHTML = '⬆️<span> ' + esc(Tf('Versió {1}', u.remota)) + '</span>'; AVIS.sec = 'actualitza'; }
+  else if (u && u.aplicant) { e.className = 'act'; e.innerHTML = '⏳<span> ' + esc(T('Actualitzant…')) + '</span>'; AVIS.sec = 'actualitza'; }
+  else { e.className = ''; e.textContent = ''; AVIS.sec = ''; }
+  g.className = AVIS.sec ? 'punt' + (AVIS.sec == 'actualitza' ? ' act' : '') : '';
+}
+function obreAvis() { if (AVIS.sec && !INF.actiu) obre('config', AVIS.sec); else obreConfig(); }
+setTimeout(comprovaAvisos, 15000);
+setInterval(comprovaAvisos, 30 * 60 * 1000);
 function permesa(id) {
   /* Spotify i WhatsApp estan desactivats fins que s'activen a Configuració */
   if (id == 'spotify' && !A.ajustos.spotify) return false;
