@@ -63,6 +63,7 @@ html,body{height:100%;overflow:hidden}
 .grup:first-child{margin-top:4px}
 .grup i{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:7px}
 .grup b{font-size:15px;letter-spacing:0;color:#fff}
+.carro{display:block;width:100%;margin:0 0 8px;padding:9px;font-size:14px;background:#2c2c2e}
 .resum{background:#1c1c1e;border-radius:12px;padding:10px 12px;margin:10px 0}
 .resum .rf{display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;padding:4px 0;font-size:14px}
 .resum .rf:first-child{border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:7px;margin-bottom:3px;font-size:15px}
@@ -437,7 +438,8 @@ function pintaLlista() {
   for (i = 0; i < ord.length; i++) {
     var sub = 0, k2;
     for (k2 = 0; k2 < g[ord[i]].length; k2++) { var o2 = opcio(g[ord[i]][k2]); if (o2 && o2.p) sub += o2.p * (g[ord[i]][k2].q || 1); }
-    if (ord.length > 1 || ord[i]) h += '<div class="grup"><span><i style="background:' + (ord[i] ? colorBot(ord[i]) : '#636366') + '"></i>' + (ord[i] ? Tf('A {1}', esc(nomBot(ord[i]) || ord[i])) : T('Sense preu')) + ' · ' + g[ord[i]].length + '</span><b>' + euro(sub) + '</b></div>';
+    if (ord.length > 1 || ord[i]) h += '<div class="grup"><span><i style="background:' + (ord[i] ? colorBot(ord[i]) : '#636366') + '"></i>' + (ord[i] ? Tf('A {1}', esc(nomBot(ord[i]) || ord[i])) : T('Sense preu')) + ' · ' + g[ord[i]].length + '</span><b>' + euro(sub) + '</b></div>' +
+      (ord[i] ? '<button class="carro" onclick="alCarro(\'' + ord[i] + '\')">🛒 ' + esc(Tf('Posa-ho al carro de {1}', nomBot(ord[i]) || ord[i])) + '</button>' : '');
     for (k2 = 0; k2 < g[ord[i]].length; k2++) h += htmlItem(g[ord[i]][k2]);
   }
   if (!L.items.length) h = '<div class="buit">' + T('La llista és buida. Toca el que necessites i et diré on és més barat.') + '</div>';
@@ -478,6 +480,27 @@ function triaOpcio(i) {
   $('tria').style.display = 'none'; desa(); pintaLlista();
 }
 /* Text per enviar: agrupat per la botiga on és més barat cada cosa */
+/* Omple el carro de la botiga online: el PC obre la botiga i hi afegeix cada producte. Pagar es fa al PC. */
+function alCarro(b) {
+  var p = pendents(), l = [], i;
+  for (i = 0; i < p.length; i++) { var o = opcio(p[i]); if (o && o.b == b && (o.u || p[i].u)) l.push({ u: o.u || p[i].u, n: o.n || p[i].t, q: p[i].q || 1 }); }
+  if (!l.length) { avis(T('No hi ha productes d\'aquesta botiga per afegir.')); return; }
+  post(api('admin/compra/cistell', { b: b }), JSON.stringify(l), function () {
+    $('tria').style.display = 'block';
+    $('tria-c').innerHTML = '<h3>🛒 ' + esc(nomBot(b)) + '</h3><div id="cx-e" class="gris">' + T('Obrint la botiga al PC…') + '</div>';
+    setTimeout(estatCarro, 1500);
+  }, function (st, t) { var m = ''; try { m = JSON.parse(t).error; } catch (e) { } avis(T('No s\'ha pogut començar') + (m ? ': ' + m : '')); });
+}
+function estatCarro() {
+  getJson(api('admin/compra/cistell-estat'), function (d) {
+    if (!d || !$('cx-e')) return;
+    var h = d.fent ? Tf('Afegint {1} de {2}…', Math.min((d.fets || 0) + 1, d.total), d.total) + (d.ara ? '<br><b>' + esc(d.ara) + '</b>' : '') : Tf('Fet: {1} de {2} productes al carro.', d.total - (d.errors ? d.errors.length : 0), d.total) + '<br>' + T('Revisa el carro i paga a la pantalla del PC.');
+    if (d.errors && d.errors.length) { h += '<p style="color:#ff9f0a">' + T('No s\'han pogut afegir:') + '</p>'; for (var i = 0; i < d.errors.length; i++) h += '<div>• ' + esc(d.errors[i].n) + '</div>'; }
+    if (d.error) h += '<p style="color:#ff453a">' + esc(d.error) + '</p>';
+    $('cx-e').innerHTML = h;
+    if (d.fent) setTimeout(estatCarro, 1500);
+  }, function () { });
+}
 function textLlista() {
   var p = pendents(), g = {}, ord = [], i, j, t = '🛒 ' + T('Llista de la compra');
   for (i = 0; i < p.length; i++) { var o = opcio(p[i]), b = o ? o.b || '' : ''; if (!g[b]) { g[b] = []; ord.push(b); } g[b].push(p[i]); }

@@ -16,6 +16,7 @@ public static class Botigues
     static volatile bool enMarxa;
     static string estatText = "";
     static volatile string llegintB = "";
+    static Dictionary<string, object> cistellEstat;
     static readonly Dictionary<string, string> obertes = new Dictionary<string, string>();
     static Dictionary<string, object> cataleg; // en mem\u00f2ria
 
@@ -441,6 +442,67 @@ public static class Botigues
             d["botigues"] = l.ToArray();
             File.WriteAllText(Ruta("botigues_cfg.json"), Js().Serialize(d), new UTF8Encoding(false));
             CasaServidor.Json(res, CasaServidor.Dic("ok", true, "url", href));
+            return;
+        }
+        // Posa la llista al carro de la botiga: obre l'Edge del PC (visible), entra a cada producte i prem \u00abAfegir\u00bb.
+        // Nom\u00e9s omple el carro; pagar ho fa la persona al PC. Cal haver entrat al compte de la botiga en aquest Edge.
+        if (nom == "cistell" && ctx.Request.HttpMethod == "POST")
+        {
+            string id = CasaServidor.Q(q, "b");
+            string text;
+            using (StreamReader sr = new StreamReader(ctx.Request.InputStream, Encoding.UTF8)) text = sr.ReadToEnd();
+            object[] items = Js().DeserializeObject(text) as object[];
+            if (items == null || items.Length == 0) { CasaServidor.Error(res, 400, "No hi ha productes"); return; }
+            lock (lk) { if (cistellEstat != null && cistellEstat.ContainsKey("fent") && (bool)cistellEstat["fent"]) { CasaServidor.Error(res, 409, "Ja s'esta omplint un carro"); return; } }
+            Dictionary<string, object> est = new Dictionary<string, object>();
+            est["fent"] = true; est["b"] = id; est["total"] = items.Length; est["fets"] = 0; est["errors"] = new List<object>();
+            lock (lk) cistellEstat = est;
+            Thread th = new Thread(delegate ()
+            {
+                try
+                {
+                    Edge.Assegura();
+                    string t = Edge.NovaPagina("about:blank");
+                    try { Edge.Finestra(t, true); } catch { }
+                    Cdp c = new Cdp();
+                    c.Connecta(Edge.WsPagina(t));
+                    c.Envia("Page.enable", null, 5000);
+                    string carro = "";
+                    foreach (object o in items)
+                    {
+                        Dictionary<string, object> it = o as Dictionary<string, object>;
+                        if (it == null) continue;
+                        string u = S(it, "u"), n = S(it, "n");
+                        int qn = 1; int.TryParse(S(it, "q"), out qn); if (qn < 1) qn = 1;
+                        est["ara"] = n;
+                        bool ok = false; string err = "";
+                        try
+                        {
+                            c.Envia("Page.navigate", CasaServidor.Dic("url", u), 20000);
+                            Thread.Sleep(3000);
+                            Dictionary<string, object> r = Crida(c, "afegeix(" + qn + ")", 40000) as Dictionary<string, object>;
+                            ok = r != null && r.ContainsKey("ok") && r["ok"] is bool && (bool)r["ok"];
+                            if (!ok && r != null) err = S(r, "error");
+                            if (carro == "") { object cu = Crida(c, "cistell()", 5000); carro = cu == null ? "" : cu.ToString(); }
+                        }
+                        catch (Exception ex) { err = ex.Message; }
+                        if (!ok) ((List<object>)est["errors"]).Add(CasaServidor.Dic("n", n, "error", err));
+                        est["fets"] = Convert.ToInt32(est["fets"]) + 1;
+                    }
+                    if (carro != "") { try { c.Envia("Page.navigate", CasaServidor.Dic("url", carro), 20000); } catch { } }
+                    try { c.Tanca(); } catch { }
+                }
+                catch (Exception ex) { est["error"] = ex.Message; }
+                est["fent"] = false; est["ara"] = "";
+            });
+            th.IsBackground = true;
+            th.Start();
+            CasaServidor.Json(res, CasaServidor.Dic("ok", true));
+            return;
+        }
+        if (nom == "cistell-estat")
+        {
+            lock (lk) CasaServidor.Json(res, cistellEstat ?? new Dictionary<string, object>());
             return;
         }
         if (nom == "actualitza")

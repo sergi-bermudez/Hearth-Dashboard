@@ -1,7 +1,7 @@
 // Hearth · lector de catàlegs de supermercat (s'executa dins l'Edge amagat, a la pàgina de la botiga).
 // No depèn de classes concretes de cap web: busca enllaços a fitxes de producte i, al voltant, el preu.
 (function () {
-  if (window.__bt && window.__bt.v === 3) return;
+  if (window.__bt && window.__bt.v === 4) return;
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   // Fitxa de producte: /produto/…, /product/…, /p/… o adreces que acaben en un codi (…-544184.html).
   // "/produtos/…" (plural) sol ser una categoria, no un producte.
@@ -150,6 +150,39 @@
     return false;
   }
 
+  // A la fitxa d'un producte: prem «Adicionar» (el del producte principal) i puja la quantitat fins a q
+  const visible = (x) => { const b = x.getBoundingClientRect(); return b.width > 0 && b.height > 0 && getComputedStyle(x).visibility != 'hidden'; };
+  async function afegeix(q) {
+    rebutjaGaletes();
+    let bt = null;
+    for (let i = 0; i < 25 && !bt; i++) {
+      const l = Array.from(document.querySelectorAll('button, a, [role="button"], input[type="submit"]')).filter((x) => (RX_AFEGIR.test(txt(x)) || RX_AFEGIR.test(x.value || '') || /add.?to.?cart|adicionar/i.test(x.getAttribute('aria-label') || '')) && visible(x) && !x.disabled);
+      // el del producte principal: fora de carrusels de «també et pot interessar», i el més amunt
+      const pri = l.filter((x) => !x.closest('[class*="carousel" i], [class*="recommend" i], [class*="slider" i], [class*="related" i], footer'));
+      bt = (pri.length ? pri : l).sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0] || null;
+      if (!bt) await espera(400);
+    }
+    if (!bt) return { ok: false, error: 'No trobo el botó d\'afegir' };
+    bt.scrollIntoView({ block: 'center' }); bt.click();
+    await espera(1500);
+    let fets = 1;
+    for (let k = 1; k < (q || 1); k++) {
+      // botó «+» al costat (el que ha aparegut en lloc d'«Adicionar») o, si no n'hi ha, torna a prémer «Adicionar»
+      const cont = bt.closest('form, [class*="product" i], [class*="add" i], div') || document;
+      const mes = Array.from(document.querySelectorAll('button, [role="button"]')).filter((x) => visible(x) && (/^\+$/.test(txt(x)) || /increase|aumentar|mais|incrementar|plus/i.test((x.getAttribute('aria-label') || '') + ' ' + (x.className || '')))).sort((a, b) => Math.abs(a.getBoundingClientRect().top - bt.getBoundingClientRect().top) - Math.abs(b.getBoundingClientRect().top - bt.getBoundingClientRect().top))[0];
+      const b2 = mes || (visible(bt) ? bt : null);
+      if (!b2) break;
+      b2.click(); fets++;
+      await espera(1100);
+    }
+    return { ok: true, q: fets };
+  }
+  // Adreça del carro de la botiga
+  function cistell() {
+    const a = Array.from(document.querySelectorAll('a[href]')).find((x) => /cart|carrinho|carrito|cistella|panier|basket|trolley|carrello/i.test(x.getAttribute('href')));
+    return a ? a.href : '';
+  }
+
   async function llest() {
     rebutjaGaletes();
     for (let i = 0; i < 30; i++) {
@@ -160,5 +193,5 @@
     return { url: location.href, titol: document.title, n: productes().length };
   }
 
-  window.__bt = { v: 3, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
+  window.__bt = { v: 4, afegeix: afegeix, cistell: cistell, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
 })();
