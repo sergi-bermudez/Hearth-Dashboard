@@ -1,7 +1,7 @@
 // Hearth · lector de catàlegs de supermercat (s'executa dins l'Edge amagat, a la pàgina de la botiga).
 // No depèn de classes concretes de cap web: busca enllaços a fitxes de producte i, al voltant, el preu.
 (function () {
-  if (window.__bt && window.__bt.v === 6) return;
+  if (window.__bt && window.__bt.v === 7) return;
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   // Fitxa de producte: /produto/…, /product/…, /p/… o adreces que acaben en un codi (…-544184.html).
   // "/produtos/…" (plural) sol ser una categoria, no un producte.
@@ -36,10 +36,15 @@
     const r = []; let m; RX_PREU.lastIndex = 0;
     while ((m = RX_PREU.exec(s))) {
       const v = num(m[1] || m[2]), seg = s.substr(m.index + m[0].length, 4), ant = s.substr(Math.max(0, m.index - 22), 22).split('€').pop();
+      // depòsit o taxa d'envàs («+0,10 € Depósito», «Valor depósito 0,10 €»): no és el preu
+      const desp = s.substr(m.index + m[0].length, 30), abansT = s.substr(Math.max(0, m.index - 30), 30);
+      if (/^\s*(\+\s*)?(dep[oó]sito|tara|taxa|vasilhame|retorn|eco|embalagem)/i.test(desp) || /(dep[oó]sito|tara|taxa|vasilhame|retorn[aá]vel|\+)\s*:?\s*$/i.test(abansT)) continue;
       r.push({ v: v, unit: /^\s*\/\s*(?!un|ud\b|u\b)[a-z]/i.test(s.substr(m.index + m[0].length, 8)), antic: /pvpr|antes|era|from|de\s*$|desde|recomendado|reduced|riduzione|avant/i.test(ant) });
     }
     const unit = r.find((x) => x.unit);
     let nets = r.filter((x) => !x.unit);
+    // un import molt petit al costat d'un preu de debò (p. ex. 0,10 € de l'envàs) no és el preu
+    if (nets.length > 1) { const mx = Math.max.apply(null, nets.map((x) => x.v)); if (mx > 0.6) nets = nets.filter((x) => !(x.v <= 0.25 && x.v * 4 < mx)); }
     const mu = unit ? new RegExp(String(unit.v).replace('.', '[.,]') + '0?' + '\\s*€\\s*\\/\\s*(kg|lt|ml|cl|gr|dos|dz|un|l|g|m)', 'i').exec(s) : null;
     // Productes a granel: només hi ha preu per kg ("6,19 €/Kg abans 6,49 €/Kg")
     if (!nets.length) {
@@ -194,5 +199,5 @@
     return { url: location.href, titol: document.title, n: productes().length };
   }
 
-  window.__bt = { v: 6, afegeix: afegeix, cistell: cistell, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
+  window.__bt = { v: 7, afegeix: afegeix, cistell: cistell, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
 })();

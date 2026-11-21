@@ -383,6 +383,8 @@ public static class Botigues
                         {
                             Dictionary<string, object> p = o as Dictionary<string, object>;
                             if (p == null || S(p, "esg") == "1") continue;
+                            // preus llegits malament abans (p. ex. els 0,10 EUR del dip\u00f2sit de l'env\u00e0s)
+                            if (Convert.ToDouble(p["p"]) <= 0.25 && PreuRef(p) > 4 * Convert.ToDouble(p["p"])) continue;
                             string nn = " " + Pla(S(p, "n") + " " + S(p, "m")) + " ";
                             bool ok = false;
                             foreach (List<string> si in alts)
