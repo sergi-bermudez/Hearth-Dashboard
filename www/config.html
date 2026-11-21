@@ -263,6 +263,15 @@ body{background:#000}
     <div class="peu"><button onclick="obreApp('missatges')">Obre Missatges</button> <button onclick="post(api('admin/wa/atura'),'',function(){avis(T('WhatsApp aturat'))},errXarxa('aturar'))">Atura el WhatsApp</button></div>
   </div>
 
+  <div class="sec" id="s-compra">
+    <h2>Compra</h2>
+    <div class="desc">Les botigues on compres. Cada nit (cap a les 6) el servidor en llegeix els productes, els preus i les promocions de la web, i l'app Compra els mostra per categories. Funciona amb qualsevol supermercat amb botiga online, de qualsevol país: només cal l'adreça. És experimental: no totes les webs es deixen llegir.</div>
+    <div id="bt-llista"></div>
+    <div class="fila"><label>Afegeix</label><select id="bt-preset" class="sel" onchange="btPreset()"></select></div>
+    <div class="fila"><input type="text" id="bt-nom" placeholder="Nom (p. ex. El meu súper)"><input type="url" id="bt-url" placeholder="https://…" autocapitalize="off" autocorrect="off" style="margin-left:8px"><button onclick="btAfegeix()" style="margin-left:8px">Afegeix</button></div>
+    <div class="peu"><button class="pri" onclick="btActualitza()">Llegeix els catàlegs ara</button> <span class="gris" id="bt-estat"></span></div>
+  </div>
+
   <div class="sec" id="s-youtube">
     <h2>YouTube</h2>
     <div class="desc">YouTube funciona amb el programa gratuït yt-dlp al PC (sense anuncis de la web). Per veure vídeos en HD també cal ffmpeg.</div>
@@ -941,6 +950,7 @@ var MENU = [
   ['General', [['llengua', 'Idioma i país', ICM.globus, '#0a84ff'], ['inici', 'Pantalla d\'inici', ICM.pantalla, '#5e5ce6'], ['passi', 'Passi de fotos', ICM.imatge, '#ff375f'], ['agenda', 'Agenda', ICM.agenda, '#ff453a'], ['funcions', 'Funcions opcionals', ICM.interruptor, '#30d158']]],
   ['Contingut', [['carpetes', 'Carpetes del PC', IC.carpeta, '#0a84ff'], ['gfotos', 'Google Fotos', ICM.imatge, '#ff9f0a'], ['media', 'Caràtules i fitxes', IC.pelis, '#bf5af2'], ['tv', 'Canals de TV', IC.tv, '#64d2ff'], ['youtube', 'YouTube', IC.video, '#ff3b30'], ['webs', 'Webs', IC.web, '#5ac8fa']]],
   ['Connexions', [['casa', 'Casa (Tuya / Smart Life)', ICM.casa, '#ff9f0a'], ['spotify', 'Spotify', IC.spotify, '#1db954'], ['whatsapp', 'WhatsApp', IC.missatges, '#25d366']]],
+  ['Compra', [['compra', 'Botigues i preus', 'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42a.25.25 0 01-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0020 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z', '#ff9f0a']]],
   ['Família', [['infantil', 'Mode infantil', ICM.nen, '#ffd60a']]],
   ['Sistema', [['diagnosi', 'Diagnòstic', 'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z', '#30d158'], ['sistema', 'Servidor', ICM.servidor, '#8e8e93'], ['actualitza', 'Actualitzacions', ICM.refresca, '#636366'], ['app', 'Instal·lar com a app', ICM.baixa, '#0a84ff'], ['fotosidx', 'Índex de fotos', IC.fotos, '#8e8e93'], ['clau', 'Contrasenya', ICM.cadenat, '#636366']]]
 ];
@@ -972,6 +982,7 @@ var CFG = { sec: ls('cfg.sec') || 'inici' };
 function nomSec(id) { for (var g = 0; g < MENU.length; g++) for (var i = 0; i < MENU[g][1].length; i++) if (MENU[g][1][i][0] == id) return T(MENU[g][1][i][1]); return T('Configuració'); }
 function obreSec(id) {
   if (!$('s-' + id)) id = 'inici';
+  if (id == 'compra') btCarrega();
   CFG.sec = id; ls('cfg.sec', id);
   var l = document.querySelectorAll('.sec');
   for (var i = 0; i < l.length; i++) if (l[i].id != 's-acces') l[i].className = 'sec' + (l[i].id == 's-' + id ? ' on' : '');
@@ -980,6 +991,62 @@ function obreSec(id) {
   $('titol').textContent = nomSec(id);
   $('pag').scrollTop = 0;
   if (estret()) document.body.className = 'det';
+}
+/* ---------- Compra: botigues ---------- */
+/* Botigues conegudes per país (es poden afegir altres amb la seva adreça) */
+var BT_PRESETS = {
+  PT: [['Continente', 'https://www.continente.pt/'], ['Pingo Doce', 'https://www.pingodoce.pt/'], ['Auchan', 'https://www.auchan.pt/']],
+  ES: [['Mercadona', 'https://tienda.mercadona.es/'], ['Carrefour', 'https://www.carrefour.es/supermercado/'], ['Dia', 'https://www.dia.es/'], ['Alcampo', 'https://www.compraonline.alcampo.es/'], ['Bonpreu', 'https://www.compraonline.bonpreuesclat.cat/']],
+  AD: [['Bonpreu', 'https://www.compraonline.bonpreuesclat.cat/']],
+  FR: [['Carrefour', 'https://www.carrefour.fr/'], ['Auchan', 'https://www.auchan.fr/'], ['Intermarché', 'https://www.intermarche.com/']],
+  GB: [['Tesco', 'https://www.tesco.com/groceries/'], ['Sainsbury\'s', 'https://www.sainsburys.co.uk/gol-ui/groceries'], ['Asda', 'https://groceries.asda.com/']],
+  IT: [['Esselunga', 'https://www.esselunga.it/'], ['Carrefour', 'https://www.carrefour.it/']]
+};
+var BT = { l: [], est: null };
+function btCarrega() {
+  getJson(api('compra/estat'), function (d) {
+    BT.l = (d && d.botigues) || []; BT.est = d;
+    btPinta();
+  }, function () { $('bt-llista').innerHTML = '<div class="gris">' + T('No s\'ha pogut connectar amb el servidor.') + '</div>'; });
+}
+function btPinta() {
+  var h = '', e = (BT.est && BT.est.estat) || {};
+  for (var i = 0; i < BT.l.length; i++) {
+    var b = BT.l[i], s = e[b.id] || {};
+    h += '<div class="fila"><label style="min-width:0;-webkit-flex:1;flex:1"><b>' + esc(b.nom) + '</b><br><span class="gris petit">' + esc(b.url) + '</span><br><span class="petit' + (s.error ? '" style="color:#ff453a">' : ' gris">') +
+      (s.error ? esc(T(s.error)) : s.n ? Tf('{1} productes', s.n) : T('Encara no llegit')) + '</span></label><button onclick="btTreu(' + i + ')">' + T('Treu') + '</button></div>';
+  }
+  if (!h) h = '<div class="gris" style="margin:10px 0">' + T('Encara no hi ha cap botiga.') + '</div>';
+  $('bt-llista').innerHTML = h;
+  var p = BT_PRESETS[PAIS] || [], o = '<option value="">' + T('Tria una botiga…') + '</option>', k, j;
+  for (j = 0; j < p.length; j++) o += '<option value="' + PAIS + ':' + j + '">' + esc(p[j][0]) + '</option>';
+  for (k in BT_PRESETS) if (BT_PRESETS.hasOwnProperty(k) && k != PAIS) for (j = 0; j < BT_PRESETS[k].length; j++) o += '<option value="' + k + ':' + j + '">' + esc(BT_PRESETS[k][j][0]) + ' (' + k + ')</option>';
+  $('bt-preset').innerHTML = o;
+  var t = BT.est || {};
+  $('bt-estat').textContent = t.enMarxa ? T('Llegint…') + ' ' + (t.fent || '') : t.actualitzat ? Tf('{1} productes · {2} en promoció · llegit {3}', t.n, t.promos, new Date(t.actualitzat).toLocaleString()) : '';
+  if (t.enMarxa) setTimeout(btCarrega, 4000);
+}
+function btPreset() {
+  var v = $('bt-preset').value; if (!v) return;
+  var p = BT_PRESETS[v.split(':')[0]][+v.split(':')[1]];
+  $('bt-nom').value = p[0]; $('bt-url').value = p[1];
+}
+function btDesa() {
+  post(api('admin/compra/botigues'), JSON.stringify({ botigues: BT.l }), function () { avis(T('Desat')); btPinta(); }, errXarxa('desar'));
+}
+function btAfegeix() {
+  var n = $('bt-nom').value.replace(/^\s+|\s+$/g, ''), u = $('bt-url').value.replace(/^\s+|\s+$/g, '');
+  if (!/^https?:\/\//.test(u)) { avis(T('Cal una adreça que comenci per https://')); return; }
+  if (!n) n = u.replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+  var id = n.toLowerCase().replace(/[^a-z0-9]+/g, '').substring(0, 20) || ('b' + Date.now());
+  for (var i = 0; i < BT.l.length; i++) if (BT.l[i].id == id) id += BT.l.length;
+  BT.l.push({ id: id, nom: n, url: u });
+  $('bt-nom').value = ''; $('bt-url').value = ''; $('bt-preset').value = '';
+  btDesa();
+}
+function btTreu(i) { BT.l.splice(i, 1); btDesa(); }
+function btActualitza() {
+  post(api('admin/compra/actualitza'), '', function () { avis(T('Llegint els catàlegs. Pot trigar una estona.')); setTimeout(btCarrega, 1500); }, errXarxa('actualitzar'));
 }
 function tornaMenu() { document.body.className = ''; valorsMenu(); }
 window.addEventListener('resize', function () { if (!estret()) document.body.className = ''; pintaMenu(); });

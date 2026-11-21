@@ -162,6 +162,7 @@ public static class CasaServidor
         if (FuncioActiva("whatsapp")) WhatsApp.AlArrencar();
         GFotos.AlArrencar();
         Actualitza.Inicia();
+        Botigues.Inicia();
         while (true)
         {
             HttpListenerContext ctx;
@@ -341,6 +342,7 @@ public static class CasaServidor
         if (nom == "radios") { Radios.Api(q, ctx); return; }
         if (nom.StartsWith("pcm/")) { Pcm.Api(nom.Substring(4), q, ctx); return; }
         if (nom.StartsWith("cast/")) { Cast.Api(nom, q, ctx, Port); return; }
+        if (nom.StartsWith("compra/")) { Botigues.Api(nom.Substring(7), q, ctx, false); return; }
         if (nom.StartsWith("radio/")) { RadioHls.Api(nom.Substring(6), q, ctx); return; }
         if (nom.StartsWith("tuya/")) { Tuya.Api(nom.Substring(5), q, ctx); return; }
         if (nom == "agenda") { Agenda.Api(q, ctx); return; }
@@ -365,6 +367,7 @@ public static class CasaServidor
         if (nom == "tuya/ajustos") { Tuya.Ajusta(ctx); return; }
         if (nom.StartsWith("actualitza/")) { Actualitza.Api(nom, q, ctx); return; }
         if (nom == "diagnosi") { Diagnosi.Api(ctx); return; }
+        if (nom.StartsWith("compra/")) { Botigues.Api(nom.Substring(7), q, ctx, true); return; }
         if (nom.StartsWith("wa/")) { if (nom != "wa/atura" && !FuncioActiva("whatsapp")) { Error(ctx.Response, 403, "WhatsApp est\u00e0 desactivat (Configuraci\u00f3 \u25b8 Funcions opcionals)"); return; } WhatsApp.Api(nom.Substring(3), q, ctx); return; }
         switch (nom)
         {
