@@ -200,8 +200,10 @@ vista('p');
 plega(!!ls('compra.plegada'));
 
 /* ---------- Dades compartides entre aparells ---------- */
+/* La llista viu al servidor: és la mateixa a l'iPad, al PC i al mòbil, i es manté d'una vegada a l'altra.
+   (amb un número a l'adreça perquè el Safari vell no torni una còpia guardada) */
 function carrega(primer) {
-  dades('compra', function (d) {
+  getJson(api('dades', { n: 'compra', _: Date.now() }), function (d) {
     if (Date.now() - EDITA < 2500) return;
     var j = JSON.stringify(d || {});
     if (!primer && j == VERSIO) return;
@@ -214,7 +216,7 @@ function carrega(primer) {
     pintaLlista();
     if (primer || (V.cat == 'fav' && !V.q)) pintaGraella();
     else marcaQuantitats();
-  });
+  }, function () { });
 }
 function desa() { EDITA = Date.now(); VERSIO = JSON.stringify(L); desaDades('compra', L); }
 

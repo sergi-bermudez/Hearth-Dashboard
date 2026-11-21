@@ -232,7 +232,13 @@ public static class Edge
         b.Envia("Browser.setWindowBounds", CasaServidor.Dic("windowId", wid, "bounds", CasaServidor.Dic("windowState", "normal")), 5000);
         b.Envia("Browser.setWindowBounds", CasaServidor.Dic("windowId", wid, "bounds",
             visible ? CasaServidor.Dic("left", 80, "top", 60, "width", 1150, "height", 820) : CasaServidor.Dic("left", -12000, "top", -12000, "width", 1150, "height", 820)), 5000);
-        if (visible) { try { b.Envia("Target.activateTarget", CasaServidor.Dic("targetId", id), 5000); } catch { } }
+        if (visible)
+        {
+            // maximitzada i al davant de tot, perqu\u00e8 es vegi a la pantalla del PC
+            try { b.Envia("Browser.setWindowBounds", CasaServidor.Dic("windowId", wid, "bounds", CasaServidor.Dic("windowState", "maximized")), 5000); } catch { }
+            try { b.Envia("Target.activateTarget", CasaServidor.Dic("targetId", id), 5000); } catch { }
+            try { Cdp p = new Cdp(); p.Connecta(WsPagina(id)); p.Envia("Page.bringToFront", null, 5000); p.Tanca(); } catch { }
+        }
     }
 
     // Valor d'un Runtime.evaluate (llan\u00e7a l'excepci\u00f3 de la pagina si n'hi ha)
