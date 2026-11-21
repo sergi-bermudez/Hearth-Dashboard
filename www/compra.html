@@ -74,6 +74,19 @@ html,body{height:100%;overflow:hidden}
 #tria .op .oi{width:48px;height:48px;-webkit-flex:none;flex:none;border-radius:8px;background:#fff center/contain no-repeat;margin-right:10px}
 #tria .op .pp{margin-left:10px}
 #tria .op.on{background:rgba(48,209,88,.12);border-radius:10px}
+#dre .cap{position:relative;padding-left:58px}
+#b-pleg{position:absolute;left:10px;top:12px;width:40px;height:40px;padding:0;border-radius:20px;font-size:20px;line-height:40px}
+#mini{display:none}
+/* Llista plegada: una franja estreta amb el recompte; la graella aprofita tot l'ample */
+body.plegada #dre{width:64px;cursor:pointer}
+body.plegada #dre .cap,body.plegada #llista,body.plegada #accions{display:none}
+body.plegada #mini{display:block;-webkit-flex:1;flex:1;text-align:center;padding-top:14px}
+#mini .n{display:inline-block;min-width:40px;height:40px;line-height:40px;border-radius:20px;background:#30d158;color:#04210f;font-weight:700;font-size:17px;margin-bottom:10px}
+#mini .n.zero{background:#2c2c2e;color:#8d95a1}
+#mini .e{font-size:22px;line-height:1.5}
+#mini .v{writing-mode:vertical-rl;-webkit-writing-mode:vertical-rl;color:#8d95a1;font-size:13px;margin:8px auto 0;letter-spacing:1px}
+body.plegada .t{width:calc(20% - 8px)}
+@media (max-width:900px){ body.plegada .t{width:calc(25% - 8px)} }
 #seg{display:none}
 #tria{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:50;display:none}
 #tria .card{position:absolute;left:50%;top:40px;width:460px;margin-left:-230px;max-height:85%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#1c1c1e;border-radius:20px;padding:18px}
@@ -90,7 +103,9 @@ html,body{height:100%;overflow:hidden}
   #seg{display:-webkit-flex;display:flex;position:absolute;top:8px;left:10px;right:10px;height:38px;background:#2c2c2e;border-radius:10px;padding:3px}
   #seg span{-webkit-flex:1;flex:1;text-align:center;line-height:32px;border-radius:8px;cursor:pointer;font-size:15px}
   #seg span.on{background:#636366;font-weight:600}
-  .t{width:calc(50% - 8px)}
+  .t,body.plegada .t{width:calc(50% - 8px)}
+  body.plegada #dre{width:auto} body.plegada #dre .cap,body.plegada #llista,body.plegada #accions{display:block} body.plegada #mini,#b-pleg{display:none !important}
+  #dre .cap{padding-left:14px}
   #tria .card{left:10px;right:10px;width:auto;margin-left:0;top:20px}
 }
 </style>
@@ -107,7 +122,8 @@ html,body{height:100%;overflow:hidden}
     <div id="graella"><div class="buit">Carregant…</div></div>
   </div>
   <div id="dre">
-    <div class="cap"><h2>Llista</h2><div class="tot" id="tot"></div></div>
+    <div class="cap"><button id="b-pleg" onclick="plega()"></button><h2>Llista</h2><div class="tot" id="tot"></div></div>
+    <div id="mini" onclick="plega()"></div>
     <div id="llista"></div>
     <div class="peu" id="accions"></div>
   </div>
@@ -121,18 +137,33 @@ try { if (window.parent !== window && window.parent.Casa) Casa = window.parent.C
 var IC_MES = 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z';
 var IC_WA = 'M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.02c-.24.68-1.42 1.3-1.95 1.35-.5.05-.97.23-3.27-.68-2.77-1.09-4.52-3.93-4.66-4.11-.13-.18-1.11-1.48-1.11-2.82s.7-2 .95-2.27c.24-.27.53-.34.71-.34l.51.01c.16.01.38-.06.6.46.24.55.79 1.89.86 2.03.07.14.11.3.02.48-.09.18-.14.3-.27.46-.14.16-.29.36-.41.48-.14.14-.28.29-.12.56.16.27.71 1.17 1.52 1.89 1.04.93 1.92 1.22 2.19 1.36.27.14.43.11.59-.07.16-.18.68-.79.86-1.07.18-.27.36-.23.61-.14.25.09 1.58.75 1.85.88.27.14.45.2.52.32.06.11.06.68-.18 1.36z';
 /* Categories comunes (el servidor hi classifica els productes de totes les botigues) */
-var CATS = [['fruita', '🍎', 'Fruita i verdura'], ['carn', '🥩', 'Carn'], ['peix', '🐟', 'Peix'], ['pa', '🥖', 'Pa i pastisseria'], ['xarcuteria', '🧀', 'Xarcuteria i formatges'], ['lactis', '🥛', 'Làctics i ous'],
-  ['rebost', '🥫', 'Rebost'], ['begudes', '🧃', 'Begudes'], ['congelats', '🧊', 'Congelats'], ['neteja', '🧽', 'Neteja'], ['higiene', '🧴', 'Higiene i bellesa'], ['bebe', '🍼', 'Bebè'], ['animals', '🐾', 'Animals']];
+var CATS = [['fruita', '🍎', 'Fruita i verdura'], ['congelats', '🧊', 'Congelats'], ['xarcuteria', '🧀', 'Formatges i embotit'], ['snacks', '🥜', 'Pica-pica'], ['rebost', '🥫', 'Rebost'],
+  ['vegetal', '🌱', 'Vegetarià'], ['lactis', '🥛', 'Làctics i ous'], ['pa', '🥖', 'Pa'], ['begudes', '🧃', 'Begudes'], ['carn', '🥩', 'Carn'], ['peix', '🐟', 'Peix'],
+  ['neteja', '🧽', 'Neteja i casa'], ['higiene', '🧴', 'Higiene'], ['bebe', '🍼', 'Bebè'], ['animals', '🐾', 'Animals']];
 var COLORS = ['#e3262e', '#2e8b3a', '#0a84ff', '#ff9f0a', '#bf5af2', '#64d2ff', '#ff375f'];
 var L = { items: [], hist: {}, fav: [] }, VERSIO = '', EDITA = 0;
-var V = { cat: 'lactis', bot: '', q: '', res: [], est: null, tq: null };
+var V = { cat: 'fruita', bot: '', q: '', res: [], est: null, tq: null };
 $('b-afg').innerHTML = svg(IC_MES);
 $('q').placeholder = T('Cerca o escriu un producte');
 $('q').oninput = function () { clearTimeout(V.tq); V.tq = setTimeout(function () { V.q = $('q').value.replace(/^\s+|\s+$/g, ''); carregaGraella(); }, 350); };
 $('q').onkeydown = function (e) { if ((e.keyCode || e.which) == 13) { e.preventDefault(); afegeixText(); } };
 
-function vista(v) { document.body.className = v == 'l' ? 'v-llista' : 'v-prod'; $('sg-p').className = v == 'l' ? '' : 'on'; $('sg-l').className = v == 'l' ? 'on' : ''; }
+function plega(v) {
+  var p = typeof v == 'boolean' ? v : document.body.className.indexOf('plegada') < 0;
+  document.body.className = document.body.className.replace(/\s*plegada/g, '') + (p ? ' plegada' : '');
+  ls('compra.plegada', p);
+  $('b-pleg').innerHTML = p ? '‹' : '›';
+}
+function pintaMini() {
+  var p = pendents(), h = '<div class="n' + (p.length ? '' : ' zero') + '">' + p.length + '</div>';
+  for (var i = 0; i < p.length && i < 9; i++) h += '<div class="e">' + (p[i].e || '•') + '</div>';
+  if (p.length > 9) h += '<div class="e">…</div>';
+  h += '<div class="v">' + esc(T('Llista')) + '</div>';
+  $('mini').innerHTML = h;
+}
+function vista(v) { document.body.className = (v == 'l' ? 'v-llista' : 'v-prod') + (document.body.className.indexOf('plegada') >= 0 ? ' plegada' : ''); $('sg-p').className = v == 'l' ? '' : 'on'; $('sg-l').className = v == 'l' ? 'on' : ''; }
 vista('p');
+plega(!!ls('compra.plegada'));
 
 /* ---------- Dades compartides entre aparells ---------- */
 function carrega(primer) {
@@ -161,7 +192,7 @@ function nomBot(id) { var i = idxBot(id); return i >= 0 ? botigues()[i].nom : ''
 function pintaChips() {
   var n = (V.est && V.est.cats) || {}, h = '<span id="c-fav" onclick="triaCat(\'fav\')">⭐ ' + esc(T('Preferits')) + '</span>', i;
   if (V.est && V.est.promos) h += '<span id="c-promo" onclick="triaCat(\'promo\')">🏷️ ' + esc(T('Promocions')) + '</span>';
-  for (i = 0; i < CATS.length; i++) h += '<span id="c-' + CATS[i][0] + '" onclick="triaCat(\'' + CATS[i][0] + '\')">' + CATS[i][1] + ' ' + esc(T(CATS[i][2])) + '</span>';
+  for (i = 0; i < CATS.length; i++) if (conceptesDe(CATS[i][0]).length) h += '<span id="c-' + CATS[i][0] + '" onclick="triaCat(\'' + CATS[i][0] + '\')">' + CATS[i][1] + ' ' + esc(T(CATS[i][2])) + '</span>';
   $('cats').innerHTML = h;
   var bl = botigues(), b = '';
   if (bl.length > 1) {
@@ -227,7 +258,8 @@ function pintaGraella() {
   if (V.q) {
     /* conceptes que coincideixen + el text com a concepte nou + productes concrets de les botigues */
     var qq = sensePla(V.q);
-    for (i = 0; i < CONCEPTES.length; i++) if (sensePla(concNom(CONCEPTES[i])).indexOf(qq) >= 0 || sensePla(concCerca(CONCEPTES[i])).indexOf(qq) >= 0) l.push(concepteObj(CONCEPTES[i]));
+    var tots = CONCEPTES.concat(CONCEPTES_MES);
+    for (i = 0; i < tots.length; i++) if (sensePla(concNom(tots[i])).indexOf(qq) >= 0 || sensePla(concCerca(tots[i]).split(' -')[0]).indexOf(qq) >= 0) l.push(concepteObj(tots[i]));
     var m = L.conc || [];
     for (i = 0; i < m.length; i++) if (sensePla(m[i].n).indexOf(qq) >= 0) l.push({ cc: 1, n: m[i].n, cq: m[i].n, e: m[i].e || '📝', cat: m[i].cat });
     var ja = false;
@@ -398,6 +430,7 @@ function pintaLlista() {
   if (f.length) { h += '<div class="sec">' + T('Al carro') + ' · ' + f.length + '</div>'; for (i = 0; i < f.length; i++) h += htmlItem(f[i]); }
   $('llista').innerHTML = h;
   $('tot').textContent = p.length ? Tf('{1} articles', p.length) : '';
+  pintaMini();
   $('sg-l').textContent = T('Llista') + (p.length ? ' (' + p.length + ')' : '');
   var a = '';
   if (p.length) a += '<button class="wa" onclick="enviaWa()">' + svg(IC_WA) + T('Envia per WhatsApp') + '</button>';

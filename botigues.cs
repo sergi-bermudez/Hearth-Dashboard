@@ -15,6 +15,7 @@ public static class Botigues
     static Timer rellotge;
     static volatile bool enMarxa;
     static string estatText = "";
+    static volatile string llegintB = "";
     static Dictionary<string, object> cataleg; // en mem\u00f2ria
 
     // Categories comunes per a totes les botigues, amb paraules clau en diversos idiomes
@@ -76,7 +77,7 @@ public static class Botigues
                 Dictionary<string, object> c = Cataleg();
                 double t = c != null && c.ContainsKey("t") ? Convert.ToDouble(c["t"]) : 0;
                 if ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds - t < 20 * 3600 * 1000) return;
-                Recorre();
+                Recorre("");
             }
             catch { }
         }, null, TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(30));
@@ -98,9 +99,10 @@ public static class Botigues
         try { Crida(c, "llest()", 20000); } catch { Thread.Sleep(2000); }
     }
 
-    public static void Recorre()
+    // nomesB: llegeix nom\u00e9s aquesta botiga (les altres es queden com estaven); "" = totes
+    public static void Recorre(string nomesB)
     {
-        lock (lk) { if (enMarxa) return; enMarxa = true; }
+        lock (lk) { if (enMarxa) return; enMarxa = true; llegintB = nomesB; }
         Thread th = new Thread(delegate ()
         {
             string pagina = null;
@@ -113,6 +115,10 @@ public static class Botigues
 
                 List<object> prods = new List<object>();
                 Dictionary<string, object> estats = new Dictionary<string, object>();
+                Dictionary<string, bool> llegides = new Dictionary<string, bool>();
+                // L'estat de les botigues que no es llegeixen ara es conserva
+                if (vell != null && vell.ContainsKey("botigues") && vell["botigues"] is Dictionary<string, object>)
+                    foreach (KeyValuePair<string, object> kv in (Dictionary<string, object>)vell["botigues"]) estats[kv.Key] = kv.Value;
                 Edge.Assegura();
                 pagina = Edge.NovaPagina("about:blank");
                 Cdp c = new Cdp();
@@ -125,6 +131,8 @@ public static class Botigues
                     Dictionary<string, object> b = ob as Dictionary<string, object>;
                     if (b == null || S(b, "url") == "" || S(b, "off") == "True") continue;
                     string id = S(b, "id"), nom = S(b, "nom");
+                    if (nomesB != "" && id != nomesB) continue;
+                    llegides[id] = true;
                     Dictionary<string, object> est = new Dictionary<string, object>();
                     estats[id] = est;
                     int n0 = prods.Count;
@@ -204,6 +212,13 @@ public static class Botigues
                         foreach (Dictionary<string, object> p in anteriors.Values) if (S(p, "b") == id) prods.Add(p);
                 }
                 try { c.Tanca(); } catch { }
+                // Els productes de les botigues que no s'han llegit ara (i que encara s\u00f3n a la configuraci\u00f3) es conserven
+                Dictionary<string, bool> actives = new Dictionary<string, bool>();
+                foreach (object ob2 in Config()) { Dictionary<string, object> b2 = ob2 as Dictionary<string, object>; if (b2 != null) actives[S(b2, "id")] = true; }
+                foreach (Dictionary<string, object> pa in anteriors.Values) { string bb = S(pa, "b"); if (!llegides.ContainsKey(bb) && actives.ContainsKey(bb)) prods.Add(pa); }
+                List<string> fora = new List<string>();
+                foreach (string k in estats.Keys) if (!actives.ContainsKey(k)) fora.Add(k);
+                foreach (string k in fora) estats.Remove(k);
                 Dictionary<string, object> nou = new Dictionary<string, object>();
                 nou["t"] = (DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds;
                 nou["botigues"] = estats;
@@ -216,7 +231,7 @@ public static class Botigues
             finally
             {
                 if (pagina != null) { try { Edge.TancaPagina(pagina); } catch { } }
-                enMarxa = false;
+                enMarxa = false; llegintB = "";
             }
         });
         th.IsBackground = true;
@@ -262,6 +277,7 @@ public static class Botigues
             d["n"] = c != null && c.ContainsKey("prod") && c["prod"] is object[] ? ((object[])c["prod"]).Length : 0;
             d["enMarxa"] = enMarxa;
             d["fent"] = estatText;
+            d["llegint"] = llegintB;
             Dictionary<string, int> cats = new Dictionary<string, int>();
             int promos = 0;
             if (c != null && c["prod"] is object[])
@@ -324,21 +340,39 @@ public static class Botigues
             if (qs != null)
                 foreach (object qo in qs)
                 {
-                    List<string> si = new List<string>(), no = new List<string>();
-                    foreach (string w in Pla(qo == null ? "" : qo.ToString()).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
-                        if (w.StartsWith("-")) { if (w.Length > 1) no.Add(w.Substring(1)); } else si.Add(w);
-                    List<Dictionary<string, object>> r = new List<Dictionary<string, object>>();
-                    if (prods != null && si.Count > 0)
+                    // "tomate cherry|tomate mini -polpa @fruita": alternatives separades per |,
+                    // paraules a excloure amb -, i categoria obligat\u00f2ria amb @
+                    List<List<string>> alts = new List<List<string>>();
+                    List<string> no = new List<string>();
+                    string catQ = "";
+                    foreach (string alt in Pla(qo == null ? "" : qo.ToString()).Split('|'))
+                    {
+                        List<string> si = new List<string>();
+                        foreach (string w in alt.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                            if (w.StartsWith("-")) { if (w.Length > 1) no.Add(w.Substring(1)); }
+                            else if (w.StartsWith("@")) catQ = w.Substring(1);
+                            else si.Add(w);
+                        if (si.Count > 0) alts.Add(si);
+                    }
+                    List<Dictionary<string, object>> r = new List<Dictionary<string, object>>(), rCat = new List<Dictionary<string, object>>();
+                    if (prods != null && alts.Count > 0)
                         foreach (object o in prods)
                         {
                             Dictionary<string, object> p = o as Dictionary<string, object>;
                             if (p == null || S(p, "esg") == "1") continue;
                             string nn = " " + Pla(S(p, "n") + " " + S(p, "m")) + " ";
-                            bool ok = true;
-                            foreach (string w in si) if (!Paraula(nn, w)) { ok = false; break; }
+                            bool ok = false;
+                            foreach (List<string> si in alts)
+                            {
+                                bool totes = true;
+                                foreach (string w in si) if (!Paraula(nn, w)) { totes = false; break; }
+                                if (totes) { ok = true; break; }
+                            }
                             if (ok) foreach (string w in no) if (nn.Contains(w)) { ok = false; break; }
-                            if (ok) r.Add(p);
+                            if (ok) { r.Add(p); if (S(p, "c") == catQ) rCat.Add(p); }
                         }
+                    // Si la botiga classifica b\u00e9 la secci\u00f3, nom\u00e9s d'aquella categoria; si no, de totes
+                    if (catQ != "" && rCat.Count > 0) r = rCat;
                     r.Sort(delegate (Dictionary<string, object> x, Dictionary<string, object> y) { return PreuRef(x).CompareTo(PreuRef(y)); });
                     Dictionary<string, object> perB = new Dictionary<string, object>();
                     foreach (Dictionary<string, object> p in r) { string b = S(p, "b"); if (!perB.ContainsKey(b)) perB[b] = p; }
@@ -364,7 +398,8 @@ public static class Botigues
         if (nom == "actualitza")
         {
             if (Config().Count == 0) { CasaServidor.Error(res, 400, "No hi ha cap botiga configurada"); return; }
-            Recorre();
+            if (enMarxa) { CasaServidor.Error(res, 409, "Ja s'esta llegint una botiga; espera que acabi"); return; }
+            Recorre(CasaServidor.Q(q, "b"));
             CasaServidor.Json(res, CasaServidor.Dic("ok", true));
             return;
         }

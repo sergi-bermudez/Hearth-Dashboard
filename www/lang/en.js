@@ -767,3 +767,13 @@ TR.en["Afegeix les teves botigues a Configuració ▸ Compra per veure on és m�
 TR.en["Torna a «el més barat»"]="Back to «cheapest»";
 TR.en["A {1}"]="At {1}";
 TR.en["Sense preu"]="No price";
+TR.en["Llegeix"]="Read";
+TR.en["Llegeix-les totes"]="Read all";
+TR.en["Ja s'està llegint una botiga; espera que acabi."]="A shop is already being read; wait until it finishes.";
+TR.en["Llegint la botiga. Pot trigar una estona."]="Reading the shop. This can take a while.";
+TR.en["Formatges i embotit"]="Cheese & deli";
+TR.en["Pica-pica"]="Snacks";
+TR.en["Vegetarià"]="Vegetarian";
+TR.en["Pa"]="Bread";
+TR.en["Neteja i casa"]="Cleaning & home";
+TR.en["Higiene"]="Toiletries";

@@ -269,7 +269,7 @@ body{background:#000}
     <div id="bt-llista"></div>
     <div class="fila"><label>Afegeix</label><select id="bt-preset" class="sel" onchange="btPreset()"></select></div>
     <div class="fila"><input type="text" id="bt-nom" placeholder="Nom (p. ex. El meu súper)"><input type="url" id="bt-url" placeholder="https://…" autocapitalize="off" autocorrect="off" style="margin-left:8px"><button onclick="btAfegeix()" style="margin-left:8px">Afegeix</button></div>
-    <div class="peu"><button class="pri" onclick="btActualitza()">Llegeix els catàlegs ara</button> <span class="gris" id="bt-estat"></span></div>
+    <div class="peu"><button onclick="btActualitza()">Llegeix-les totes</button> <span class="gris" id="bt-estat"></span></div>
   </div>
 
   <div class="sec" id="s-youtube">
@@ -1014,7 +1014,7 @@ function btPinta() {
   for (var i = 0; i < BT.l.length; i++) {
     var b = BT.l[i], s = e[b.id] || {};
     h += '<div class="fila"><label style="min-width:0;-webkit-flex:1;flex:1"><b>' + esc(b.nom) + '</b><br><span class="gris petit">' + esc(b.url) + '</span><br><span class="petit' + (s.error ? '" style="color:#ff453a">' : ' gris">') +
-      (s.error ? esc(T(s.error)) : s.n ? Tf('{1} productes', s.n) : T('Encara no llegit')) + '</span></label><button onclick="btTreu(' + i + ')">' + T('Treu') + '</button></div>';
+      (s.error ? esc(T(s.error)) : s.n ? Tf('{1} productes', s.n) : T('Encara no llegit')) + '</span></label>' + (BT.est && BT.est.enMarxa && BT.est.llegint == b.id ? '<span class="gris petit" style="margin-right:8px">' + T('Llegint…') + '</span>' : '<button onclick="btActualitza(\'' + b.id + '\')" style="margin-right:8px">' + T('Llegeix') + '</button>') + '<button onclick="btTreu(' + i + ')">' + T('Treu') + '</button></div>';
   }
   if (!h) h = '<div class="gris" style="margin:10px 0">' + T('Encara no hi ha cap botiga.') + '</div>';
   $('bt-llista').innerHTML = h;
@@ -1042,11 +1042,13 @@ function btAfegeix() {
   for (var i = 0; i < BT.l.length; i++) if (BT.l[i].id == id) id += BT.l.length;
   BT.l.push({ id: id, nom: n, url: u });
   $('bt-nom').value = ''; $('bt-url').value = ''; $('bt-preset').value = '';
-  btDesa();
+  /* desa i llegeix només la botiga nova */
+  post(api('admin/compra/botigues'), JSON.stringify({ botigues: BT.l }), function () { btActualitza(id); }, errXarxa('desar'));
 }
 function btTreu(i) { BT.l.splice(i, 1); btDesa(); }
-function btActualitza() {
-  post(api('admin/compra/actualitza'), '', function () { avis(T('Llegint els catàlegs. Pot trigar una estona.')); setTimeout(btCarrega, 1500); }, errXarxa('actualitzar'));
+function btActualitza(b) {
+  if (BT.est && BT.est.enMarxa) { avis(T('Ja s\'està llegint una botiga; espera que acabi.')); return; }
+  post(api('admin/compra/actualitza', b ? { b: b } : null), '', function () { avis(b ? T('Llegint la botiga. Pot trigar una estona.') : T('Llegint els catàlegs. Pot trigar una estona.')); setTimeout(btCarrega, 1500); }, errXarxa('actualitzar'));
 }
 function tornaMenu() { document.body.className = ''; valorsMenu(); }
 window.addEventListener('resize', function () { if (!estret()) document.body.className = ''; pintaMenu(); });
