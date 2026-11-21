@@ -357,7 +357,7 @@ public static class CasaServidor
         if (nom == "musica") { Musica.Api(q, ctx); return; }
         if (nom.StartsWith("youtube/") && nom != "youtube/instal-la") { YouTube.Api(nom.Substring(8), q, ctx); return; }
         if (nom == "agenda/calendaris") { Agenda.Llista(q, ctx); return; }
-        if (nom == "imgx" || nom == "portada" || nom == "caratula" || nom == "peli" || nom == "peli-titol") { Media.Api(nom, q, ctx); return; }
+        if (nom == "imgx" || nom == "portada" || nom == "caratula" || nom == "peli" || nom == "peli-titol" || nom == "peli-opcions" || nom == "peli-tria") { Media.Api(nom, q, ctx); return; }
         if (nom.StartsWith("admin/")) { Admin(nom.Substring(6), q, ctx); return; }
         Error(res, 404, "API desconeguda");
     }

@@ -7,44 +7,97 @@
 <title>Pel·lícules</title>
 <script src="i18n.js"></script>
 <style>
-.it .im .lletra small{font-size:14px}
-.pest{margin-bottom:12px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.pest button{margin-right:8px;border-radius:22px;padding:9px 18px}
-.pest button.on{background:#fff;color:#111}
-.xips{margin:0 0 14px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* ---- aspecte de servei de streaming: portada gran, files que llisquen, fitxa amb fons ---- */
+#pag{padding-top:0}
+.cap-p{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:14px 0 10px;flex-wrap:wrap;-webkit-flex-wrap:wrap}
+.cap-p h1{margin:0 18px 0 0;font-size:26px}
+.nav-p{-webkit-flex:1;flex:1;min-width:0;white-space:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.nav-p::-webkit-scrollbar{display:none}
+.nav-p span{display:inline-block;margin-right:6px;padding:8px 14px;border-radius:20px;color:#b4bbc5;cursor:pointer;font-size:15px}
+.nav-p span.on{background:#fff;color:#111;font-weight:600}
+.nav-p span b{display:inline-block;background:#ffab3d;color:#111;border-radius:10px;padding:0 7px;font-size:12px;margin-left:5px}
+.cap-p input.cerca-p{-webkit-flex:none;flex:none;width:190px;max-width:32%;margin:0;border-radius:20px;border:0;background:rgba(255,255,255,.1);color:#fff;padding:9px 14px;font-size:15px}
+.heroi{position:relative;height:430px;margin:0 -24px 10px;background:#14181e center 20%/cover no-repeat;overflow:hidden;cursor:pointer}
+.heroi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:75%;background:-webkit-linear-gradient(left,rgba(14,17,22,.95),rgba(14,17,22,0));background:linear-gradient(to right,rgba(14,17,22,.95),rgba(14,17,22,0))}
+.heroi:after{content:"";position:absolute;left:0;right:0;bottom:0;height:120px;background:-webkit-linear-gradient(top,rgba(14,17,22,0),#0e1116);background:linear-gradient(to bottom,rgba(14,17,22,0),#0e1116)}
+.heroi .txt{position:absolute;left:44px;bottom:56px;width:52%;z-index:2}
+.heroi h2{font-size:40px;line-height:1.1;margin:0 0 10px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.heroi .md{color:#d6dae0;margin-bottom:12px;font-size:15px}
+.heroi .md span{margin-right:12px}
+.heroi .sin{color:#d6dae0;line-height:1.45;max-height:4.35em;overflow:hidden;margin-bottom:18px;font-size:16px}
+.heroi button{margin-right:10px;padding:12px 22px;font-size:16px}
+.fila{margin-bottom:18px}
+.fila h3{font-size:19px;margin:0 0 8px;font-weight:600}
+.fila h3 small{color:#8d95a1;font-weight:400;font-size:14px;margin-left:8px;cursor:pointer}
+.fila-cap{overflow:hidden;margin:0 -24px}
+.fila-in{white-space:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:4px 24px 34px;margin-bottom:-30px;scrollbar-width:none}
+.fila-in::-webkit-scrollbar{display:none;height:0}
+.fila-in .it{display:inline-block;vertical-align:top;width:150px;margin:0 12px 0 0;white-space:normal}
+.fila-in .it.ample{width:260px}
+.fila-in .it.ample .im{padding-top:56.25%}
+.it .im .nou{position:absolute;left:6px;top:6px;background:#e04848;color:#fff;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700}
+.it .im .rev{position:absolute;left:6px;bottom:8px;background:#ffab3d;color:#111;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700}
+.it .any{color:#8d95a1;font-size:13px}
+.it:active .im{-webkit-transform:scale(.97);transform:scale(.97)}
+.xips{margin:0 0 14px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.xips::-webkit-scrollbar{display:none}
 .xips .xip{display:inline-block;margin:0 8px 8px 0;padding:8px 15px;border-radius:18px;background:rgba(255,255,255,.08);cursor:pointer;font-size:15px}
 .xips .xip small{color:#8d95a1;margin-left:4px;font-size:13px}
 .xips .xip.on{background:#fff;color:#111}
-.xips .xip.on small{color:#555}
-.nota-idx{color:#8d95a1;font-size:14px;margin:-4px 0 10px}
-.it .any{color:#8d95a1;font-size:13px}
-.it .im .nou{position:absolute;left:6px;top:6px;background:#ffab3d;color:#111;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:700}
+.nota-idx{color:#8d95a1;font-size:14px;margin:0 0 10px}
 .el .d{color:#8d95a1;font-size:14px;margin-left:10px;-webkit-flex:none;flex:none}
 .el.curt .t{color:#8d95a1}
+/* revisar */
+.rv{background:rgba(255,255,255,.05);border-radius:14px;padding:14px;margin-bottom:12px}
+.rv-cap{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
+.rv-cap .mini{width:46px;height:69px;border-radius:6px;background:#1d2229 center/cover no-repeat;-webkit-flex:none;flex:none;margin-right:12px}
+.rv-cap .t{-webkit-flex:1;flex:1;min-width:0}
+.rv-cap .f{font-size:15px;word-break:break-all}
+.rv-cap .e{font-size:13px;margin-top:3px}
+.rv-cap .e.no{color:#ff7a6b}.rv-cap .e.du{color:#ffab3d}
+.rv-cap button{margin-left:8px;padding:9px 14px;font-size:14px;-webkit-flex:none;flex:none}
+.ops{white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:12px;scrollbar-width:none}
+.ops::-webkit-scrollbar{display:none}
+.op{display:inline-block;vertical-align:top;width:118px;margin-right:12px;white-space:normal;cursor:pointer}
+.op .im{padding-top:150%;border-radius:8px;background:#1d2229 center/cover no-repeat;position:relative}
+.op .im .lletra{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;color:#5d6673;padding:8px;text-align:center;font-size:13px}
+.op .nm{font-size:13px;margin-top:5px;line-height:1.25}
+.op .nm small{display:block;color:#8d95a1}
+.op.sug .im{box-shadow:0 0 0 3px #ffab3d}
+.op .sg{position:absolute;left:5px;top:5px;background:#ffab3d;color:#111;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700}
+/* fitxa */
 .fx-avis{background:rgba(255,171,61,.12);border-left:3px solid #ffab3d;padding:8px 12px;border-radius:6px;color:#e6d2b0;font-size:14px;margin:12px 0}
 .fx-fitxer{color:#6f7782;font-size:13px;margin-top:4px;word-break:break-all}
-#fitxa{position:absolute;top:0;left:0;right:0;bottom:0;background:#0e1116;z-index:40;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
-#fx-fons{position:absolute;top:0;left:0;right:0;height:430px;background:#14181e center top/cover no-repeat}
-#fx-fons:after{content:"";position:absolute;left:0;right:0;bottom:0;height:100%;background:-webkit-linear-gradient(top,rgba(14,17,22,.35),#0e1116);background:linear-gradient(to bottom,rgba(14,17,22,.35),#0e1116)}
+#fitxa,#tria{position:absolute;top:0;left:0;right:0;bottom:0;background:#0e1116;z-index:40;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#tria{z-index:45;padding:20px 24px 60px}
+#fx-fons{position:absolute;top:0;left:0;right:0;height:480px;background:#14181e center 20%/cover no-repeat}
+#fx-fons:after{content:"";position:absolute;left:0;right:0;bottom:0;height:100%;background:-webkit-linear-gradient(top,rgba(14,17,22,.25),#0e1116);background:linear-gradient(to bottom,rgba(14,17,22,.25),#0e1116)}
 #fx-cos{position:relative;padding:24px 28px 60px;display:-webkit-flex;display:flex}
-#fx-poster{width:230px;height:345px;border-radius:12px;background:#1d2229 center/cover no-repeat;-webkit-flex:none;flex:none;margin-right:28px;margin-top:60px}
-#fx-info{-webkit-flex:1;flex:1;padding-top:120px}
-#fx-info h1{font-size:34px;margin-bottom:6px}
+#fx-poster{width:230px;height:345px;border-radius:12px;background:#1d2229 center/cover no-repeat;-webkit-flex:none;flex:none;margin-right:28px;margin-top:80px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#fx-info{-webkit-flex:1;flex:1;padding-top:150px}
+#fx-info h1{font-size:36px;margin-bottom:6px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
 .fx-dades{color:#b4bbc5;margin-bottom:14px}
 .fx-dades span{margin-right:14px}
 .nota{display:inline-block;background:rgba(255,255,255,.1);border-radius:8px;padding:4px 10px;margin-right:8px;font-weight:600;font-size:15px}
 .fx-sin{line-height:1.5;color:#d6dae0;margin:16px 0 22px;max-width:640px}
 .fx-bt button{margin:0 8px 8px 0;padding:12px 20px}
-@media (max-width:800px){ #fx-poster{width:170px;height:255px} #fx-info{padding-top:90px} #fx-info h1{font-size:26px} }
+.tr-cap{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-bottom:14px}
+.tr-cap input{-webkit-flex:1;flex:1;margin:0 10px;font-size:17px;padding:11px 14px;border-radius:12px;border:0;background:rgba(255,255,255,.1);color:#fff}
+.tr-gra .op{width:150px;margin:0 14px 18px 0}
+@media (max-width:800px){
+  .heroi{height:340px}.heroi .txt{left:24px;width:80%;bottom:40px}.heroi h2{font-size:28px}
+  .fila-in .it{width:116px}.cap-p input.cerca-p{width:120px}
+  #fx-poster{width:150px;height:225px}#fx-info{padding-top:110px}#fx-info h1{font-size:26px}
+  #fx-cos{display:block}#fx-poster{margin:60px 0 0}#fx-info{padding-top:16px}
+}
 </style>
 </head>
 <body>
 <div id="pag">
-  <div class="capc"><h1>Pel·lícules</h1></div>
-  <div class="pest" id="pest"></div>
+  <div class="cap-p"><h1>Pel·lícules</h1><div class="nav-p" id="pest"></div><input class="cerca-p" id="cerca" type="search" placeholder="Cerca" oninput="cercaPeli()"></div>
   <div class="xips" id="filtre"></div>
   <div class="nota-idx" id="nota"></div>
-  <div id="veient"></div>
+  <div id="vista"></div>
   <div class="cami" id="cami"></div>
   <div class="gra" id="gra"></div>
   <div class="llista" id="fitxers"></div>
@@ -54,11 +107,17 @@
   <div style="position:absolute;top:16px;left:16px;z-index:3"><button onclick="tancaFitxa()">‹ Tornar</button></div>
   <div id="fx-cos"><div id="fx-poster"></div><div id="fx-info"></div></div>
 </div>
+<div id="tria">
+  <div class="tr-cap"><button onclick="tancaTria()">‹</button><input id="tr-q" type="search" onkeydown="if(event.keyCode==13)busca()"><button class="pri" onclick="busca()">Busca</button></div>
+  <div class="gris" id="tr-nota" style="margin-bottom:12px"></div>
+  <div class="tr-gra" id="tr-l"></div>
+</div>
 <script src="comu.js"></script>
 <script>
 dinsCasa('pelis');
-var PEST = [['totes', 'Totes'], ['recents', 'Afegides fa poc'], ['generes', 'Gèneres'], ['decades', 'Dècades'], ['noreco', 'Sense reconèixer'], ['fitxers', 'Fitxers']];
-var P = { pest: ls('pelis.pest') || 'totes', l: [], filtre: null, cami: '', tots: {}, t: null };
+var PEST = [['inici', 'Inici'], ['totes', 'Totes'], ['generes', 'Gèneres'], ['decades', 'Dècades'], ['revisa', 'Per revisar'], ['fitxers', 'Fitxers']];
+var P = { pest: ls('pelis.pest') || 'inici', l: [], filtre: null, cami: '', tots: {}, t: null, q: '', heroi: null };
+if (P.pest == 'recents' || P.pest == 'noreco') P.pest = P.pest == 'noreco' ? 'revisa' : 'inici';
 function netejaTitol(n) {
   var t = n.replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[._]+/g, ' ');
   var m = /^(.+?)[\s(\[]+((19|20)\d\d)\b/.exec(t);
@@ -69,7 +128,6 @@ function netejaTitol(n) {
 }
 function titol(e) { return e.titol || netejaTitol(e.n); }
 function caratula(e, m) { return api('caratula', { p: e.p || e, m: m || 400, cau: 1, v: e.trobada ? 1 : 0 }); }
-/* Els gèneres arriben en anglès (o en castellà); es posen en català i després es tradueixen a l'idioma triat */
 var GEN_CA = { action: 'Acció', adventure: 'Aventura', animation: 'Animació', anime: 'Animació', biography: 'Biografia', comedy: 'Comèdia', crime: 'Crim', documentary: 'Documental', drama: 'Drama', family: 'Família', kids: 'Infantil', 'kids & family': 'Família', fantasy: 'Fantasia', history: 'Història', horror: 'Terror', music: 'Música', musical: 'Música', 'music & musicals': 'Música', mystery: 'Misteri', romance: 'Romàntica', 'science fiction': 'Ciència-ficció', 'sci-fi': 'Ciència-ficció', 'sci-fi & fantasy': 'Ciència-ficció', short: 'Curtmetratge', sport: 'Esport', sports: 'Esport', thriller: 'Thriller', suspense: 'Thriller', war: 'Bèl·lica', western: 'Western', 'tv movie': 'Telefilm', independent: 'Independent', 'acción': 'Acció', aventura: 'Aventura', 'animación': 'Animació', 'comedia': 'Comèdia', 'crimen': 'Crim', documental: 'Documental', familia: 'Família', 'fantasía': 'Fantasia', historia: 'Història', terror: 'Terror', 'música': 'Música', misterio: 'Misteri', 'ciencia ficción': 'Ciència-ficció', 'bélica': 'Bèl·lica', 'película de tv': 'Telefilm' };
 function nomGenere(g) { var k = String(g).toLowerCase().replace(/^\s+|\s+$/g, ''); return T(GEN_CA[k] || (g.charAt(0).toUpperCase() + g.substring(1))); }
 function generes(e) {
@@ -78,44 +136,54 @@ function generes(e) {
   for (var i = 0; i < l.length; i++) { if (!l[i]) continue; var n = nomGenere(l[i]); if (r.indexOf(n) < 0) r.push(n); }
   return r;
 }
+function perRevisar() { return P.l.filter(function (e) { return !e.trobada || e.dubte; }); }
 function pintaPest() {
-  var h = '';
-  for (var i = 0; i < PEST.length; i++) h += '<button class="' + (PEST[i][0] == P.pest ? 'on' : '') + '" onclick="triaPest(\'' + PEST[i][0] + '\')">' + esc(T(PEST[i][1])) + '</button>';
+  var h = '', n = perRevisar().length;
+  for (var i = 0; i < PEST.length; i++)
+    h += '<span class="' + (PEST[i][0] == P.pest ? 'on' : '') + '" onclick="triaPest(\'' + PEST[i][0] + '\')">' + esc(T(PEST[i][1])) + (PEST[i][0] == 'revisa' && n ? '<b>' + n + '</b>' : '') + '</span>';
   $('pest').innerHTML = h;
 }
-function triaPest(p) { P.pest = p; P.filtre = null; ls('pelis.pest', p); pintaPest(); $('pag').scrollTop = 0; pinta(); }
+function triaPest(p) { P.pest = p; P.filtre = null; P.q = ''; $('cerca').value = ''; ls('pelis.pest', p); pintaPest(); $('pag').scrollTop = 0; pinta(); }
+function cercaPeli() { P.q = retalla($('cerca').value || '').toLowerCase(); if (P.q && P.pest != 'totes') { P.pest = 'totes'; pintaPest(); } pinta(); }
 function carregaLlista() {
   clearTimeout(P.t);
   getJson(api('pelis/llista'), function (d) {
     P.l = d.pelis || [];
     for (var i = 0; i < P.l.length; i++) P.tots[P.l[i].p] = P.l[i];
     $('nota').textContent = d.estat ? d.estat + '…' : '';
-    if (P.pest != 'fitxers') pinta();
+    pintaPest();
+    if (P.pest != 'fitxers' && !(P.pest == 'revisa' && $('vista').innerHTML)) pinta();
     if (d.estat || d.indexant) P.t = setTimeout(carregaLlista, 15000);
   }, function (st) {
     $('gra').innerHTML = '<div class="gris" style="margin:8px">' + (st == 404 ? T('La carpeta de pel·lícules no existeix. Revisa-la a Configuració.') : T('No s\'ha pogut carregar la biblioteca.')) + '</div>';
   });
 }
-function graella(l) {
-  var h = '', vt = ls('veient') || {}, ara = Date.now();
-  for (var i = 0; i < l.length; i++) {
-    var e = l[i], v = vt[e.p];
-    h += '<div class="it" onclick="fitxa(' + js(e.p) + ')"><div class="im" data-bg="' + esc(caratula(e)) + '"><div class="lletra">' + svg(IC.pelis) + '<small>' + esc(titol(e)) + '</small></div>' +
-      (ara - e.t < 14 * 864e5 ? '<span class="nou">' + T('NOVA') + '</span>' : '') +
-      (dins(EXT_VLC, e.ext) ? '<span class="etiq">VLC</span>' : '') +
-      (v && v.d ? '<div class="prog"><div style="width:' + Math.round(100 * v.t / v.d) + '%"></div></div>' : '') +
-      '</div><div class="nm">' + esc(titol(e)) + (e.any ? ' <span class="any">' + esc(e.any) + '</span>' : '') + '</div></div>';
-  }
-  return h;
+function targeta(e, ample) {
+  var vt = ls('veient') || {}, v = vt[e.p];
+  return '<div class="it' + (ample ? ' ample' : '') + '" onclick="fitxa(' + js(e.p) + ')"><div class="im" data-bg="' + esc(ample ? api('caratula', { p: e.p, fons: 1, m: 520, cau: 1 }) : caratula(e)) + '"><div class="lletra">' + svg(IC.pelis) + '<small>' + esc(titol(e)) + '</small></div>' +
+    (Date.now() - e.t < 14 * 864e5 ? '<span class="nou">' + T('NOVA') + '</span>' : '') +
+    (!e.trobada || e.dubte ? '<span class="rev">' + T('Revisa') + '</span>' : '') +
+    (dins(EXT_VLC, e.ext) ? '<span class="etiq">VLC</span>' : '') +
+    (v && v.d ? '<div class="prog"><div style="width:' + Math.round(100 * v.t / v.d) + '%"></div></div>' : '') +
+    '</div><div class="nm">' + esc(titol(e)) + (e.any ? ' <span class="any">' + esc(e.any) + '</span>' : '') + '</div></div>';
 }
+function graella(l) { var h = ''; for (var i = 0; i < l.length; i++) h += targeta(l[i]); return h; }
+function fila(nom, l, mes, ample) {
+  if (!l.length) return '';
+  var h = '';
+  for (var i = 0; i < Math.min(l.length, 24); i++) h += targeta(l[i], ample);
+  return '<div class="fila"><h3>' + esc(nom) + (mes ? ' <small onclick="' + mes + '">' + T('Veure-les totes') + ' ›</small>' : '') + '</h3><div class="fila-cap"><div class="fila-in" onscroll="mandrosAviat()">' + h + '</div></div></div>';
+}
+var MT = null;
+function mandrosAviat() { if (MT) return; MT = setTimeout(function () { MT = null; mandros(); }, 150); }
 function pinta() {
-  $('cami').innerHTML = ''; $('fitxers').innerHTML = ''; $('filtre').innerHTML = '';
-  pintaVeient();
+  $('cami').innerHTML = ''; $('fitxers').innerHTML = ''; $('filtre').innerHTML = ''; $('gra').innerHTML = ''; $('vista').innerHTML = '';
   var l = P.l.slice(), i, h = '';
-  if (P.pest == 'fitxers') { $('veient').innerHTML = ''; obreCarpeta(P.cami); return; }
-  if (P.pest == 'recents') l.sort(function (a, b) { return b.t - a.t; });
-  else l.sort(function (a, b) { return natural(titol(a), titol(b)); });
-  if (P.pest == 'noreco') l = l.filter(function (e) { return !e.trobada; });
+  if (P.pest == 'fitxers') { obreCarpeta(P.cami); return; }
+  if (P.pest == 'inici') { pintaInici(); return; }
+  if (P.pest == 'revisa') { pintaRevisa(); return; }
+  l.sort(function (a, b) { return natural(titol(a), titol(b)); });
+  if (P.q) l = l.filter(function (e) { return (titol(e) + ' ' + e.n + ' ' + (e.any || '')).toLowerCase().indexOf(P.q) >= 0; });
   if (P.pest == 'generes' || P.pest == 'decades') {
     var grups = {}, noms = [];
     for (i = 0; i < l.length; i++) {
@@ -129,23 +197,143 @@ function pinta() {
     $('filtre').innerHTML = h;
     l = P.filtre ? grups[P.filtre] : [];
   }
-  $('gra').innerHTML = graella(l) || '<div class="gris" style="margin:8px">' + (P.pest == 'noreco' ? T('Totes les pel·lícules estan reconegudes.') : T('Aquí no hi ha cap pel·lícula.')) + '</div>';
+  $('gra').innerHTML = graella(l) || '<div class="gris" style="margin:8px">' + (P.q ? T('No n\'he trobat cap.') : T('Aquí no hi ha cap pel·lícula.')) + '</div>';
   setTimeout(mandros, 30);
 }
+
+/* ---------- Inici: portada gran i files ---------- */
 function veientLlista() {
   var v = ls('veient') || {}, r = [];
-  for (var k in v) if (v.hasOwnProperty(k)) r.push(v[k]);
+  for (var k in v) if (v.hasOwnProperty(k) && P.tots[k]) r.push(v[k]);
   r.sort(function (a, b) { return b.ts - a.ts; });
   return r;
 }
-function pintaVeient() {
-  var v = veientLlista(), h = '';
-  if (P.pest != 'totes' || !v.length) { $('veient').innerHTML = ''; return; }
-  for (var i = 0; i < Math.min(v.length, 5); i++)
-    h += '<div class="it" onclick="fitxa(' + js(v[i].p) + ')"><div class="im" data-bg="' + esc(caratula(v[i].p)) + '"><div class="lletra">' + svg(IC.play) + '<small>' + esc(v[i].n) + '</small></div>' +
-      '<div class="prog"><div style="width:' + Math.round(100 * v[i].t / v[i].d) + '%"></div></div></div><div class="nm">' + esc(v[i].n) + '<br><span class="gris">' + Tf('Queden {1}', durada(v[i].d - v[i].t)) + '</span></div></div>';
-  $('veient').innerHTML = '<h2 style="margin-top:0">' + T('Continuar veient') + '</h2><div class="gra">' + h + '</div><h2>' + T('Totes') + '</h2>';
+function triaHeroi() {
+  var c = P.l.filter(function (e) { return e.trobada && e.fons && !e.dubte; });
+  if (!c.length) return null;
+  c.sort(function (a, b) { return b.t - a.t; });
+  c = c.slice(0, 8);
+  var dia = Math.floor(Date.now() / 36e5 / 6);       /* canvia cada 6 hores */
+  return c[dia % c.length];
 }
+function pintaInici() {
+  var h = '', e = triaHeroi(), i;
+  if (e) {
+    P.heroi = e.p;
+    h += '<div class="heroi" id="heroi" onclick="fitxa(' + js(e.p) + ')" style="background-image:' + bg(api('caratula', { p: e.p, fons: 1, m: 1280, cau: 1 })) + '"><div class="txt"><h2>' + esc(titol(e)) + '</h2>' +
+      '<div class="md">' + (e.any ? '<span>' + esc(e.any) + '</span>' : '') + (e.nota ? '<span>★ ' + esc(e.nota) + '</span>' : '') + (generes(e).length ? '<span>' + esc(generes(e).slice(0, 2).join(' · ')) + '</span>' : '') + '</div>' +
+      '<div class="sin" id="heroi-sin"></div>' +
+      '<button class="pri" onclick="event.stopPropagation();reprodueixDirecte(' + js(e.p) + ')">' + svg(IC.play) + ' ' + T('Reproduir') + '</button><button onclick="event.stopPropagation();fitxa(' + js(e.p) + ')">' + T('Més informació') + '</button></div></div>';
+    getJson(api('peli', { p: e.p }), function (d) { var s = $('heroi-sin'); if (s && P.heroi == e.p) s.textContent = d.sinopsi || ''; }, function () { });
+  }
+  var vt = veientLlista(), cont = [];
+  for (i = 0; i < vt.length; i++) cont.push(P.tots[vt[i].p]);
+  h += fila(T('Continuar veient'), cont, '', true);
+  var rec = P.l.slice().sort(function (a, b) { return b.t - a.t; });
+  h += fila(T('Afegides fa poc'), rec, "triaPest('totes')");
+  var rv = perRevisar();
+  if (rv.length) h += fila(Tf('Per revisar ({1})', rv.length), rv, "triaPest('revisa')");
+  var grups = {}, noms = [];
+  for (i = 0; i < P.l.length; i++) {
+    var g = generes(P.l[i]);
+    for (var k = 0; k < g.length; k++) { if (!grups[g[k]]) { grups[g[k]] = []; noms.push(g[k]); } grups[g[k]].push(P.l[i]); }
+  }
+  noms.sort(function (a, b) { return grups[b].length - grups[a].length; });
+  for (i = 0; i < Math.min(noms.length, 8); i++) {
+    if (grups[noms[i]].length < 3) continue;
+    var gl = grups[noms[i]].slice().sort(function (a, b) { return (parseFloat(b.nota || b.imdb) || 0) - (parseFloat(a.nota || a.imdb) || 0); });
+    h += fila(noms[i], gl, "P.pest='generes';P.filtre=" + js(noms[i]).replace(/"/g, '&quot;') + ";pintaPest();pinta()");
+  }
+  $('vista').innerHTML = h || '<div class="gris" style="margin:8px">' + T('Aquí no hi ha cap pel·lícula.') + '</div>';
+  setTimeout(mandros, 30);
+}
+
+/* ---------- Per revisar: les no reconegudes i les dubtoses, amb les opcions més properes ---------- */
+var REV = { cua: [], actius: 0, gen: 0 };
+function pintaRevisa() {
+  var l = perRevisar(), h = '';
+  l.sort(function (a, b) { return (a.trobada ? 1 : 0) - (b.trobada ? 1 : 0) || natural(a.n, b.n); });
+  if (!l.length) { $('vista').innerHTML = '<div class="gris" style="margin:8px">' + T('Totes les pel·lícules estan reconegudes.') + '</div>'; return; }
+  h += '<div class="gris" style="margin-bottom:12px">' + T('Toca la pel·lícula correcta per confirmar-la. Si no hi és, busca-la pel títol.') + '</div>';
+  for (var i = 0; i < l.length; i++) {
+    var e = l[i], id = 'rv' + i;
+    h += '<div class="rv" id="' + id + '" data-p="' + esc(e.p) + '"><div class="rv-cap"><div class="mini" data-bg="' + esc(caratula(e, 120)) + '"></div><div class="t"><div class="f">' + esc(e.n + '.' + e.ext) + '</div>' +
+      (e.trobada ? '<div class="e du">' + Tf('Dubtosa: sembla «{1}»', titol(e) + (e.any ? ' (' + e.any + ')' : '')) + '</div>' : '<div class="e no">' + T('No reconeguda') + '</div>') + '</div>' +
+      (e.trobada ? '<button onclick="confirmaActual(' + js(e.p) + ',\'' + id + '\')">' + T('Sí, és aquesta') + '</button>' : '') +
+      '<button onclick="obreTria(' + js(e.p) + ')">' + svg(IC.cerca) + ' ' + T('Busca') + '</button></div><div class="ops" onscroll="mandrosAviat()"><span class="gris">' + T('Buscant opcions…') + '</span></div></div>';
+  }
+  $('vista').innerHTML = h;
+  REV.cua = []; for (i = 0; i < l.length && i < 40; i++) REV.cua.push('rv' + i);
+  REV.gen = (REV.gen || 0) + 1;
+  revSeg(REV.gen);
+  setTimeout(mandros, 30);
+}
+function revSeg(gen) {
+  while (REV.actius < 2 && REV.cua.length) {
+    (function (id) {
+      var el = $(id); if (!el) return;
+      var p = el.getAttribute('data-p');
+      REV.actius++;
+      getJson(api('peli-opcions', { p: p }), function (d) {
+        REV.actius--; if (gen != REV.gen) return;
+        var o = el.getElementsByClassName('ops')[0];
+        if (o) o.innerHTML = opcionsHtml(d.opcions || [], p, id) || '<span class="gris">' + T('No he trobat cap opció. Busca-la pel títol.') + '</span>';
+        mandros(); revSeg(gen);
+      }, function () { REV.actius--; revSeg(gen); });
+    })(REV.cua.shift());
+  }
+}
+function opcionsHtml(l, p, id) {
+  var h = '';
+  for (var i = 0; i < l.length; i++) {
+    var o = l[i];
+    h += '<div class="op' + (i == 0 && o.punts >= 0.8 ? ' sug' : '') + '" onclick="triaOpcio(' + js(p) + ',' + js(o.id) + ',' + js(id || '') + ')"><div class="im"' + (o.poster ? ' data-bg="' + esc(api('imgx', { u: o.poster, m: 300 })) + '"' : '') + '><div class="lletra">' + (o.poster ? '' : esc(o.titol)) + '</div>' +
+      (i == 0 && o.punts >= 0.8 ? '<span class="sg">' + T('Suggerida') + '</span>' : '') + '</div><div class="nm">' + esc(o.titol) + '<small>' + esc((o.any || '') + (o.original && o.original != o.titol ? ' · ' + o.original : '') + ' · ' + o.fontNom) + '</small></div></div>';
+  }
+  return h;
+}
+function triaOpcio(p, idop, idEl) {
+  avis(T('Desant…'));
+  getJson(api('peli-tria', { p: p, id: idop }), function (d) { fet(p, d, idEl); }, function (st) { avis(st == 410 ? T('Torna a buscar-la, si us plau.') : T('No s\'ha pogut desar.')); });
+}
+function confirmaActual(p, idEl) { getJson(api('peli-tria', { p: p, id: 'actual' }), function (d) { fet(p, d, idEl); }, errXarxa(T('desar'))); }
+function fet(p, d, idEl) {
+  var e = P.tots[p];
+  if (e) { e.titol = d.titol; e.any = d.any; e.genere = d.genere; e.nota = d.nota; e.trobada = true; e.dubte = false; e.ok = true; e.fons = !!d.fons; e.poster = !!d.poster; }
+  avis(Tf('Desada: {1}', d.titol + (d.any ? ' (' + d.any + ')' : '')));
+  var el = idEl && $(idEl);
+  if (el) { el.style.opacity = '.35'; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600); }
+  if ($('tria').style.display == 'block') tancaTria();
+  if (FX.p == p) { FX.d = d; pintaFitxa(d, (ls('veient') || {})[p]); $('fx-poster').style.backgroundImage = bg(api('caratula', { p: p, m: 460, v: Date.now() })); }
+  pintaPest();
+}
+/* buscar a mà, amb resultats per triar */
+var TR = { p: null };
+function obreTria(p, text) {
+  TR.p = p;
+  $('tria').style.display = 'block'; $('tria').scrollTop = 0;
+  $('tr-q').value = text || '';
+  $('tr-l').innerHTML = '';
+  $('tr-nota').textContent = T('Buscant…');
+  carregaOpcions(text || '');
+}
+function busca() { carregaOpcions(retalla($('tr-q').value || '')); }
+function carregaOpcions(text) {
+  var p = TR.p;
+  $('tr-nota').textContent = T('Buscant…');
+  getJson(api('peli-opcions', { p: p, q: text }), function (d) {
+    if (TR.p != p) return;
+    if (!$('tr-q').value && d.cerca && d.cerca.length) $('tr-q').value = d.cerca[0];
+    $('tr-nota').textContent = Tf('Fitxer: {1}', d.fitxer || '') + ' · ' + T('Toca la correcta.');
+    $('tr-l').innerHTML = opcionsHtml(d.opcions || [], p, '') || '<div class="gris">' + T('No he trobat res. Prova amb el títol original o un altre nom.') + '</div>';
+    mandrosTria();
+  }, function () { $('tr-nota').textContent = T('No s\'ha pogut buscar.'); });
+}
+function mandrosTria() {
+  var els = $('tr-l').querySelectorAll('[data-bg]');
+  for (var i = 0; i < els.length; i++) { els[i].style.backgroundImage = bg(els[i].getAttribute('data-bg')); els[i].removeAttribute('data-bg'); }
+}
+function tancaTria() { TR.p = null; $('tria').style.display = 'none'; }
 
 /* ---------- Mode fitxers: per trobar a mà qualsevol vídeo ---------- */
 function obreCarpeta(cami) {
@@ -168,17 +356,21 @@ function obreCarpeta(cami) {
   }, function () { $('fitxers').innerHTML = '<div class="gris">' + T('No s\'ha pogut obrir la carpeta.') + '</div>'; });
 }
 
-/* ---------- Fitxa (com al Plex) ---------- */
-var FX = { p: null, d: {}, e: null };
-function fitxa(p) {
-  FX.p = p; FX.d = {}; FX.e = P.tots[p] || null;
+/* ---------- Fitxa ---------- */
+var FX = { p: null, d: {}, e: null, play: false };
+function fitxa(p, play) {
+  FX.p = p; FX.d = {}; FX.e = P.tots[p] || null; FX.play = !!play;
   var v = (ls('veient') || {})[p];
   $('fitxa').style.display = 'block';
   $('fitxa').scrollTop = 0;
   $('fx-fons').style.backgroundImage = 'none';
   $('fx-poster').style.backgroundImage = bg(api('caratula', { p: p, m: 460 }));
   pintaFitxa({ titol: FX.e ? titol(FX.e) : netejaTitol(p.split('/').pop()) }, v);
-  getJson(api('pelis/video', { p: p }), function (e) { if (FX.p == p) { FX.e = e; pintaFitxa(FX.d.titol ? FX.d : { titol: titol(e) }, v); } }, function () { });
+  getJson(api('pelis/video', { p: p }), function (e) {
+    if (FX.p != p) return;
+    FX.e = e; pintaFitxa(FX.d.titol ? FX.d : { titol: titol(e) }, v);
+    if (FX.play) { FX.play = false; reprodueix(); }
+  }, function () { });
   getJson(api('peli', { p: p }), function (d) {
     if (FX.p != p) return;
     FX.d = d;
@@ -187,6 +379,7 @@ function fitxa(p) {
     if (d.fons) { var u = api('caratula', { p: p, fons: 1, m: 1280 }), im = new Image(); im.onload = function () { if (FX.p == p) $('fx-fons').style.backgroundImage = bg(u); }; im.src = u; }
   }, function () { });
 }
+function reprodueixDirecte(p) { fitxa(p, true); }
 function pintaFitxa(d, v) {
   var e = FX.e && FX.e.p == FX.p ? FX.e : null, vlc = e && dins(EXT_VLC, e.ext), h = '<h1>' + esc(d.titol || '') + '</h1><div class="fx-dades">';
   if (d.any) h += '<span>' + esc(d.any) + '</span>';
@@ -200,29 +393,16 @@ function pintaFitxa(d, v) {
   h += '</div>';
   if (d.director) h += '<div class="gris" style="margin-top:12px">' + T('Direcció:') + ' ' + esc(d.director) + '</div>';
   if (d.avis) h += '<div class="fx-avis">' + esc(d.avis) + '</div>';
+  else if (d.fontNom && !d.confirmada && parseFloat(d.conf) < 0.75) h += '<div class="fx-avis">' + T('No estic segur que sigui aquesta. Confirma-ho o tria la correcta.') + '</div>';
   h += '<div class="fx-sin">' + esc(d.sinopsi || '') + '</div><div class="fx-bt">';
   if (!e) h += '<span class="gris">' + T('Buscant el fitxer…') + '</span>';
   else if (vlc) h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + T('Obrir a VLC') + '</button>';
   else if (v && v.d) h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + Tf('Continuar ({1})', durada(v.t)) + '</button><button onclick="reprodueix(true)">' + T('Des del principi') + '</button>';
   else h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + T('Reproduir') + '</button>';
-  h += '<button onclick="corregeix()">' + T('No és aquesta? Corregeix el títol') + '</button></div>';
+  if (d.fontNom && !d.confirmada && parseFloat(d.conf) < 0.75) h += '<button onclick="confirmaActual(FX.p)">' + T('Sí, és aquesta') + '</button>';
+  h += '<button onclick="obreTria(FX.p)">' + svg(IC.cerca) + ' ' + T('No és aquesta? Torna a buscar') + '</button></div>';
   if (e) h += '<div class="fx-fitxer">' + esc(e.p) + ' · ' + mida(e.mida) + (d.fontNom ? ' · ' + esc(d.fontNom) : '') + '</div>';
   $('fx-info').innerHTML = h;
-}
-function corregeix() {
-  var t = prompt(T('Títol de la pel·lícula (pots afegir l\'any al final, p. ex. «Interstellar 2014»):'), FX.d.titol || '');
-  if (t == null) return;
-  t = retalla(t);
-  var m = /^(.*?)\s*\(?((19|20)\d\d)\)?$/.exec(t), any = '';
-  if (m && m[1]) { t = m[1]; any = m[2]; }
-  var p = FX.p;
-  avis(T('Buscant…'));
-  getJson(api('peli-titol', { p: p, t: t, a: any }), function (d) {
-    if (FX.p != p) return;
-    FX.d = d; pintaFitxa(d, (ls('veient') || {})[p]);
-    $('fx-poster').style.backgroundImage = bg(api('caratula', { p: p, m: 460, v: Date.now() }));
-    carregaLlista();
-  }, errXarxa(T('buscar la pel·lícula')));
 }
 function reprodueix(desDelPrincipi) {
   var e = FX.e;
@@ -240,7 +420,7 @@ function reprodueix(desDelPrincipi) {
   if (desDelPrincipi) { var st = ls('veient') || {}; delete st[e.p]; ls('veient', st); }
   if (Casa) Casa.video({ id: e.p, nom: FX.d.titol || titol(e), s: FX.d.any || T('Pel·lícula'), u: url, poster: api('caratula', { p: e.p, m: 300 }), subs: subs, k: 'peli', desa: 'veient', desDelPrincipi: !!desDelPrincipi });
 }
-function tancaFitxa() { FX.p = null; $('fitxa').style.display = 'none'; pintaVeient(); }
+function tancaFitxa() { FX.p = null; $('fitxa').style.display = 'none'; pintaPest(); }
 window.casaObre = function (arg) { arg = decodeURIComponent(arg); if (arg.indexOf('v:') === 0) fitxa(arg.substring(2)); };
 window.casaMostra = function () { carregaLlista(); };
 iniciaMandros();

@@ -473,6 +473,14 @@ public static class Media
                         if ((res == null || res.Length == 0) && any != "") { r = JsonDe("https://api.themoviedb.org/3/search/movie?api_key=" + Uri.EscapeDataString(tmdb) + "&language=" + llengua + "&query=" + Uri.EscapeDataString(titol), 8000) as Dictionary<string, object>; res = r != null && r.ContainsKey("results") ? r["results"] as object[] : null; }
                         if (res == null || res.Length == 0) break;
                         Dictionary<string, object> p = res[0] as Dictionary<string, object>;
+                        double pm = -1;
+                        for (int ri = 0; ri < res.Length && ri < 6; ri++)
+                        {
+                            Dictionary<string, object> pr = res[ri] as Dictionary<string, object>;
+                            double sc = Math.Max(Semblanca(titol, S(pr, "title")), Semblanca(titol, S(pr, "original_title"))) - ri * 0.03;
+                            if (any != "" && S(pr, "release_date").StartsWith(any)) sc += 0.3;
+                            if (sc > pm) { pm = sc; p = pr; }
+                        }
                         m["titol"] = S(p, "title"); m["original"] = S(p, "original_title"); m["fontNom"] = "TMDB";
                         string data = S(p, "release_date"); if (data.Length >= 4) m["any"] = data.Substring(0, 4);
                         if (S(p, "overview") != "" && !m.ContainsKey("sinopsi")) m["sinopsi"] = S(p, "overview");
@@ -517,6 +525,214 @@ public static class Media
             if (cands.Count > 0) { m["titol"] = cands[0][0]; m["any"] = cands[0][1]; }
         }
         return m;
+    }
+
+    // ---------- Reconeixement: confianca, opcions i triar a ma ----------
+    static readonly Dictionary<string, string> GenTmdb = new Dictionary<string, string> {
+        {"28","Action"},{"12","Adventure"},{"16","Animation"},{"35","Comedy"},{"80","Crime"},{"99","Documentary"},{"18","Drama"},
+        {"10751","Family"},{"14","Fantasy"},{"36","History"},{"27","Horror"},{"10402","Music"},{"9648","Mystery"},{"10749","Romance"},
+        {"878","Science Fiction"},{"10770","TV Movie"},{"53","Thriller"},{"10752","War"},{"37","Western"} };
+
+    // 0..1: com s'assembla la fitxa trobada al nom del fitxer o carpeta
+    internal static double Confianca(List<string[]> cands, Dictionary<string, object> m)
+    {
+        if (m == null || !m.ContainsKey("fontNom")) return 0;
+        if (m.ContainsKey("confirmada")) return 1;
+        double millor = 0;
+        foreach (string[] c in cands)
+        {
+            double s = Math.Max(Semblanca(c[0], S(m, "titol")), S(m, "original") != "" ? Semblanca(c[0], S(m, "original")) : 0);
+            int a1, a2;
+            if (c[1] != "" && int.TryParse(c[1], out a1) && int.TryParse(S(m, "any"), out a2))
+            {
+                if (a1 == a2) s += 0.25; else if (Math.Abs(a1 - a2) <= 1) s += 0.1; else s -= 0.3;
+            }
+            if (s > millor) millor = s;
+        }
+        return Math.Max(0, Math.Min(1, millor));
+    }
+
+    // Per a la llista: la confianca d'una fitxa ja desada (es calcula un cop i es guarda)
+    internal static double ConfiancaEnCau(string rel, Dictionary<string, object> m)
+    {
+        double c;
+        if (m.ContainsKey("conf") && double.TryParse(S(m, "conf"), NumberStyles.Any, CultureInfo.InvariantCulture, out c)) return c;
+        if (!m.ContainsKey("fontNom")) return 0;
+        string full = CasaServidor.Ruta("pelis", rel);
+        if (full == null) return 1;
+        c = Confianca(CandidatsAmbTitol(rel, full), m);
+        lock (lk) { m["conf"] = Math.Round(c, 2).ToString(CultureInfo.InvariantCulture); }
+        return c;
+    }
+
+    static List<string[]> CandidatsAmbTitol(string rel, string full)
+    {
+        List<string[]> cands = Candidats(full);
+        object tc;
+        lock (lk) { Titols().TryGetValue(rel, out tc); }
+        Dictionary<string, object> tcd = tc as Dictionary<string, object>;
+        if (tcd != null && S(tcd, "t") != "") cands.Insert(0, new string[] { S(tcd, "t"), S(tcd, "a") });
+        return cands;
+    }
+
+    static readonly Dictionary<string, Dictionary<string, object>> opcionsCau = new Dictionary<string, Dictionary<string, object>>();
+
+    static void AfegeixOpcio(List<Dictionary<string, object>> l, Dictionary<string, object> o, string titol, string any)
+    {
+        if (S(o, "titol") == "") return;
+        double s = Math.Max(Semblanca(titol, S(o, "titol")), S(o, "original") != "" ? Semblanca(titol, S(o, "original")) : 0);
+        int a1, a2;
+        if (any != "" && int.TryParse(any, out a1) && int.TryParse(S(o, "any"), out a2)) { if (a1 == a2) s += 0.3; else if (Math.Abs(a1 - a2) <= 1) s += 0.15; }
+        if (S(o, "poster") != "") s += 0.05;
+        string clau = Pla(S(o, "titol")) + "|" + S(o, "any");
+        foreach (Dictionary<string, object> x in l)
+            if (Pla(S(x, "titol")) + "|" + S(x, "any") == clau)
+            {
+                // la mateixa pel.licula des d'una altra font: completa el que falti
+                foreach (string k in new string[] { "poster", "fons", "sinopsi", "nota", "genere", "minuts", "edat", "original" }) if (S(x, k) == "" && S(o, k) != "") x[k] = o[k];
+                return;
+            }
+        o["punts"] = Math.Round(s, 3);
+        l.Add(o);
+        lock (opcionsCau) opcionsCau[S(o, "id")] = o;
+    }
+
+    // Les pel.licules que s'assemblen a un titol, de totes les fonts, per triar-ne una
+    internal static List<Dictionary<string, object>> Opcions(List<string[]> cands)
+    {
+        List<Dictionary<string, object>> l = new List<Dictionary<string, object>>();
+        if (!Internet()) return l;
+        string tmdb = A("tmdb", ""), ll = Llengua();
+        int n = 0;
+        foreach (string[] c in cands)
+        {
+            if (++n > 2) break;
+            string titol = c[0], any = c[1];
+            if (titol.Length < 2) continue;
+            if (tmdb != "")
+            {
+                try
+                {
+                    Dictionary<string, object> r = JsonDe("https://api.themoviedb.org/3/search/movie?api_key=" + Uri.EscapeDataString(tmdb) + "&language=" + ll + "-" + ll.ToUpperInvariant() + "&query=" + Uri.EscapeDataString(titol), 8000) as Dictionary<string, object>;
+                    object[] res = r != null && r.ContainsKey("results") ? r["results"] as object[] : null;
+                    if (res != null)
+                        for (int i = 0; i < res.Length && i < 10; i++)
+                        {
+                            Dictionary<string, object> p = res[i] as Dictionary<string, object>, o = new Dictionary<string, object>();
+                            o["id"] = "tmdb:" + S(p, "id"); o["fontNom"] = "TMDB";
+                            o["titol"] = S(p, "title"); o["original"] = S(p, "original_title");
+                            if (S(p, "release_date").Length >= 4) o["any"] = S(p, "release_date").Substring(0, 4);
+                            if (S(p, "overview") != "") o["sinopsi"] = S(p, "overview");
+                            if (S(p, "poster_path") != "") o["poster"] = "https://image.tmdb.org/t/p/w500" + S(p, "poster_path");
+                            if (S(p, "backdrop_path") != "") o["fons"] = "https://image.tmdb.org/t/p/w1280" + S(p, "backdrop_path");
+                            double nota; if (double.TryParse(S(p, "vote_average"), NumberStyles.Any, CultureInfo.InvariantCulture, out nota) && nota > 0) o["nota"] = Math.Round(nota, 1).ToString(CultureInfo.InvariantCulture);
+                            object[] gs = p.ContainsKey("genre_ids") ? p["genre_ids"] as object[] : null;
+                            if (gs != null) { List<string> g = new List<string>(); foreach (object x in gs) { string gn; if (x != null && GenTmdb.TryGetValue(x.ToString(), out gn)) g.Add(gn); } o["genere"] = string.Join(", ", g.ToArray()); }
+                            AfegeixOpcio(l, o, titol, any);
+                        }
+                }
+                catch { }
+            }
+            try
+            {
+                Dictionary<string, object> r = JsonDe("https://itunes.apple.com/search?media=movie&entity=movie&limit=10&country=" + A("paisItunes", "es") + "&term=" + Uri.EscapeDataString(titol), 8000) as Dictionary<string, object>;
+                object[] res = r != null && r.ContainsKey("results") ? r["results"] as object[] : null;
+                if (res != null)
+                    foreach (object x in res)
+                    {
+                        Dictionary<string, object> p = x as Dictionary<string, object>, o = new Dictionary<string, object>();
+                        o["id"] = "itunes:" + S(p, "trackId"); o["fontNom"] = "iTunes";
+                        o["titol"] = S(p, "trackName");
+                        if (S(p, "releaseDate").Length >= 4) o["any"] = S(p, "releaseDate").Substring(0, 4);
+                        if (S(p, "longDescription") != "") o["sinopsi"] = S(p, "longDescription");
+                        if (S(p, "artworkUrl100") != "") o["poster"] = S(p, "artworkUrl100").Replace("100x100bb", "600x600bb");
+                        o["genere"] = S(p, "primaryGenreName"); o["edat"] = S(p, "contentAdvisoryRating");
+                        long ms; if (long.TryParse(S(p, "trackTimeMillis"), out ms)) o["minuts"] = (ms / 60000).ToString();
+                        AfegeixOpcio(l, o, titol, any);
+                    }
+            }
+            catch { }
+            try
+            {
+                string wl = ll == "en" ? "en" : ll;
+                string paraula = wl == "ca" ? "pel\u00b7l\u00edcula" : wl == "es" ? "pel\u00edcula" : wl == "pt" ? "filme" : "film";
+                Dictionary<string, object> r = JsonDe("https://" + wl + ".wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=4&srsearch=" + Uri.EscapeDataString(titol + " " + any + " " + paraula), 8000) as Dictionary<string, object>;
+                Dictionary<string, object> qd = r != null && r.ContainsKey("query") ? r["query"] as Dictionary<string, object> : null;
+                object[] res = qd != null && qd.ContainsKey("search") ? qd["search"] as object[] : null;
+                if (res != null)
+                    foreach (object x in res)
+                    {
+                        string t = S(x as Dictionary<string, object>, "title");
+                        if (!Regex.IsMatch(t, @"\((film|pel|filme|movie)", RegexOptions.IgnoreCase) && Semblanca(titol, t) < 0.5) continue;
+                        Dictionary<string, object> d = JsonDe("https://" + wl + ".wikipedia.org/api/rest_v1/page/summary/" + Uri.EscapeDataString(t.Replace(' ', '_')), 8000) as Dictionary<string, object>;
+                        if (d == null || S(d, "type") == "disambiguation") continue;
+                        Dictionary<string, object> o = new Dictionary<string, object>();
+                        o["id"] = "wiki:" + wl + ":" + t; o["fontNom"] = "Viquip\u00e8dia";
+                        o["titol"] = Regex.Replace(t, @"\s*\([^)]*\)\s*$", "");
+                        Match ma = Regex.Match(t + " " + S(d, "description"), @"(19[2-9]\d|20[0-4]\d)"); if (ma.Success) o["any"] = ma.Value;
+                        if (S(d, "extract") != "") o["sinopsi"] = S(d, "extract");
+                        Dictionary<string, object> img = d.ContainsKey("originalimage") ? d["originalimage"] as Dictionary<string, object> : (d.ContainsKey("thumbnail") ? d["thumbnail"] as Dictionary<string, object> : null);
+                        if (S(img, "source") != "") o["poster"] = S(img, "source");
+                        AfegeixOpcio(l, o, titol, any);
+                    }
+            }
+            catch { }
+        }
+        l.Sort(delegate (Dictionary<string, object> a, Dictionary<string, object> b) { return Convert.ToDouble(b["punts"]).CompareTo(Convert.ToDouble(a["punts"])); });
+        if (l.Count > 12) l.RemoveRange(12, l.Count - 12);
+        return l;
+    }
+
+    // Desa l'opcio triada a ma: d'ara endavant aquesta pel.licula fa servir aquesta fitxa
+    internal static Dictionary<string, object> Tria(string rel, string id)
+    {
+        Dictionary<string, object> o;
+        if (id == "actual")
+        {
+            // "si, es aquesta": la fitxa que ja tenia queda confirmada
+            o = Fitxa(rel);
+            if (o == null || !o.ContainsKey("fontNom")) return null;
+            o = new Dictionary<string, object>(o);
+            foreach (string k in new string[] { "font", "conf", "confirmada", "avis", "error", "imdb", "rotten", "director" }) o.Remove(k);
+        }
+        else lock (opcionsCau) opcionsCau.TryGetValue(id, out o);
+        if (o == null) return null;
+        Dictionary<string, object> f = new Dictionary<string, object>();
+        foreach (KeyValuePair<string, object> kv in o) if (kv.Key != "punts" && kv.Key != "id") f[kv.Key] = kv.Value;
+        lock (lk)
+        {
+            Dictionary<string, object> t = Titols();
+            Dictionary<string, object> x = new Dictionary<string, object>();
+            x["t"] = S(o, "titol"); x["a"] = S(o, "any"); x["tria"] = f;
+            t[rel] = x;
+            File.WriteAllText(FitxerTitols, new JavaScriptSerializer().Serialize(t), new UTF8Encoding(false));
+            CarregaMetes();
+            metes.Remove(rel);
+            noTrobades.Clear();
+            DesaMetes();
+        }
+        return Fitxa(rel);
+    }
+
+    // Afegeix la nota d'IMDb i el director (si hi ha clau d'OMDb)
+    static void DeOmdb(Dictionary<string, object> m)
+    {
+        try
+        {
+            string omdb = A("omdb", "");
+            if (omdb == "" || !m.ContainsKey("fontNom") || !Internet()) return;
+            string t = m.ContainsKey("original") && S(m, "original") != "" ? S(m, "original") : S(m, "titol");
+            Dictionary<string, object> o = JsonDe("https://www.omdbapi.com/?apikey=" + Uri.EscapeDataString(omdb) + "&t=" + Uri.EscapeDataString(t) + (S(m, "any") != "" ? "&y=" + S(m, "any") : ""), 8000) as Dictionary<string, object>;
+            if (o == null || S(o, "Response") != "True") return;
+            if (S(o, "imdbRating") != "N/A") m["imdb"] = S(o, "imdbRating");
+            object[] rs = o.ContainsKey("Ratings") ? o["Ratings"] as object[] : null;
+            if (rs != null) foreach (object x in rs) { Dictionary<string, object> rr = x as Dictionary<string, object>; if (S(rr, "Source") == "Rotten Tomatoes") m["rotten"] = S(rr, "Value"); }
+            if (!m.ContainsKey("poster") && S(o, "Poster").StartsWith("http")) m["poster"] = S(o, "Poster");
+            if (!m.ContainsKey("genere") || S(m, "genere") == "") m["genere"] = S(o, "Genre");
+            if (!m.ContainsKey("minuts") || S(m, "minuts") == "") m["minuts"] = S(o, "Runtime").Replace(" min", "");
+            m["director"] = S(o, "Director");
+        }
+        catch { }
     }
 
     static readonly Dictionary<string, DateTime> noTrobades = new Dictionary<string, DateTime>();
@@ -580,8 +796,23 @@ public static class Media
         object tc;
         lock (lk) { Titols().TryGetValue(rel, out tc); }
         Dictionary<string, object> tcd = tc as Dictionary<string, object>;
-        if (tcd != null) cands.Insert(0, new string[] { S(tcd, "t"), S(tcd, "a") });
-        Dictionary<string, object> m = CercaPeli(cands);
+        Dictionary<string, object> m;
+        Dictionary<string, object> triada = tcd != null && tcd.ContainsKey("tria") ? tcd["tria"] as Dictionary<string, object> : null;
+        if (triada != null)
+        {
+            // triada a ma entre les opcions: es fa servir tal qual
+            m = new Dictionary<string, object>(triada);
+            m["confirmada"] = true;
+            DeOmdb(m);
+        }
+        else
+        {
+            if (tcd != null) cands.Insert(0, new string[] { S(tcd, "t"), S(tcd, "a") });
+            m = CercaPeli(cands);
+            // un titol escrit a ma i trobat compta com a confirmat
+            if (tcd != null && m.ContainsKey("fontNom") && Math.Max(Semblanca(S(tcd, "t"), S(m, "titol")), Semblanca(S(tcd, "t"), S(m, "original"))) >= 0.6) m["confirmada"] = true;
+        }
+        m["conf"] = Math.Round(Confianca(cands, m), 2).ToString(CultureInfo.InvariantCulture);
         m["font"] = font;
         lock (lk)
         {
@@ -662,6 +893,31 @@ public static class Media
                         CorregeixTitol(CasaServidor.Q(q, "p"), CasaServidor.Q(q, "t").Trim(), CasaServidor.Q(q, "a").Trim());
                         Dictionary<string, object> fx = Fitxa(CasaServidor.Q(q, "p"));
                         if (fx == null) { CasaServidor.Error(res, 404, "No trobat"); return; }
+                        CasaServidor.Json(res, fx);
+                        return;
+                    }
+                case "peli-opcions":
+                    {
+                        string rel = CasaServidor.Q(q, "p"), full = CasaServidor.Ruta("pelis", rel), txt = CasaServidor.Q(q, "q").Trim();
+                        if (full == null) { CasaServidor.Error(res, 404, "No trobat"); return; }
+                        List<string[]> cands;
+                        if (txt != "")
+                        {
+                            Match ma = Regex.Match(txt, @"^(.*?)\s*\(?((?:19|20)\d\d)\)?$");
+                            cands = new List<string[]>();
+                            cands.Add(ma.Success && ma.Groups[1].Value.Trim() != "" ? new string[] { ma.Groups[1].Value.Trim(), ma.Groups[2].Value } : new string[] { txt, "" });
+                        }
+                        else cands = CandidatsAmbTitol(rel, full);
+                        Dictionary<string, object> o = new Dictionary<string, object>();
+                        List<object> cs = new List<object>(); foreach (string[] c in cands) cs.Add(c[0] + (c[1] != "" ? " " + c[1] : ""));
+                        o["cerca"] = cs; o["opcions"] = Opcions(cands); o["fitxer"] = Path.GetFileName(full.TrimEnd('\\', '/'));
+                        CasaServidor.Json(res, o);
+                        return;
+                    }
+                case "peli-tria":
+                    {
+                        Dictionary<string, object> fx = Tria(CasaServidor.Q(q, "p"), CasaServidor.Q(q, "id"));
+                        if (fx == null) { CasaServidor.Error(res, 410, "Torna a buscar"); return; }
                         CasaServidor.Json(res, fx);
                         return;
                     }

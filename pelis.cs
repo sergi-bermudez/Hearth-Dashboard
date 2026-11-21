@@ -225,6 +225,9 @@ public static class Pelis
             foreach (string k in new string[] { "titol", "any", "genere", "nota", "imdb", "fontNom" }) { object v; if (m.TryGetValue(k, out v) && v != null && v.ToString() != "") e[k] = v; }
             e["poster"] = m.ContainsKey("poster");
             e["trobada"] = m.ContainsKey("fontNom");
+            if (m.ContainsKey("confirmada")) e["ok"] = true;
+            else if (m.ContainsKey("fontNom") && Media.ConfiancaEnCau(rel, m) < 0.75) e["dubte"] = true;
+            if (m.ContainsKey("fons")) e["fons"] = true;
         }
         if (ambSubs) { try { e["subs"] = Subtitols(arrel, new FileInfo(CasaServidor.Ruta("pelis", rel))); } catch { } }
         return e;

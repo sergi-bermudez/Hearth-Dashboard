@@ -261,12 +261,12 @@ var MAND = { cua: [], actius: 0, t: null };
 function mandros() {
   var sc = $('pag');
   if (!sc) return;
-  var h = sc.clientHeight || window.innerHeight, els = sc.querySelectorAll('[data-bg]');
+  var h = sc.clientHeight || window.innerHeight, w = window.innerWidth || 1024, els = sc.querySelectorAll('[data-bg]');
   for (var i = 0; i < els.length; i++) {
     var e = els[i];
     if (e.getAttribute('data-estat')) continue;
     var r = e.getBoundingClientRect();
-    if (r.bottom > -300 && r.top < h + 500 && r.width > 0) { e.setAttribute('data-estat', 'cua'); MAND.cua.push(e); }
+    if (r.bottom > -300 && r.top < h + 500 && r.width > 0 && r.right > -300 && r.left < w + 600) { e.setAttribute('data-estat', 'cua'); MAND.cua.push(e); }
   }
   mandSeg();
 }
