@@ -1879,12 +1879,15 @@ function posaAvis(u, errs) {
 function obreAvis() { if (AVIS.sec && !INF.actiu) obre('config', AVIS.sec); else obreConfig(); }
 setTimeout(comprovaAvisos, 15000);
 setInterval(comprovaAvisos, 30 * 60 * 1000);
+var TELE_AMAGA = { compra: 1, docs: 1, missatges: 1, webs: 1, podcasts: 0 };
 function permesa(id) {
   /* Spotify i WhatsApp estan desactivats fins que s'activen a Configuració */
   if (id == 'spotify' && !A.ajustos.spotify) return false;
   if (id == 'futbol' && A.ajustos.futbol === false) return false;
   if (id == 'missatges' && !A.ajustos.whatsapp) return false;
   if (id == 'casa' && !A.ajustos.tuya) return false;
+  /* a la tele només el que té sentit amb el comandament: escoltar, mirar, fotos i la casa */
+  if (modeTele() && TELE_AMAGA[id]) return false;
   return !INF.actiu || id == 'dash' || INF.apps.indexOf(id) >= 0;
 }
 function carregaInfantil() {
