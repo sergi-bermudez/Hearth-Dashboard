@@ -1,7 +1,7 @@
 // Hearth · lector de catàlegs de supermercat (s'executa dins l'Edge amagat, a la pàgina de la botiga).
 // No depèn de classes concretes de cap web: busca enllaços a fitxes de producte i, al voltant, el preu.
 (function () {
-  if (window.__bt && window.__bt.v === 5) return;
+  if (window.__bt && window.__bt.v === 6) return;
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   // Fitxa de producte: /produto/…, /product/…, /p/… o adreces que acaben en un codi (…-544184.html).
   // "/produtos/…" (plural) sol ser una categoria, no un producte.
@@ -114,6 +114,7 @@
       out.push({
         n: nom, u: h, img: im, p: pr.p, pv: pr.pv, pu: pr.pu, uu: pr.uu,
         q: qm ? qm[1].trim() : '', m: marca ? txt(marca) : '',
+        g: pr.granel || (pr.pu && pr.p == pr.pu && /^(kg|kilo)/i.test(pr.uu) && /granel|\/\s*kg\b|€\s*\/\s*kg|kg\s*$/i.test(s.split('\n').slice(0, 6).join(' ')) && !/emb\.|\d+\s*(g|gr)\b/i.test(s)) ? 1 : 0,
         esg: /indispon[ií]vel|esgotado|sem stock/i.test(s) ? 1 : 0,
         promo: pr.pv > 0 || /promo|desconto|poupe|leve \d|oferta|\-\d+\s*%/i.test(s) ? 1 : 0
       });
@@ -193,5 +194,5 @@
     return { url: location.href, titol: document.title, n: productes().length };
   }
 
-  window.__bt = { v: 5, afegeix: afegeix, cistell: cistell, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
+  window.__bt = { v: 6, afegeix: afegeix, cistell: cistell, sfcc: () => !!document.querySelector('script[src*="demandware"]'), productes: productes, enllacos: enllacos, mes: mes, llest: llest };
 })();
