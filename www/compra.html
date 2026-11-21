@@ -42,8 +42,9 @@ html,body{height:100%;overflow:hidden}
 .t .qt{position:absolute;left:8px;top:64px;min-width:28px;height:28px;line-height:28px;border-radius:14px;background:#30d158;color:#04210f;font-weight:700;text-align:center;font-size:15px;padding:0 6px}
 .t.esg{opacity:.5}
 .t .qc{position:absolute;left:6px;right:40px;top:58px;height:36px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;background:rgba(20,20,22,.88);border-radius:18px;border:1.5px solid #30d158}
-.t .qc b{width:40px;height:34px;line-height:32px;text-align:center;font-size:24px;font-weight:400;color:#30d158;-webkit-flex:none;flex:none}
-.t .qc span{-webkit-flex:1;flex:1;text-align:center;font-weight:700;font-size:17px;color:#fff}
+.t .qc b{width:34px;height:34px;line-height:32px;text-align:center;font-size:24px;font-weight:400;color:#30d158;-webkit-flex:none;flex:none}
+.t .qc.pes span{text-decoration:underline dotted;text-underline-offset:3px}
+.t .qc span{-webkit-flex:1;flex:1;min-width:0;text-align:center;font-weight:700;font-size:14px;color:#fff;white-space:nowrap;overflow:hidden}
 .t.lliure .em{font-size:30px}
 .buit{padding:30px 10px;color:#8d95a1;text-align:center}
 #dre .cap h2{margin:0;font-size:22px}
@@ -270,12 +271,12 @@ function esFav(k) { for (var i = 0; i < L.fav.length; i++) if (L.fav[i].k == k) 
 function euro(v) { return v ? (Math.round(v * 100) / 100).toFixed(2).replace('.', ',') + ' €' : ''; }
 function sensePla(s) { return String(s || '').toLowerCase().replace(/[àáâã]/g, 'a').replace(/[èéê]/g, 'e').replace(/[ìíï]/g, 'i').replace(/[òóôõ]/g, 'o').replace(/[ùúü]/g, 'u').replace(/ç/g, 'c'); }
 function htmlTile(p, i) {
-  var k = clauP(p), h = '<div class="t' + (p.esg ? ' esg' : '') + (p.cc ? ' conc' : p.u ? '' : ' lliure') + '" data-k="' + esc(k) + '"' + (p.cc ? ' data-q="' + esc(p.cq) + '"' : '') + ' onclick="tocaTile(' + i + ')" oncontextmenu="treuTile(' + i + ');return false" ontouchstart="premTile(' + i + ')" ontouchend="deixaTile()" ontouchmove="deixaTile()">';
+  var k = clauP(p), h = '<div class="t' + (p.esg ? ' esg' : '') + (p.cc ? ' conc' : p.u ? '' : ' lliure') + '" data-k="' + esc(k) + '"' + (p.cc ? ' data-q="' + esc(p.cq) + '" data-cat="' + esc(p.cat || '') + '"' : '') + ' onclick="tocaTile(' + i + ')" oncontextmenu="treuTile(' + i + ');return false" ontouchstart="premTile(' + i + ')" ontouchend="deixaTile()" ontouchmove="deixaTile()">';
   h += p.img ? '<div class="im" style="background-image:' + bg(imgx(p.img, 200)) + '"></div>' : '<div class="em">' + (p.e || '🛒') + '</div>';
   if (p.b) h += '<span class="bt" style="background:' + colorBot(p.b) + '">' + esc(nomBot(p.b) || p.b) + '</span>';
   if (p.pv && p.pv > p.p) h += '<span class="dc">-' + Math.round((1 - p.p / p.pv) * 100) + '%</span>';
   if (!p.nou) h += '<span class="st" onclick="event.stopPropagation();commutaFav(' + i + ')">' + (esFav(k) ? '★' : '☆') + '</span>';
-  h += '<span class="qt" style="display:none"></span><div class="qc" style="display:none"><b onclick="event.stopPropagation();treuTile(' + i + ')">−</b><span></span><b onclick="event.stopPropagation();tocaTile(' + i + ')">+</b></div>';
+  h += '<span class="qt" style="display:none"></span><div class="qc" style="display:none"><b onclick="event.stopPropagation();treuTile(' + i + ')">−</b><span onclick="event.stopPropagation();modeTile(' + i + ')"></span><b onclick="event.stopPropagation();tocaTile(' + i + ')">+</b></div>';
   h += '<div class="tx"><div class="nm">' + esc(p.n) + '</div>';
   if (p.cc) h += '<div class="ds"></div>';
   else {
@@ -334,7 +335,7 @@ function pintaDes() {
     if (!d) continue;
     if (!m) d.innerHTML = '';
     else if (!b) d.innerHTML = '<span class="gris">' + T('No el trobo a les botigues') + '</span>';
-    else d.innerHTML = T('des de') + ' <b>' + euro(b.p) + '</b> · <span style="color:' + colorBot(b.b) + '">' + esc(nomBot(b.b)) + '</span>';
+    else d.innerHTML = T('des de') + ' <b>' + euro(b.p) + (b.g ? '/kg' : b.q ? '</b> <span class="gris">' + esc(b.q) + '</span><b>' : '') + '</b> · <span style="color:' + colorBot(b.b) + '">' + esc(nomBot(b.b)) + '</span>';
   }
 }
 function marcaQuantitats() {
@@ -345,7 +346,7 @@ function marcaQuantitats() {
   for (i = 0; i < ts.length; i++) {
     var n = q[ts[i].getAttribute('data-k')], b = ts[i].querySelector('.qt'), c = ts[i].querySelector('.qc');
     b.style.display = 'none';
-    if (c) { c.style.display = n ? '' : 'none'; c.children[1].textContent = n ? String(Math.round(n * 100) / 100).replace('.', ',') + (kg[ts[i].getAttribute('data-k')] ? ' kg' : ' ' + T('un')) : ''; }
+    if (c) { c.style.display = n ? '' : 'none'; c.className = 'qc' + (PES_CATS[ts[i].getAttribute('data-cat')] ? ' pes' : ''); c.children[1].textContent = n ? String(Math.round(n * 100) / 100).replace('.', ',') + (kg[ts[i].getAttribute('data-k')] ? ' kg' : ' ' + T('un')) : ''; }
     else { b.style.display = n ? '' : 'none'; b.textContent = n || ''; }
   }
 }
@@ -353,6 +354,15 @@ function marcaQuantitats() {
 var PREM = { t: null, fet: false };
 function premTile(i) { deixaTile(); PREM.fet = false; PREM.t = setTimeout(function () { PREM.fet = true; treuTile(i); }, 550); }
 function deixaTile() { if (PREM.t) { clearTimeout(PREM.t); PREM.t = null; } }
+/* Al botó del producte: tocar la quantitat canvia entre unitats i kg (fruita, verdura, carn, peix) */
+function modeTile(i) {
+  var p = VIS[i]; if (!p) return;
+  var k = clauP(p);
+  for (var j = 0; j < L.items.length; j++) if (L.items[j].k == k && !L.items[j].fet) {
+    if (esPes(L.items[j])) canviaMode(L.items[j].id); else tocaTile(i);
+    return;
+  }
+}
 function treuTile(i) {
   var p = VIS[i]; if (!p) return;
   var k = clauP(p);
