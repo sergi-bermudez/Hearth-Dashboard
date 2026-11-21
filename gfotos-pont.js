@@ -68,9 +68,10 @@ if (!window.__gf) (function () {
       return p;
     };
   } catch (e) {}
-  const RE_FOTO = /\["([A-Za-z0-9_-]{25,})",\["(https:\/\/lh3\.googleusercontent\.com\/[^"\\]+)[^"]*",\d+,\d+[^\]]*\],(\d{13})/g;
+  // Adreces d'imatge: abans lh3.googleusercontent.com, ara també photos.fife.usercontent.google.com
+  const RE_FOTO = /\["([A-Za-z0-9_-]{25,})",\["(https:\/\/[a-z0-9.-]*(?:googleusercontent\.com|usercontent\.google\.com)\/[^"\\]+)[^"]*",\d+,\d+[^"]{0,300}?\],(1\d{12})/g;
   // Més tolerant: un identificador de Google Fotos (AF1Qip…) seguit d'una adreça d'imatge i, a prop, una data (ms)
-  const RE_FOTO2 = /"(AF1Qip[A-Za-z0-9_-]{20,})",\[?"(https:\/\/[a-z0-9.-]*googleusercontent\.com\/[^"\\]+)/g;
+  const RE_FOTO2 = /"(AF1Qip[A-Za-z0-9_-]{20,})",\[?"(https:\/\/[a-z0-9.-]*(?:googleusercontent\.com|usercontent\.google\.com)\/[^"\\]+)/g;
   function deText(txt, l, ids) {
     // El text pot venir escapat una o dues vegades (JSON dins de JSON)
     let t = txt;
@@ -119,7 +120,7 @@ if (!window.__gf) (function () {
       const tots = Array.from(document.scripts).map((x) => x.textContent || '').join('\n') + capturades.join('\n');
       const ai = tots.indexOf('AF1Qip');
       const diag = { url: location.href, titol: document.title, enllacos: enllacos.length, inicials: ini.length, xarxa: xarxa.length, respostes: capturades.length, trobades: r.length,
-        imatges: document.querySelectorAll('img[src*="googleusercontent"], [style*="googleusercontent"]').length,
+        imatges: document.querySelectorAll('img[src*="usercontent"], [style*="usercontent"]').length,
         ids: (tots.match(/AF1Qip[A-Za-z0-9_-]{20,}/g) || []).length, prop: ai >= 0 ? tots.substring(ai - 40, ai + 400) : '',
         mostra: enllacos[0] ? enllacos[0].outerHTML.substring(0, 600) : (document.body ? document.body.innerHTML.substring(0, 1500) : '') };
       return { items: r, diag: diag };
@@ -143,7 +144,7 @@ if (!window.__gf) (function () {
             const m = st && st.match(/url\(["']?([^"')]+)["']?\)/);
             const src = el.tagName === 'IMG' ? el.src : '';
             const u = bgl || (m && m[1]) || src;
-            if (u && /googleusercontent\.com/.test(u)) { url = u; break; }
+            if (u && /googleusercontent\.com|usercontent\.google\.com/.test(u)) { url = u; break; }
           }
           if (!url) return;
           const label = a.getAttribute('aria-label') || '';
