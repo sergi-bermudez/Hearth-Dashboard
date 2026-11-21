@@ -800,3 +800,6 @@ TR.fr["Aturant… acabarà la pàgina que està llegint."]="Arrêt… il termine
 TR.fr["Aturat"]="Arrêté";
 TR.fr["Toca per canviar entre peces i kg"]="Touchez pour passer de pièces à kg";
 TR.fr["peces"]="pièces";
+TR.fr["un"]="pc";
+TR.fr["toca: unitats"]="touchez : pièces";
+TR.fr["toca: kg"]="touchez : kg";

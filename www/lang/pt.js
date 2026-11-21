@@ -800,3 +800,6 @@ TR.pt["Aturant… acabarà la pàgina que està llegint."]="A parar… acaba a p
 TR.pt["Aturat"]="Parado";
 TR.pt["Toca per canviar entre peces i kg"]="Toca para mudar entre peças e kg";
 TR.pt["peces"]="peças";
+TR.pt["un"]="un";
+TR.pt["toca: unitats"]="toca: unidades";
+TR.pt["toca: kg"]="toca: kg";

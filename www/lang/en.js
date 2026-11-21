@@ -800,3 +800,6 @@ TR.en["Aturant… acabarà la pàgina que està llegint."]="Stopping… it will 
 TR.en["Aturat"]="Stopped";
 TR.en["Toca per canviar entre peces i kg"]="Tap to switch between pieces and kg";
 TR.en["peces"]="pieces";
+TR.en["un"]="pcs";
+TR.en["toca: unitats"]="tap: pieces";
+TR.en["toca: kg"]="tap: kg";

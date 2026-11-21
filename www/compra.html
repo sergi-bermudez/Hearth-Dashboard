@@ -59,7 +59,7 @@ html,body{height:100%;overflow:hidden}
 .ci.fet .tx b{text-decoration:line-through;color:#8d95a1}
 .ci .qb{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex:none;flex:none;margin-right:6px}
 .ci .qb button{width:34px;height:34px;padding:0;border-radius:17px;font-size:18px;line-height:34px;background:#2c2c2e}
-.ci .qb span{min-width:24px;text-align:center;font-weight:700}
+.ci .qb span{min-width:44px;text-align:center;font-weight:700;font-size:14px}
 .ci .qb span.kg{min-width:58px;font-size:14px;cursor:pointer;text-decoration:underline dotted;line-height:1.1}
 .ci .qb span.kg small{display:block;font-size:10px;font-weight:400;color:#8d95a1;text-decoration:none}
 .sec{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#8d95a1;margin:14px 4px 6px}
@@ -345,7 +345,7 @@ function marcaQuantitats() {
   for (i = 0; i < ts.length; i++) {
     var n = q[ts[i].getAttribute('data-k')], b = ts[i].querySelector('.qt'), c = ts[i].querySelector('.qc');
     b.style.display = 'none';
-    if (c) { c.style.display = n ? '' : 'none'; c.children[1].textContent = n ? String(Math.round(n * 100) / 100).replace('.', ',') + (kg[ts[i].getAttribute('data-k')] ? ' kg' : '') : ''; }
+    if (c) { c.style.display = n ? '' : 'none'; c.children[1].textContent = n ? String(Math.round(n * 100) / 100).replace('.', ',') + (kg[ts[i].getAttribute('data-k')] ? ' kg' : ' ' + T('un')) : ''; }
     else { b.style.display = n ? '' : 'none'; b.textContent = n || ''; }
   }
 }
@@ -433,7 +433,7 @@ function preuItem(it, o) {
   if (it.mode == 'kg') return o.pu && /kg/i.test(o.uu || '') ? o.pu * q : 0;
   return o.p * q;
 }
-function qText(it) { var q = it.q || 1; return enKg(it) ? kgTxt(q) : String(q); }
+function qText(it) { var q = it.q || 1; return enKg(it) ? kgTxt(q) : q + ' ' + T('un'); }
 function canviaMode(id) {
   var i = troba(id); if (i < 0 || !esPes(L.items[i])) return;
   var it = L.items[i], o = opcio(it), w = pesUnitat(o) || 0.25;
@@ -463,7 +463,7 @@ function htmlItem(it) {
   else if (it.cq && MILL[it.cq]) sub = '<small>' + T('No el trobo a les botigues') + '</small>';
   return '<div class="ci' + (it.fet ? ' fet' : '') + '"><div class="ck" onclick="commuta(\'' + it.id + '\')"><i></i></div>' +
     '<div class="tx" onclick="' + (it.cq && !it.fet ? 'opcions(\'' + it.id + '\')' : 'commuta(\'' + it.id + '\')') + '"><b>' + (it.e ? it.e + ' ' : '') + esc(it.t) + '</b>' + sub + '</div>' +
-    (it.fet ? '' : '<div class="qb"><button onclick="quant(\'' + it.id + '\',-1)">−</button><span' + (esPes(it) ? ' class="kg" onclick="canviaMode(\'' + it.id + '\')" title="' + esc(T('Toca per canviar entre peces i kg')) + '"' : '') + '>' + qText(it) + (esPes(it) && !enKg(it) ? '<small>' + T('peces') + '</small>' : '') + '</span><button onclick="quant(\'' + it.id + '\',1)">+</button></div>') + '</div>';
+    (it.fet ? '' : '<div class="qb"><button onclick="quant(\'' + it.id + '\',-1)">−</button><span' + (esPes(it) ? ' class="kg" onclick="canviaMode(\'' + it.id + '\')" title="' + esc(T('Toca per canviar entre peces i kg')) + '"' : '') + '>' + qText(it) + (esPes(it) ? '<small>' + (enKg(it) ? T('toca: unitats') : T('toca: kg')) + '</small>' : '') + '</span><button onclick="quant(\'' + it.id + '\',1)">+</button></div>') + '</div>';
 }
 /* Totals: comprant cada cosa on és més barata, o tot en una sola botiga */
 function resum(p) {
@@ -576,7 +576,7 @@ function textLlista() {
     for (j = 0; j < g[ord[i]].length; j++) {
       var it = g[ord[i]][j], op = opcio(it), q = it.q || 1;
       var pi = preuItem(it, op), kk = kgsDe(it, op);
-      t += '\n• ' + (enKg(it) ? qText(it) + ' ' : q > 1 ? q + '× ' : '') + it.t + (op && op.g && !enKg(it) && kk ? ' (≈ ' + kgTxt(kk) + ')' : '') + (op && it.cq ? ' – ' + op.n : '') + (pi ? ' (' + (op.g ? '≈ ' : '') + euro(pi) + ')' : '');
+      t += '\n• ' + qText(it) + ' ' + it.t + (op && op.g && !enKg(it) && kk ? ' (≈ ' + kgTxt(kk) + ')' : '') + (op && it.cq ? ' – ' + op.n : '') + (pi ? ' (' + (op.g ? '≈ ' : '') + euro(pi) + ')' : '');
     }
   }
   return t;

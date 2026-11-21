@@ -800,3 +800,6 @@ TR.es["Aturant… acabarà la pàgina que està llegint."]="Parando… acabará 
 TR.es["Aturat"]="Parado";
 TR.es["Toca per canviar entre peces i kg"]="Toca para cambiar entre piezas y kg";
 TR.es["peces"]="piezas";
+TR.es["un"]="ud";
+TR.es["toca: unitats"]="toca: unidades";
+TR.es["toca: kg"]="toca: kg";
