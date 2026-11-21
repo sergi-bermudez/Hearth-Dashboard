@@ -111,6 +111,25 @@ body{background:#000}
 .dg-e b{font-weight:600;width:170px;-webkit-flex:none;flex:none}
 .dg-e span{color:#aeb4bd;font-size:14px;-webkit-flex:1;flex:1;min-width:0;word-break:break-word}
 .dg-err{font:12px Menlo,monospace;color:#ff9f8a;background:#140b0b;border-radius:8px;padding:8px 10px;white-space:pre-wrap;word-break:break-all}
+.bt-card{background:#2c2c2e;border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.bt-cap{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
+.bt-cap i{width:10px;height:10px;border-radius:5px;margin-right:9px;-webkit-flex:none;flex:none}
+.bt-cap b{-webkit-flex:1;flex:1;font-size:17px;min-width:0}
+.bt-cap .st{font-size:14px;white-space:nowrap}
+.bt-url{color:#8d95a1;font-size:13px;margin:3px 0 0 19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bt-peu{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:10px 0 0 19px}
+.bt-peu .check{-webkit-flex:1;flex:1;margin:4px 0;font-size:14px;min-width:200px}
+.bt-peu .check input{width:20px;height:20px;margin-right:8px}
+.bt-peu button{margin:4px 0 4px 8px;padding:7px 13px;font-size:14px}
+.bt-resum{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin:4px 0 6px}
+.bt-resum span{-webkit-flex:1;flex:1;font-size:14px}
+.bt-h{margin:22px 0 10px;font-size:17px}
+.bt-nova{display:-webkit-flex;display:flex;margin:10px 0}
+.bt-nova input{min-width:0}
+.bt-nova #bt-nom{-webkit-flex:1;flex:1}
+.bt-nova #bt-url{-webkit-flex:2;flex:2;margin-left:8px}
+.bt-nova button{margin-left:8px;-webkit-flex:none;flex:none}
+@media (max-width:600px){ .bt-nova{-webkit-flex-wrap:wrap;flex-wrap:wrap} .bt-nova #bt-url{margin:8px 0 0;-webkit-flex-basis:100%;flex-basis:100%} .bt-nova button{margin:8px 0 0} }
 </style>
 </head>
 <body>
@@ -265,12 +284,13 @@ body{background:#000}
 
   <div class="sec" id="s-compra">
     <h2>Compra</h2>
-    <div class="desc">Si la botiga ensenya preus diferents segons la zona (per exemple a Madeira), prem «Obre al PC», tria-hi la teva botiga o codi postal i prem «Fet»: a partir d'aleshores la llegirà amb aquella zona.</div>
-    <div class="desc">Les botigues on compres. Cada nit (cap a les 6) el servidor en llegeix els productes, els preus i les promocions de la web, i l'app Compra els mostra per categories. Funciona amb qualsevol supermercat amb botiga online, de qualsevol país: només cal l'adreça. És experimental: no totes les webs es deixen llegir.</div>
+    <div class="desc">Les botigues on compres. Hearth en llegeix de la web els productes, els preus i les promocions, i l'app Compra et diu on és més barat cada cosa. Funciona amb qualsevol supermercat amb botiga online, de qualsevol país. És experimental: no totes les webs es deixen llegir.</div>
     <div id="bt-llista"></div>
-    <div class="fila"><label>Afegeix</label><select id="bt-preset" class="sel" onchange="btPreset()"></select></div>
-    <div class="fila"><input type="text" id="bt-nom" placeholder="Nom (p. ex. El meu súper)"><input type="url" id="bt-url" placeholder="https://…" autocapitalize="off" autocorrect="off" style="margin-left:8px"><button onclick="btAfegeix()" style="margin-left:8px">Afegeix</button></div>
-    <div class="peu"><button onclick="btActualitza()">Llegeix-les totes</button> <span class="gris" id="bt-estat"></span></div>
+    <div class="bt-resum"><span class="gris" id="bt-estat"></span><button onclick="btActualitza()">Llegeix-les totes</button></div>
+    <h3 class="bt-h">Afegeix una botiga</h3>
+    <select id="bt-preset" class="sel" onchange="btPreset()"></select>
+    <div class="bt-nova"><input type="text" id="bt-nom" placeholder="Nom"><input type="url" id="bt-url" placeholder="https://…" autocapitalize="off" autocorrect="off"><button class="pri" onclick="btAfegeix()">Afegeix</button></div>
+    <div class="desc petit">Si la botiga ensenya preus diferents segons la zona (per exemple a Madeira), prem «Obre al PC», tria-hi la teva botiga o codi postal i prem «Fet»: a partir d'aleshores la llegirà amb aquella zona.</div>
   </div>
 
   <div class="sec" id="s-youtube">
@@ -1010,12 +1030,21 @@ function btCarrega() {
     btPinta();
   }, function () { $('bt-llista').innerHTML = '<div class="gris">' + T('No s\'ha pogut connectar amb el servidor.') + '</div>'; });
 }
+var BT_COLORS = ['#e3262e', '#2e8b3a', '#0a84ff', '#ff9f0a', '#bf5af2', '#64d2ff', '#ff375f'];
 function btPinta() {
-  var h = '', e = (BT.est && BT.est.estat) || {};
+  var h = '', e = (BT.est && BT.est.estat) || {}, t = BT.est || {};
   for (var i = 0; i < BT.l.length; i++) {
-    var b = BT.l[i], s = e[b.id] || {};
-    h += '<div class="fila"><label style="min-width:0;-webkit-flex:1;flex:1"><b>' + esc(b.nom) + '</b><br><span class="gris petit">' + esc(b.url) + '</span><br><span class="petit' + (s.error ? '" style="color:#ff453a">' : ' gris">') +
-      (s.error ? esc(T(s.error)) : s.n ? Tf('{1} productes', s.n) : T('Encara no llegit')) + '</span></label>' + (BT.est && BT.est.enMarxa && BT.est.llegint == b.id ? '<span class="gris petit" style="margin-right:8px">' + T('Llegint…') + '</span>' : (BT.obert == b.id ? '<button class="pri" onclick="btAgafa(\'' + b.id + '\')" style="margin-right:8px">' + T('Fet') + '</button>' : '<button onclick="btObre(\'' + b.id + '\')" style="margin-right:8px">' + T('Obre al PC') + '</button>') + '<button onclick="btActualitza(\'' + b.id + '\')" style="margin-right:8px">' + T('Llegeix') + '</button>') + '<button onclick="btTreu(' + i + ')">' + T('Treu') + '</button></div>';
+    var b = BT.l[i], s = e[b.id] || {}, llegint = t.enMarxa && (t.llegint == b.id || t.llegint == '' || (t.llegint == '*auto' && b.auto));
+    var st = llegint ? '<span class="st gris">⏳ ' + T('Llegint…') + '</span>'
+      : s.error ? '<span class="st" style="color:#ff453a">⚠️ ' + esc(T(s.error)) + '</span>'
+      : s.n ? '<span class="st" style="color:#30d158">✓ ' + Tf('{1} productes', s.n) + '</span>'
+      : '<span class="st gris">' + T('Encara no llegit') + '</span>';
+    h += '<div class="bt-card"><div class="bt-cap"><i style="background:' + BT_COLORS[i % BT_COLORS.length] + '"></i><b>' + esc(b.nom) + '</b>' + st + '</div>' +
+      '<div class="bt-url">' + esc(b.url) + (s.t ? ' · ' + T('llegit') + ' ' + new Date(s.t).toLocaleString() : '') + '</div>' +
+      '<div class="bt-peu"><label class="check"><input type="checkbox"' + (b.auto ? ' checked' : '') + ' onchange="btAuto(' + i + ',this.checked)">' + T('Revisa-la cada dia (de matinada)') + '</label>' +
+      (BT.obert == b.id ? '<button class="pri" onclick="btAgafa(\'' + b.id + '\')">' + T('Fet') + '</button>' : '<button onclick="btObre(\'' + b.id + '\')">' + T('Obre al PC') + '</button>') +
+      (llegint ? '' : '<button onclick="btActualitza(\'' + b.id + '\')">' + T('Llegeix') + '</button>') +
+      '<button onclick="btTreu(' + i + ')">' + T('Treu') + '</button></div></div>';
   }
   if (!h) h = '<div class="gris" style="margin:10px 0">' + T('Encara no hi ha cap botiga.') + '</div>';
   $('bt-llista').innerHTML = h;
@@ -1023,8 +1052,7 @@ function btPinta() {
   for (j = 0; j < p.length; j++) o += '<option value="' + PAIS + ':' + j + '">' + esc(p[j][0]) + '</option>';
   for (k in BT_PRESETS) if (BT_PRESETS.hasOwnProperty(k) && k != PAIS) for (j = 0; j < BT_PRESETS[k].length; j++) o += '<option value="' + k + ':' + j + '">' + esc(BT_PRESETS[k][j][0]) + ' (' + k + ')</option>';
   $('bt-preset').innerHTML = o;
-  var t = BT.est || {};
-  $('bt-estat').textContent = t.enMarxa ? T('Llegint…') + ' ' + (t.fent || '') : t.actualitzat ? Tf('{1} productes · {2} en promoció · llegit {3}', t.n, t.promos, new Date(t.actualitzat).toLocaleString()) : '';
+  $('bt-estat').textContent = t.enMarxa ? T('Llegint…') + ' ' + (t.fent || '') : t.n ? Tf('{1} productes · {2} en promoció', t.n, t.promos) : '';
   if (t.enMarxa) setTimeout(btCarrega, 4000);
 }
 function btPreset() {
@@ -1041,7 +1069,7 @@ function btAfegeix() {
   if (!n) n = u.replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
   var id = n.toLowerCase().replace(/[^a-z0-9]+/g, '').substring(0, 20) || ('b' + Date.now());
   for (var i = 0; i < BT.l.length; i++) if (BT.l[i].id == id) id += BT.l.length;
-  BT.l.push({ id: id, nom: n, url: u });
+  BT.l.push({ id: id, nom: n, url: u, auto: true });
   $('bt-nom').value = ''; $('bt-url').value = ''; $('bt-preset').value = '';
   /* desa i llegeix només la botiga nova */
   post(api('admin/compra/botigues'), JSON.stringify({ botigues: BT.l }), function () { btActualitza(id); }, errXarxa('desar'));
@@ -1054,6 +1082,7 @@ function btObre(id) {
 function btAgafa(id) {
   postJson(api('admin/compra/agafa', { b: id }), {}, function (d) { BT.obert = ''; avis(T('Desat') + (d && d.url ? ': ' + d.url : '')); btCarrega(); }, errXarxa('desar'));
 }
+function btAuto(i, v) { BT.l[i].auto = v; btDesa(); }
 function btTreu(i) { BT.l.splice(i, 1); btDesa(); }
 function btActualitza(b) {
   if (BT.est && BT.est.enMarxa) { avis(T('Ja s\'està llegint una botiga; espera que acabi.')); return; }

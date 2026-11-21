@@ -782,3 +782,7 @@ TR.es["Fet"]="Hecho";
 TR.es["Obre al PC"]="Abrir en el PC";
 TR.es["S'ha obert la botiga a la pantalla del PC. Tria-hi la teva zona o botiga i ves a una secció amb productes; després prem «Fet»."]="La tienda se ha abierto en la pantalla del PC. Elige allí tu zona o tienda y ve a una sección con productos; después pulsa «Hecho».";
 TR.es["Si la botiga ensenya preus diferents segons la zona (per exemple a Madeira), prem «Obre al PC», tria-hi la teva botiga o codi postal i prem «Fet»: a partir d'aleshores la llegirà amb aquella zona."]="Si la tienda muestra precios distintos según la zona, pulsa «Abrir en el PC», elige allí tu tienda o código postal y pulsa «Hecho»: a partir de entonces la leerá con esa zona.";
+TR.es["Revisa-la cada dia (de matinada)"]="Revisarla cada día (de madrugada)";
+TR.es["llegit"]="leído";
+TR.es["{1} productes · {2} en promoció"]="{1} productos · {2} en promoción";
+TR.es["Afegeix una botiga"]="Añadir una tienda";

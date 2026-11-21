@@ -74,11 +74,14 @@ public static class Botigues
             try
             {
                 if (DateTime.Now.Hour != 6 || enMarxa) return;
-                if (Config().Count == 0) return;
+                // Nom\u00e9s les botigues amb la casella \u00abRevisa-la cada dia\u00bb marcada
+                bool alguna = false;
+                foreach (object ob in Config()) { Dictionary<string, object> b = ob as Dictionary<string, object>; if (b != null && S(b, "auto") == "True") alguna = true; }
+                if (!alguna) return;
                 Dictionary<string, object> c = Cataleg();
-                double t = c != null && c.ContainsKey("t") ? Convert.ToDouble(c["t"]) : 0;
+                double t = c != null && c.ContainsKey("tAuto") ? Convert.ToDouble(c["tAuto"]) : 0;
                 if ((DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds - t < 20 * 3600 * 1000) return;
-                Recorre("");
+                Recorre("*auto");
             }
             catch { }
         }, null, TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(30));
@@ -132,7 +135,8 @@ public static class Botigues
                     Dictionary<string, object> b = ob as Dictionary<string, object>;
                     if (b == null || S(b, "url") == "" || S(b, "off") == "True") continue;
                     string id = S(b, "id"), nom = S(b, "nom");
-                    if (nomesB != "" && id != nomesB) continue;
+                    if (nomesB == "*auto") { if (S(b, "auto") != "True") continue; }
+                    else if (nomesB != "" && id != nomesB) continue;
                     llegides[id] = true;
                     Dictionary<string, object> est = new Dictionary<string, object>();
                     estats[id] = est;
@@ -212,6 +216,7 @@ public static class Botigues
                             Thread.Sleep(1200); // amb calma: no carregar la web de la botiga
                         }
                         est["n"] = prods.Count - n0;
+                        est["t"] = (DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds;
                         if (prods.Count == n0) est["error"] = "No he trobat productes";
                     }
                     catch (Exception ex) { est["error"] = ex.Message; }
@@ -230,6 +235,7 @@ public static class Botigues
                 Dictionary<string, object> nou = new Dictionary<string, object>();
                 nou["t"] = (DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds;
                 nou["botigues"] = estats;
+                nou["tAuto"] = nomesB == "*auto" ? nou["t"] : (vell != null && vell.ContainsKey("tAuto") ? vell["tAuto"] : 0);
                 nou["prod"] = prods.ToArray();
                 File.WriteAllText(Ruta("botigues_cat.json"), Js().Serialize(nou), new UTF8Encoding(false));
                 lock (lk) cataleg = nou;
