@@ -546,6 +546,7 @@ body:not(.en-app) #apps{top:-30000px;bottom:auto;height:10px}
 <script src="comu.js"></script>
 <script>
 /* Hearth · pàgina principal i reproductor central (ES5, Safari 9) */
+var IC_CARRO = 'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42a.25.25 0 01-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0020 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z';
 var APPS = [
   { id: 'musica', nom: 'Música', ic: IC.musica, c1: '#ff5fa2', c2: '#b0217a' },
   { id: 'spotify', nom: 'Spotify', ic: IC.spotify, c1: '#2fd36b', c2: '#128a3e' },
@@ -556,6 +557,7 @@ var APPS = [
   { id: 'youtube', nom: 'YouTube', ic: IC.video, c1: '#ff5a5a', c2: '#c4161c' },
   { id: 'futbol', nom: 'Futbol', ic: 'M12 2a10 10 0 100 20 10 10 0 000-20zm1 3.3l1.35-.95a8 8 0 014.3 3.14l-.39 1.32-1.35.46L13 6.7V5.3zM9.65 4.35L11 5.3v1.4L7.1 9.27l-1.35-.46-.39-1.32a8 8 0 014.29-3.14zM7.08 17.11l-1.14.1A7.95 7.95 0 014 12c0-.12.01-.23.02-.35l1-.73 1.38.48 1.46 4.35-.78 1.36zm7.42 2.59a7.9 7.9 0 01-5 0l-.69-1.49.64-1.1h4.11l.64 1.11-.7 1.48zM14.27 15H9.73l-1.35-4.02L12 8.44l3.63 2.54L14.27 15zm3.79 2.21l-1.14-.1-.79-1.37 1.46-4.36 1.39-.47 1 .73L20 12a7.95 7.95 0 01-1.94 5.21z', c1: '#30d158', c2: '#0b7a3b' },
   { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12' },
+  { id: 'compra', nom: 'Compra', ic: IC_CARRO, c1: '#ffc24d', c2: '#e07b12' },
   { id: 'fotos', nom: 'Fotos', ic: IC.fotos, c1: '#3fd18b', c2: '#14905a' },
   { id: 'missatges', nom: 'Missatges', ic: IC.missatges, c1: '#3ad07a', c2: '#0f8a55' },
   { id: 'docs', nom: 'Documents', ic: IC.docs, c1: '#43b4ff', c2: '#1a6fc4' },
@@ -566,7 +568,7 @@ var APPS = [
 var GRUPS = [
   { id: 'escoltar', nom: 'Escoltar', ic: IC.musica, c1: '#ff7a59', c2: '#c2185b', apps: ['musica', 'spotify', 'radio', 'podcasts'] },
   { id: 'mirar', nom: 'Mirar', ic: IC.pelis, c1: '#5a7bff', c2: '#3a2bb0', apps: ['pelis', 'tv', 'youtube', 'futbol'] },
-  { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12', apps: ['casa'] },
+  { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12', apps: ['casa', 'compra'] },
   { id: 'fotos', nom: 'Fotos', ic: IC.fotos, c1: '#3fd18b', c2: '#14905a', apps: ['fotos'] },
   { id: 'missatges', nom: 'Missatges', ic: IC.missatges, c1: '#3ad07a', c2: '#0f8a55', apps: ['missatges'] },
   { id: 'docs', nom: 'Documents', ic: IC.docs, c1: '#43b4ff', c2: '#1a6fc4', apps: ['docs'] },

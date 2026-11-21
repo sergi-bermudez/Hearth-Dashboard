@@ -706,3 +706,15 @@ TR.pt["Les fotos del fons de la pantalla d'inici fan servir el mateix estil (Ken
 TR.pt["L'estil, el temps, la salutació, el fons i els modes lleuger i nit."]="O estilo, o tempo, a saudação, o fundo e os modos leve e noite.";
 TR.pt["Toca «Inici» un altre cop per recarregar (s'aturarà el que sona)."]="Toca em «Início» outra vez para recarregar (o que está a tocar pára).";
 TR.pt["Recarregant…"]="A recarregar…";
+TR.pt["Compra"]="Compras";
+TR.pt["Afegeix (p. ex. 2 llet)"]="Adicionar (ex. 2 leite)";
+TR.pt["La llista és buida. Afegeix el que falta a casa."]="A lista está vazia. Adiciona o que falta em casa.";
+TR.pt["Al carro"]="No carrinho";
+TR.pt["Envia per WhatsApp"]="Enviar por WhatsApp";
+TR.pt["Treu els comprats"]="Remover os comprados";
+TR.pt["Llista de la compra"]="Lista de compras";
+TR.pt["Cerca"]="Procurar";
+TR.pt["Obre WhatsApp en aquest aparell"]="Abrir o WhatsApp neste aparelho";
+TR.pt["Enviant…"]="A enviar…";
+TR.pt["Llista enviada a {1}"]="Lista enviada para {1}";
+TR.pt["No s'ha pogut enviar."]="Não foi possível enviar.";

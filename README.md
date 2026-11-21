@@ -34,6 +34,7 @@ No app store, no subscription, no account with us, no cloud. Everything runs on 
 | **Photos** | Your PC photo folders as a timeline, plus a nightly sync of recent photos and chosen albums from **Google Photos**. |
 | **Calendar** | Your Google calendars or any iCal link, each in its own colour. |
 | **Smart home** | Tuya / Smart Life lights, plugs and scenes, and any web page from the PC (e.g. Google Home or a camera) shown live on the tablet. |
+| **Shopping list** | Shared list synced across every screen in the house, with quick re-add of usual items and one-tap sending by WhatsApp. |
 | **Messages** | Optional WhatsApp reading and replying, with a red badge for new messages. |
 | **Documents** | A simple WordPad-style editor, great for kids learning to type, with photos from the tablet's camera roll. |
 | **Family** | **Kids mode** with a PIN and only the apps you choose. **Per-device settings**: every tablet can have its own style, slideshow and kids mode. |
