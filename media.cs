@@ -953,6 +953,61 @@ public static class Media
         return Fitxa(rel);
     }
 
+    // Si la fitxa no te caratula (p. ex. la Viquipedia en catala no en te), se'n busca una a TMDB, a la Viquipedia anglesa o a iTunes
+    internal static bool CompletaPoster(Dictionary<string, object> m)
+    {
+        if (m == null || m.ContainsKey("poster") || !Internet()) return false;
+        string tit = S(m, "original") != "" ? S(m, "original") : S(m, "titol"), any = S(m, "any");
+        if (tit == "") return false;
+        try
+        {
+            string tmdb = A("tmdb", "");
+            if (tmdb != "")
+            {
+                Dictionary<string, object> r = JsonDe("https://api.themoviedb.org/3/search/movie?api_key=" + Uri.EscapeDataString(tmdb) + "&query=" + Uri.EscapeDataString(tit) + (any != "" ? "&year=" + any : ""), 8000) as Dictionary<string, object>;
+                object[] res = r != null && r.ContainsKey("results") ? r["results"] as object[] : null;
+                if (res != null && res.Length > 0)
+                {
+                    Dictionary<string, object> p = res[0] as Dictionary<string, object>;
+                    if (S(p, "poster_path") != "") { m["poster"] = "https://image.tmdb.org/t/p/w500" + S(p, "poster_path"); if (!m.ContainsKey("fons") && S(p, "backdrop_path") != "") m["fons"] = "https://image.tmdb.org/t/p/w1280" + S(p, "backdrop_path"); return true; }
+                }
+            }
+        }
+        catch { }
+        try
+        {
+            foreach (string q in new string[] { tit + " " + any + " film", tit + " film" })
+            {
+                Dictionary<string, object> r = JsonDe("https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=3&srsearch=" + Uri.EscapeDataString(q), 8000) as Dictionary<string, object>;
+                Dictionary<string, object> qd = r != null && r.ContainsKey("query") ? r["query"] as Dictionary<string, object> : null;
+                object[] res = qd != null && qd.ContainsKey("search") ? qd["search"] as object[] : null;
+                if (res == null) continue;
+                foreach (object x in res)
+                {
+                    string t = S(x as Dictionary<string, object>, "title");
+                    if (Semblanca(tit, Regex.Replace(t, @"\s*\([^)]*\)\s*$", "")) < 0.5) continue;
+                    string img = Miniatura500(Resum("en", t));
+                    if (img != null) { m["poster"] = img; return true; }
+                }
+            }
+        }
+        catch { }
+        try
+        {
+            object[] ir = ItunesCerca(tit, "us", 8);
+            if (ir != null)
+                foreach (object x in ir)
+                {
+                    Dictionary<string, object> p = x as Dictionary<string, object>;
+                    bool anyOk = any == "" || S(p, "releaseDate").StartsWith(any);
+                    if (Semblanca(tit, S(p, "trackName")) >= 0.6 && anyOk && S(p, "artworkUrl100") != "")
+                    { m["poster"] = S(p, "artworkUrl100").Replace("100x100bb", "600x600bb"); return true; }
+                }
+        }
+        catch { }
+        return false;
+    }
+
     // Afegeix la nota d'IMDb i el director (si hi ha clau d'OMDb)
     static void DeOmdb(Dictionary<string, object> m)
     {
@@ -1027,7 +1082,17 @@ public static class Media
         {
             CarregaMetes();
             object v;
-            if (metes.TryGetValue(rel, out v) && v is Dictionary<string, object> && S((Dictionary<string, object>)v, "font") == font) return (Dictionary<string, object>)v;
+            if (metes.TryGetValue(rel, out v) && v is Dictionary<string, object> && S((Dictionary<string, object>)v, "font") == font)
+            {
+                Dictionary<string, object> mv = (Dictionary<string, object>)v;
+                // reconeguda pero sense caratula: es busca una vegada en segon pla en altres llocs
+                if (mv.ContainsKey("fontNom") && !mv.ContainsKey("poster") && !mv.ContainsKey("posterProvat"))
+                {
+                    mv["posterProvat"] = DateTime.Now.ToString("yyyy-MM-dd");
+                    ThreadPool.QueueUserWorkItem(delegate { try { if (CompletaPoster(mv)) lock (lk) DesaMetes(); } catch { } });
+                }
+                return mv;
+            }
             DateTime quan;
             if (noTrobades.TryGetValue(rel + "|" + font, out quan) && (DateTime.Now - quan).TotalMinutes < 30 && metes.TryGetValue(rel + "|no", out v)) return (Dictionary<string, object>)v;
         }
@@ -1044,6 +1109,7 @@ public static class Media
             m["confirmada"] = true;
             m["triada"] = true;
             DeOmdb(m);
+            CompletaPoster(m);
         }
         else
         {
@@ -1052,6 +1118,7 @@ public static class Media
             // un titol escrit a ma i trobat compta com a confirmat
             if (tcd != null && m.ContainsKey("fontNom") && Math.Max(Semblanca(S(tcd, "t"), S(m, "titol")), Semblanca(S(tcd, "t"), S(m, "original"))) >= 0.6) m["confirmada"] = true;
         }
+        if (m.ContainsKey("fontNom") && !m.ContainsKey("poster")) { CompletaPoster(m); m["posterProvat"] = DateTime.Now.ToString("yyyy-MM-dd"); }
         m["conf"] = Math.Round(Confianca(cands, m), 2).ToString(CultureInfo.InvariantCulture);
         m["font"] = font;
         lock (lk)

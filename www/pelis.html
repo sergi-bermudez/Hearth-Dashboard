@@ -85,6 +85,8 @@
 .nota{display:inline-block;background:rgba(255,255,255,.1);border-radius:8px;padding:4px 10px;margin-right:8px;font-weight:600;font-size:15px}
 .fx-sin{line-height:1.5;color:#d6dae0;margin:16px 0 22px;max-width:640px}
 .fx-bt button{margin:0 8px 8px 0;padding:12px 20px}
+.fx-sin.curta{max-height:7.5em;overflow:hidden;margin-bottom:6px}
+.fx-mes{color:#7fb0ff;cursor:pointer;margin:0 0 18px;font-weight:600}
 .tr-cap{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-bottom:14px}
 .tr-cap input{-webkit-flex:1;flex:1;margin:0 10px;font-size:17px;padding:11px 14px;border-radius:12px;border:0;background:rgba(255,255,255,.1);color:#fff}
 .tr-gra .op{width:150px;margin:0 14px 18px 0}
@@ -422,7 +424,8 @@ function pintaFitxa(d, v) {
   if (d.director) h += '<div class="gris" style="margin-top:12px">' + T('Direcció:') + ' ' + esc(d.director) + '</div>';
   if (d.avis) h += '<div class="fx-avis">' + esc(d.avis) + '</div>';
   else if (d.fontNom && !d.confirmada && parseFloat(d.conf) < 0.75) h += '<div class="fx-avis">' + T('No estic segur que sigui aquesta. Confirma-ho o tria la correcta.') + '</div>';
-  h += '<div class="fx-sin">' + esc(d.sinopsi || '') + '</div><div class="fx-bt">';
+  var sin = d.sinopsi || '', llarga = sin.length > 420;
+  h += '<div class="fx-sin' + (llarga ? ' curta' : '') + '" id="fx-sin">' + esc(sin) + '</div>' + (llarga ? '<div class="fx-mes" onclick="var e=$(\'fx-sin\');e.className=\'fx-sin\';this.style.display=\'none\'">' + T('Més') + ' ›</div>' : '') + '<div class="fx-bt">';
   if (!e) h += '<span class="gris">' + T('Buscant el fitxer…') + '</span>';
   else if (vlc) h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + T('Obrir a VLC') + '</button>';
   else if (v && v.d) h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + Tf('Continuar ({1})', durada(v.t)) + '</button><button onclick="reprodueix(true)">' + T('Des del principi') + '</button>';
