@@ -1983,7 +1983,7 @@ function marcSeguent() {
   clearTimeout(MC.t);
   var fs = marcFotos(), e = estilPassi(), urls = [], fets = 0, mides = [];
   $('marc').className = e;
-  for (var i = 0; i < fs.length; i++) urls.push(miniUrl('fotos', fs[i][0], e == 'revista' && i > 0 ? 800 : 1600));
+  for (var i = 0; i < fs.length; i++) urls.push(miniUrl('fotos', fs[i][0], e == 'revista' && i > 0 ? 800 : lleuger() ? 1024 : 1600));
   function llest() {
     if (++fets < urls.length || !marcObert()) return;
     var a = $(MC.capa ? 'mc-a' : 'mc-b'), b = $(MC.capa ? 'mc-b' : 'mc-a');
@@ -2010,7 +2010,14 @@ function infoFoto(f) {
   $('mc-idata').textContent = d && d.getFullYear() > 1980 ? dataCurta(d) : '';
   $('mc-illoc').textContent = '';
   MC.info = f[0];
-  getJson(api('foto-info', { p: f[0], ll: LANG }), function (r) { if (MC.info == f[0] && r && r.lloc) $('mc-illoc').textContent = r.lloc; }, function () { });
+  var demana = function (segon) {
+    getJson(api('foto-info', { p: f[0], ll: LANG }), function (r) {
+      if (MC.info != f[0] || !r) return;
+      if (r.lloc) $('mc-illoc').textContent = r.lloc;
+      else if (r.pendent && !segon) setTimeout(function () { demana(true); }, 3000);
+    }, function () { });
+  };
+  demana(false);
 }
 function tancaMarc() {
   clearTimeout(MC.t);
@@ -2678,7 +2685,7 @@ function aplicaTele() {
   document.documentElement.style.zoom = t && z > 1.05 ? z.toFixed(2) : '';
 }
 window.addEventListener('resize', function () { if (window.A && A.ajustos) aplicaTele(); });
-function lleuger() { var v = A.ajustos.lleuger; return v === 'si' || v === true ? true : v === 'no' ? false : IOS_VELL; }
+function lleuger() { var v = A.ajustos.lleuger; return v === 'si' || v === true ? true : v === 'no' ? false : IOS_VELL || NAV_TELE; }
 
 /* ---------- Connexió a part per al so i el vídeo ----------
    Safari obre com a molt 6 connexions alhora amb un mateix servidor. Si estan ocupades

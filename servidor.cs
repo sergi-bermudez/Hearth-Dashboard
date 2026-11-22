@@ -248,7 +248,8 @@ public static class CasaServidor
                     // On es va fer la foto (les coordenades GPS de la foto, tradu\u00efdes a un nom de lloc)
                     string full = Ruta("fotos", p);
                     if (full == null || !File.Exists(full)) { Error(res, 404, "No trobat"); return; }
-                    Json(res, Dic("lloc", LlocDeFoto(full, Q(q, "ll"))));
+                    string lloc = LlocDeFoto(full, Q(q, "ll"));
+                    Json(res, Dic("lloc", lloc ?? "", "pendent", lloc == null));
                     return;
                 }
             case "mini":
@@ -754,6 +755,23 @@ public static class CasaServidor
             }
             object v;
             if (llocs.TryGetValue(clau, out v)) return Convert.ToString(v);
+            // No es fa esperar ning\u00fa: el nom es busca en segon pla (la connexi\u00f3 de l'aparell queda lliure per a la m\u00fasica)
+            if (!pendentsLloc.Contains(clau))
+            {
+                pendentsLloc.Add(clau);
+                double la = lat, lo = lon; string ll2 = llengua, cl = clau;
+                ThreadPool.QueueUserWorkItem(delegate { try { BuscaLloc(la, lo, ll2, cl); } catch { } lock (llocsLk) pendentsLloc.Remove(cl); });
+            }
+            return null;
+        }
+    }
+    static readonly HashSet<string> pendentsLloc = new HashSet<string>();
+    static readonly object nominatimLk = new object();
+    static void BuscaLloc(double lat, double lon, string llengua, string clau)
+    {
+        string fit = Path.Combine(DirDades, "llocs.json");
+        lock (nominatimLk)
+        {
             // OpenStreetMap demana com a molt una consulta per segon
             double esp = 1100 - (DateTime.Now - darreraNominatim).TotalMilliseconds;
             if (esp > 0) Thread.Sleep((int)esp);
@@ -778,10 +796,12 @@ public static class CasaServidor
                     nom = poble != "" && zona != "" ? poble + ", " + zona : poble + zona;
                 }
             }
-            catch { return ""; }
-            llocs[clau] = nom;
-            try { File.WriteAllText(fit, new JavaScriptSerializer().Serialize(llocs), new UTF8Encoding(false)); } catch { }
-            return nom;
+            catch { return; }
+            lock (llocsLk)
+            {
+                llocs[clau] = nom;
+                try { File.WriteAllText(fit, new JavaScriptSerializer().Serialize(llocs), new UTF8Encoding(false)); } catch { }
+            }
         }
     }
 
