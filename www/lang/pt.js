@@ -987,3 +987,4 @@ TR.pt["Enviant a {1} aparells…"]="A enviar para {1} aparelhos…";
 TR.pt["Mostra la data i el lloc de cada foto"]="Mostrar a data e o local de cada foto";
 TR.pt["Toca per escoltar"]="Toque para ouvir";
 TR.pt["Registre del so d'aquest aparell (si la música o la ràdio es talla)"]="Registo do som deste aparelho (se a música ou a rádio falhar)";
+TR.pt["coincideix"]="sobreposto";

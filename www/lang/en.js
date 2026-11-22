@@ -987,3 +987,4 @@ TR.en["Enviant a {1} aparells…"]="Sending to {1} devices…";
 TR.en["Mostra la data i el lloc de cada foto"]="Show each photo's date and place";
 TR.en["Toca per escoltar"]="Tap to listen";
 TR.en["Registre del so d'aquest aparell (si la música o la ràdio es talla)"]="This device's sound log (if music or radio cuts out)";
+TR.en["coincideix"]="overlaps";
