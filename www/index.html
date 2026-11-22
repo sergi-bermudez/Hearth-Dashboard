@@ -1276,7 +1276,9 @@ function reconnectaRadio() {
 setInterval(function () {
   var it = R.cua[R.pos];
   if (!it || it.k != 'radio' || au.paused || (it.pcm && USA_PCM)) { RDV.t = -1; RDV.des = Date.now(); return; }
-  if (au.currentTime != RDV.t) { RDV.t = au.currentTime; RDV.des = Date.now(); if (au.currentTime > 30) RDV.intents = 0; return; }
+  /* alguns navegadors (p. ex. el de les teles LG) no fan avançar el temps d'una ràdio en directe encara que soni:
+     només es considera encallada si a més no té dades per continuar (readyState < 3) */
+  if (au.currentTime != RDV.t || au.readyState >= 3) { RDV.t = au.currentTime; RDV.des = Date.now(); if (au.currentTime > 30) RDV.intents = 0; return; }
   if (Date.now() - RDV.des > 12000 && RDV.intents < 20) { RDV.des = Date.now(); reconnectaRadio(); }
 }, 3000);
 /* Ràdio: si no comença a sonar en 20 s (o falla), prova l'altra via */
