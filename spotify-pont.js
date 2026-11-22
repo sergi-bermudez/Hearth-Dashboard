@@ -228,7 +228,15 @@ if (!window.__casa) (function () {
       if (!o.llistes.length && token) {
         try { const d = await this.api(token, 'me/playlists?limit=50'); o = this.extreu(d, o); } catch (e) { if (!o.albums.length) return { error: e.message, llistes: l }; }
       }
-      return { llistes: l.concat(o.llistes, o.albums, o.artistes) };
+      // 4) El que s'ha escoltat fa poc (de les respostes de la web, o de l'API si no n'hi ha)
+      let rec = { cancons: [], albums: [], llistes: [], artistes: [] };
+      for (const r of window.__casaResp) if (/recent/i.test(r.op + r.url)) rec = this.extreu(r.j, rec);
+      if (!rec.cancons.length && !rec.llistes.length && !rec.albums.length && token) {
+        try { rec = this.extreu(await this.api(token, 'me/player/recently-played?limit=30'), rec); } catch (e) { }
+      }
+      // llistes: tot junt (com abans, per als Hearth antics); la resta, separat, per a la pantalla nova
+      return { llistes: l.concat(o.llistes, o.albums, o.artistes), propies: l.concat(o.llistes), albums: o.albums, artistes: o.artistes,
+        recents: rec.llistes.concat(rec.albums, rec.artistes).slice(0, 12), recentsCancons: rec.cancons.slice(0, 20) };
     },
 
     cami(uri) {

@@ -651,14 +651,39 @@ function textLlista() {
   return t;
 }
 function waActiu() { try { return !!(window.parent && window.parent.A && window.parent.A.ajustos.whatsapp); } catch (e) { return false; } }
+/* Si la llista té coses de diverses botigues, primer es tria quina s'envia */
+function botiguesDeLaLlista() {
+  var p = pendents(), vist = {}, r = [];
+  for (var i = 0; i < p.length; i++) { var o = opcio(p[i]), b = o ? o.b || '' : ''; if (b && !vist[b]) { vist[b] = 1; r.push(b); } }
+  return r;
+}
 function enviaWa(b) {
+  if (b === null || b === undefined) {
+    var bs = botiguesDeLaLlista();
+    if (bs.length > 1) {
+      var h = '<h3>' + T('Quina llista vols enviar?') + '</h3><div class="xt" onclick="enviaWaDe(null)"><b>' + T('Tota la llista') + '</b></div>';
+      for (var i = 0; i < bs.length; i++) h += '<div class="xt" onclick="enviaWaDe(\'' + bs[i] + '\')">' + esc(Tf('Només la de {1}', nomBot(bs[i]) || bs[i])) + '</div>';
+      h += '<p style="text-align:right"><button onclick="$(\'tria\').style.display=\'none\'">' + T('Tanca') + '</button></p>';
+      $('tria').style.display = 'block'; $('tria-c').innerHTML = h;
+      return;
+    }
+  }
+  enviaWaDe(b);
+}
+/* El xat amb tu mateix de WhatsApp es diu "El teu nom (Tu)", "(You)"... */
+function esJo(nom) { return /\((tu|tú|you|você|vous|moi|jo|eu|yo)\)\s*$/i.test(nom || ''); }
+function enviaWaDe(b) {
   WA_B = typeof b == 'string' ? b : null;
   if (!waActiu()) { obreWaMe(); return; }
   $('tria').style.display = 'block';
   $('tria-c').innerHTML = '<h3>' + T('Envia a…') + '</h3><div class="gris">' + T('Carregant…') + '</div>';
   getJson(api('admin/wa/xats'), function (l) {
     l = l || [];
+    /* primer, el xat amb tu mateix */
+    var jo = null;
+    for (var k = 0; k < l.length; k++) if (esJo(l[k].nom)) { jo = l.splice(k, 1)[0]; break; }
     var h = '<h3>' + T('Envia a…') + '</h3><input type="search" id="cerca" placeholder="' + esc(T('Cerca')) + '" oninput="filtra()"><div id="xts">';
+    if (jo) h += '<div class="xt" data-n="' + esc(jo.nom) + '" onclick="enviaA(this.getAttribute(\'data-n\'))"><b>⭐ ' + T('A tu mateix') + '</b><small>' + esc(jo.nom) + '</small></div>';
     for (var i = 0; i < l.length; i++) h += '<div class="xt" data-n="' + esc(l[i].nom) + '" onclick="enviaA(this.getAttribute(\'data-n\'))">' + esc(l[i].nom) + (l[i].darrer ? '<small>' + esc(l[i].darrer) + '</small>' : '') + '</div>';
     if (!l.length) h += '<div class="gris" style="padding:10px 0">' + T('Encara no hi ha xats (o s\'estan carregant).') + '</div>';
     h += '</div><p><button onclick="obreWaMe()">' + T('Obre WhatsApp en aquest aparell') + '</button></p>';

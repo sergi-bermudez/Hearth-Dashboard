@@ -20,14 +20,38 @@
 .ajuda{background:rgba(255,200,80,.08);border:1px solid rgba(255,200,80,.25);border-radius:16px;padding:16px 18px;margin-bottom:18px;line-height:1.5}
 .it .im.rodo{border-radius:50%}
 .canco .mini{width:48px;height:48px}
+/* ---- Com l'app de Spotify: inici amb dreceres, el que has escoltat i la teva biblioteca ---- */
+body{background:#121212}
+#pag{background:-webkit-linear-gradient(top,#1f3a2b 0,#121212 340px);background:linear-gradient(to bottom,#1f3a2b 0,#121212 340px)}
+.ara{padding:12px;border-radius:14px;margin-bottom:16px}
+.ara .im{width:72px;height:72px;line-height:72px;margin-right:14px}
+.ara .t{font-size:18px}
+.ara .ctl{margin-top:8px}
+.salut-sp{font-size:26px;font-weight:700;margin:6px 0 14px}
+.drec{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:0 -5px 18px}
+.drec .d{width:-webkit-calc(50% - 10px);width:calc(50% - 10px);margin:5px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;background:rgba(255,255,255,.08);border-radius:6px;overflow:hidden;cursor:pointer;height:56px}
+.drec .d .im{width:56px;height:56px;-webkit-flex:none;flex:none;background:#282828 center/cover no-repeat}
+.drec .d span{padding:0 10px;font-weight:700;font-size:14px;line-height:1.2;max-height:2.4em;overflow:hidden}
+@media (min-width:900px){.drec .d{width:-webkit-calc(25% - 10px);width:calc(25% - 10px)}}
+.xips-sp{margin:0 0 14px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.xips-sp::-webkit-scrollbar{display:none}
+.xips-sp span{display:inline-block;padding:7px 14px;border-radius:16px;background:rgba(255,255,255,.08);margin-right:8px;cursor:pointer;font-size:14px}
+.xips-sp span.on{background:#1ed760;color:#000}
+.fila-sp{white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px 18px;padding:0 24px;scrollbar-width:none}
+.fila-sp::-webkit-scrollbar{display:none}
+.fila-sp .it{display:inline-block;vertical-align:top;width:150px;margin-right:14px;white-space:normal}
+h2.sp{font-size:21px;margin:8px 0 10px}
+#b-cerca{background:#1ed760;color:#000}
+#b-cerca .ic{fill:#000}
+.cerca input{border-radius:24px}
 </style>
 </head>
 <body>
 <div id="pag">
   <div class="capc"><h1>Spotify</h1></div>
   <div id="ajuda" class="ajuda amagat"></div>
-  <div class="ara" id="ara"></div>
   <div class="cerca"><input type="search" id="q" placeholder="Cançons, artistes, discos o llistes" onkeydown="if(event.keyCode==13)cerca()"><button class="pri" onclick="cerca()" id="b-cerca"></button></div>
+  <div class="ara" id="ara"></div>
   <div id="res" class="res"></div>
   <div id="bib"></div>
 </div>
@@ -93,10 +117,11 @@ function seccio(titol, l, tipus) {
 }
 function cerca() {
   var q = retalla($('q').value);
-  if (!q) { $('res').innerHTML = ''; $('bib').className = ''; return; }
+  if (!q) { $('res').innerHTML = ''; $('bib').className = ''; pintaInici(); return; }
   $('q').blur();
   $('res').innerHTML = '<div class="gris">Cercant…</div>';
   getJson(api('spotify/cerca', { q: q }), function (d) {
+    S.res = d;
     $('bib').className = 'amagat';
     $('res').innerHTML = '<button onclick="$(\'q\').value=\'\';cerca()">‹ Tornar a la biblioteca</button>' +
       seccio('Cançons', d.cancons, 'cancons') + seccio('Artistes', d.artistes, 'artistes') + seccio('Discos', d.albums, 'albums') + seccio('Llistes', d.llistes, 'llistes') +
@@ -104,10 +129,65 @@ function cerca() {
     setTimeout(mandros, 30);
   }, function (st, txt) { var m = ''; try { m = JSON.parse(txt).error; } catch (e) { } $('res').innerHTML = '<div class="ajuda">No s\'ha pogut cercar. ' + esc(m) + '</div>'; });
 }
+/* Inici, com a l'app: salutació, dreceres al que has escoltat fa poc, i la biblioteca per tipus */
+function recentsLocals() { return ls('sp.recents') || []; }
+function recordaRecent(o) {
+  if (!o || !o.uri) return;
+  var l = recentsLocals(), r = [o];
+  for (var i = 0; i < l.length && r.length < 16; i++) if (l[i].uri != o.uri) r.push(l[i]);
+  ls('sp.recents', r);
+}
 function biblioteca() {
-  getJson(api('spotify/biblioteca'), function (d) { S.bib = d; $('bib').innerHTML = seccio('La teva biblioteca', d.llistes, 'llistes'); setTimeout(mandros, 30); }, function () { });
+  getJson(api('spotify/biblioteca'), function (d) { S.bib = d; pintaInici(); }, function () { pintaInici(); });
+}
+function filaSp(titol, l, tipus) {
+  if (!l || !l.length) return '';
+  var h = '<h2 class="sp">' + esc(titol) + '</h2><div class="fila-sp" onscroll="mandros()">';
+  for (var i = 0; i < l.length; i++) {
+    var x = l[i];
+    h += '<div class="it quad" onclick="tocaO(' + i + ',' + js(tipus) + ')"><div class="im' + (tipus == 'artistes' ? ' rodo' : '') + '"' + (x.img ? ' data-bg="' + esc(imgx(x.img, 300)) + '"' : '') + '><div class="lletra">' + svg(IC.spotify) + '</div></div><div class="nm">' + esc(x.t) + (x.a ? '<br><span class="gris">' + esc(x.a) + '</span>' : '') + '</div></div>';
+  }
+  return h + '</div>';
+}
+var LL = {};
+function tocaO(i, tipus) { var x = (LL[tipus] || [])[i]; if (x) { recordaRecent(x); toca(x.uri); } }
+function pintaInici() {
+  if (retalla($('q').value)) return;
+  var d = S.bib || {}, h = '', hr = new Date().getHours();
+  h += '<div class="salut-sp">' + T(hr < 6 ? 'Bona nit' : hr < 13 ? 'Bon dia' : hr < 20 ? 'Bona tarda' : 'Bona nit') + '</div>';
+  /* dreceres: el que has posat des de Hearth i el que Spotify diu que has escoltat */
+  var dr = [], vist = {}, fonts = [recentsLocals(), d.recents || [], d.propies || d.llistes || []];
+  for (var f = 0; f < fonts.length; f++) for (var i = 0; i < fonts[f].length && dr.length < 8; i++) if (!vist[fonts[f][i].uri]) { vist[fonts[f][i].uri] = 1; dr.push(fonts[f][i]); }
+  LL.drec = dr;
+  if (dr.length) {
+    h += '<div class="drec">';
+    for (i = 0; i < dr.length; i++) h += '<div class="d" onclick="tocaO(' + i + ',\'drec\')"><div class="im"' + (dr[i].img ? ' data-bg="' + esc(imgx(dr[i].img, 120)) + '"' : '') + '></div><span>' + esc(dr[i].t) + '</span></div>';
+    h += '</div>';
+  }
+  var tipus = S.filtre || 'tot';
+  h += '<div class="xips-sp">';
+  var X = [['tot', 'Tot'], ['propies', 'Llistes'], ['albums', 'Àlbums'], ['artistes', 'Artistes']];
+  for (i = 0; i < X.length; i++) h += '<span class="' + (tipus == X[i][0] ? 'on' : '') + '" onclick="S.filtre=\'' + X[i][0] + '\';pintaInici()">' + esc(T(X[i][1])) + '</span>';
+  h += '</div>';
+  LL.recents = d.recents || []; LL.recentsCancons = d.recentsCancons || []; LL.propies = d.propies || d.llistes || []; LL.albums = d.albums || []; LL.artistes = d.artistes || [];
+  if (tipus == 'tot') {
+    h += filaSp(T('Escoltat fa poc'), LL.recents, 'recents');
+    h += filaSp(T('Les teves llistes'), LL.propies, 'propies');
+    h += filaSp(T('Els teus àlbums'), LL.albums, 'albums');
+    h += filaSp(T('Els teus artistes'), LL.artistes, 'artistes');
+    if (LL.recentsCancons.length) h += seccio(T('Cançons escoltades fa poc'), LL.recentsCancons, 'cancons');
+  } else {
+    var l = LL[tipus] || [];
+    h += '<div class="gra">';
+    for (i = 0; i < l.length; i++) h += '<div class="it quad" onclick="tocaO(' + i + ',\'' + tipus + '\')"><div class="im' + (tipus == 'artistes' ? ' rodo' : '') + '"' + (l[i].img ? ' data-bg="' + esc(imgx(l[i].img, 300)) + '"' : '') + '><div class="lletra">' + svg(IC.spotify) + '</div></div><div class="nm">' + esc(l[i].t) + (l[i].a ? '<br><span class="gris">' + esc(l[i].a) + '</span>' : '') + '</div></div>';
+    h += '</div>';
+  }
+  if (!S.bib) h += '<div class="gris">' + T('Carregant la teva biblioteca…') + '</div>';
+  $('bib').innerHTML = h;
+  setTimeout(mandros, 30);
 }
 function toca(uri) {
+  if (S.res) { var tots = [].concat(S.res.cancons || [], S.res.artistes || [], S.res.albums || [], S.res.llistes || []); for (var i = 0; i < tots.length; i++) if (tots[i].uri == uri && !/:track:/.test(uri)) { recordaRecent(tots[i]); break; } }
   avis('Posant-ho al Spotify del PC…');
   post(api('spotify/toca', { uri: uri }), '', function (t) {
     var d = null;
@@ -124,6 +204,7 @@ window.casaTanca = window.casaAmaga;
 window.casaEstat = pintaAra;
 iniciaMandros();
 pintaAra();
+pintaInici();
 comenca();
 </script>
 </body>
