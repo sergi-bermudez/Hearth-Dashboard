@@ -994,3 +994,9 @@ TR.en["Omplir, però sencera si és vertical en una pantalla horitzontal (o al r
 TR.en["Sempre sencera, amb el fons difuminat"]="Always whole, with a blurred background";
 TR.en["Més"]="More";
 TR.en["Encara buscant en més llocs…"]="Still searching more sources…";
+TR.en["Busca o escriu una adreça web"]="Search or type a web address";
+TR.en["Busca o escriu una adreça"]="Search or type an address";
+TR.en["Obre"]="Open";
+TR.en["Posa"]="Fill in";
+TR.en["Envia ↵"]="Send ↵";
+TR.en["Les webs s'obren en un navegador amagat al PC, de la mida d'aquesta pantalla, i aquí en veus la imatge. Toca per fer-hi un clic, arrossega per moure-la i fes servir ⌨ per escriure."]="Web pages open in a hidden browser on the PC, sized to this screen, and you see the picture here. Tap to click, drag to scroll and use ⌨ to type.";

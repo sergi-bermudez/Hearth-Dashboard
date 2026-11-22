@@ -49,8 +49,73 @@ public static class Webs
         try { return Convert.ToDouble(v, System.Globalization.CultureInfo.InvariantCulture); } catch { return def; }
     }
 
+    // ---------- Navegador: una pagina de l'Edge per a cada aparell, de la mida de la seva pantalla ----------
+    // L'aparell nomes rep una captura quan la demana (despres de tocar, moure o escriure), no un video.
+    const string NAV_INICI = "https://www.google.com/";
+    const string NAV_SCRIPT = "(function(){try{window.open=function(u){if(u)location.href=u;return window;};" +
+        "document.addEventListener('click',function(e){var a=e.target;while(a&&a.tagName!='A')a=a.parentElement;if(a&&a.target&&a.target!='_self')a.target='_self';},true);}catch(e){}})();";
+
+    static Captura ObreNav(string id, int w, int h, bool mobil)
+    {
+        Captura c;
+        lock (lk)
+        {
+            obertes.TryGetValue(id, out c);
+            if (c == null || c.Pag == null || !c.Pag.Viu)
+            {
+                if (c != null) { try { c.Pag.Tanca(); } catch { } try { Edge.TancaPagina(c.Target); } catch { } }
+                c = new Captura();
+                c.Id = id; c.Url = ""; c.W = w > 0 ? w : 1024; c.H = h > 0 ? h : 700;
+                c.Target = Edge.NovaPagina("about:blank");
+                c.Pag = new Cdp();
+                c.Pag.Connecta(Edge.WsPagina(c.Target));
+                c.Pag.Envia("Page.enable", null, 5000);
+                c.Pag.Envia("Page.addScriptToEvaluateOnNewDocument", CasaServidor.Dic("source", NAV_SCRIPT), 5000);
+                c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", c.W, "height", c.H, "deviceScaleFactor", 1, "mobile", mobil), 5000);
+                c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", NAV_INICI), 10000);
+                c.Cx = 0; c.Cy = 0; c.Cw = c.W; c.Ch = c.H; c.Retall = false;
+                obertes[id] = c;
+                if (neteja == null) neteja = new Timer(Neteja, null, 60000, 60000);
+            }
+            else if (w > 0 && h > 0 && (w != c.W || h != c.H))
+            {
+                c.W = w; c.H = h; c.Cw = w; c.Ch = h; c.Quan = DateTime.MinValue;
+                c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", w, "height", h, "deviceScaleFactor", 1, "mobile", mobil), 5000);
+            }
+            c.Vist = DateTime.Now;
+        }
+        return c;
+    }
+
+    static string NavUrl(string u)
+    {
+        u = (u ?? "").Trim();
+        if (u == "") return NAV_INICI;
+        if (System.Text.RegularExpressions.Regex.IsMatch(u, @"^https?://", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) return u;
+        if (!u.Contains(" ") && System.Text.RegularExpressions.Regex.IsMatch(u, @"^[\w-]+(\.[\w-]+)+(:\d+)?(/.*)?$")) return "https://" + u;
+        return "https://www.google.com/search?q=" + Uri.EscapeDataString(u);
+    }
+
+    static void NavTecla(Cdp p, string tecla)
+    {
+        int codi = tecla == "Enter" ? 13 : tecla == "Backspace" ? 8 : tecla == "Tab" ? 9 : tecla == "Escape" ? 27 : 0;
+        if (codi == 0) return;
+        Dictionary<string, object> d = CasaServidor.Dic("type", "rawKeyDown", "key", tecla, "code", tecla, "windowsVirtualKeyCode", codi, "nativeVirtualKeyCode", codi);
+        p.Envia("Input.dispatchKeyEvent", d, 5000);
+        if (tecla == "Enter") p.Envia("Input.dispatchKeyEvent", CasaServidor.Dic("type", "char", "key", "Enter", "text", "\r", "unmodifiedText", "\r", "windowsVirtualKeyCode", 13), 5000);
+        d = CasaServidor.Dic("type", "keyUp", "key", tecla, "code", tecla, "windowsVirtualKeyCode", codi, "nativeVirtualKeyCode", codi);
+        p.Envia("Input.dispatchKeyEvent", d, 5000);
+    }
+
+    const string NAV_INFO = "(function(){var e=document.activeElement,ed=false,v='',t='';" +
+        "if(e){t=(e.tagName||'').toLowerCase();var ty=(e.type||'').toLowerCase();" +
+        "ed=(t=='textarea')||(t=='input'&&!/^(button|submit|checkbox|radio|range|color|file|image|reset|hidden)$/.test(ty))||e.isContentEditable===true;" +
+        "if(ed)v=e.isContentEditable?(e.innerText||''):(e.value||'');}" +
+        "return {url:location.href,titol:document.title,edita:ed,valor:v.substring(0,2000),contrasenya:!!(e&&e.type=='password'),cercador:!!(e&&(e.type=='search'||e.getAttribute&&e.getAttribute('role')=='combobox'))};})()";
+
     static Captura Obre(string id)
     {
+        if (id.StartsWith("nav-")) return ObreNav(id, 0, 0, false);
         Dictionary<string, object> def = null;
         foreach (Dictionary<string, object> d in Definicions()) if (d.ContainsKey("id") && d["id"].ToString() == id) def = d;
         if (def == null) throw new Exception("Aquesta web no existeix");
@@ -123,11 +188,12 @@ public static class Webs
         c.Quan = DateTime.MinValue;
     }
 
-    static void Roda(string id, int dy)
+    static void Roda(string id, int dy, int dx, double fx, double fy)
     {
         Captura c = Obre(id);
-        double x = c.Cx + c.Cw / 2, y = c.Cy + c.Ch / 2;
-        c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseWheel", "x", x, "y", y, "deltaX", 0, "deltaY", dy), 5000);
+        // on es mou importa: una llista o un mapa dins la pagina es mou ella sola
+        double x = c.Cx + (fx >= 0 ? fx : 0.5) * c.Cw, y = c.Cy + (fy >= 0 ? fy : 0.5) * c.Ch;
+        c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseWheel", "x", x, "y", y, "deltaX", dx, "deltaY", dy), 5000);
         c.Quan = DateTime.MinValue;
     }
 
@@ -155,9 +221,77 @@ public static class Webs
                     CasaServidor.Text(res, "{\"ok\":true}", "application/json");
                     return;
                 case "roda":
-                    Roda(id, int.Parse(CasaServidor.Q(q, "d")));
+                    {
+                        int dx; int.TryParse(CasaServidor.Q(q, "dx"), out dx);
+                        double fx, fy;
+                        if (!double.TryParse(CasaServidor.Q(q, "x"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out fx)) fx = -1;
+                        if (!double.TryParse(CasaServidor.Q(q, "y"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out fy)) fy = -1;
+                        Roda(id, int.Parse(CasaServidor.Q(q, "d")), dx, fx, fy);
+                    }
                     CasaServidor.Text(res, "{\"ok\":true}", "application/json");
                     return;
+                case "nav-obre":
+                    {
+                        int w, h; int.TryParse(CasaServidor.Q(q, "w"), out w); int.TryParse(CasaServidor.Q(q, "h"), out h);
+                        if (!id.StartsWith("nav-")) throw new Exception("id");
+                        w = Math.Max(240, Math.Min(2000, w)); h = Math.Max(240, Math.Min(2000, h));
+                        ObreNav(id, w, h, CasaServidor.Q(q, "mobil") == "1");
+                        CasaServidor.Text(res, "{\"ok\":true}", "application/json");
+                        return;
+                    }
+                case "nav-ves":
+                    {
+                        Captura c = Obre(id);
+                        c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", NavUrl(CasaServidor.Q(q, "u"))), 15000);
+                        c.Quan = DateTime.MinValue;
+                        CasaServidor.Text(res, "{\"ok\":true}", "application/json");
+                        return;
+                    }
+                case "nav-enrere":
+                case "nav-endavant":
+                    {
+                        Captura c = Obre(id);
+                        Edge.Avalua(c.Pag, nom == "nav-enrere" ? "history.back(),1" : "history.forward(),1", 5000);
+                        c.Quan = DateTime.MinValue;
+                        CasaServidor.Text(res, "{\"ok\":true}", "application/json");
+                        return;
+                    }
+                case "nav-escriu":
+                    {
+                        // substitueix el que hi ha al camp actiu pel text (i, si cal, prem Enter)
+                        Captura c = Obre(id);
+                        Edge.Avalua(c.Pag, "(function(){var e=document.activeElement;if(!e)return 0;if(e.isContentEditable){document.execCommand('selectAll');}else if(e.select){e.select();}return 1;})()", 5000);
+                        string t = CasaServidor.Q(q, "t");
+                        if (t != "") c.Pag.Envia("Input.insertText", CasaServidor.Dic("text", t), 5000);
+                        else NavTecla(c.Pag, "Backspace");
+                        if (CasaServidor.Q(q, "enter") == "1") NavTecla(c.Pag, "Enter");
+                        c.Quan = DateTime.MinValue;
+                        CasaServidor.Text(res, "{\"ok\":true}", "application/json");
+                        return;
+                    }
+                case "nav-recarrega":
+                    {
+                        Captura c = Obre(id);
+                        c.Pag.Envia("Page.reload", null, 10000);
+                        c.Quan = DateTime.MinValue;
+                        CasaServidor.Text(res, "{\"ok\":true}", "application/json");
+                        return;
+                    }
+                case "nav-tecla":
+                    {
+                        Captura c = Obre(id);
+                        NavTecla(c.Pag, CasaServidor.Q(q, "k"));
+                        c.Quan = DateTime.MinValue;
+                        CasaServidor.Text(res, "{\"ok\":true}", "application/json");
+                        return;
+                    }
+                case "nav-info":
+                    {
+                        Captura c = Obre(id);
+                        object v = Edge.Avalua(c.Pag, NAV_INFO, 5000);
+                        CasaServidor.Text(res, new JavaScriptSerializer().Serialize(v), "application/json");
+                        return;
+                    }
                 case "recarrega":
                     Obre(id).Pag.Envia("Page.reload", null, 10000);
                     CasaServidor.Text(res, "{\"ok\":true}", "application/json");

@@ -22,18 +22,54 @@
 #punt{position:absolute;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:20px;border:3px solid #7fb0ff;display:none;pointer-events:none}
 #estat{position:absolute;left:0;right:0;top:50%;text-align:center;color:#8d95a1}
 @media (max-width:800px){ .web{width:calc(100% - 18px)} }
+/* Navegador */
+.nav-cerca{display:-webkit-flex;display:flex;margin:0 0 18px}
+.nav-cerca input{-webkit-flex:1;flex:1;min-width:0;font-size:17px;padding:12px 14px}
+.nav-cerca button{margin-left:8px}
+/* barra com la d'un navegador */
+#nbarra{display:none;position:absolute;top:0;left:0;right:0;height:52px;background:#202226;border-bottom:1px solid #000;-webkit-align-items:center;align-items:center;padding:0 6px;z-index:2}
+#vista.nav .cap{display:none}
+#vista.nav #nbarra{display:-webkit-flex;display:flex}
+#vista.nav #marc{top:52px}
+#nbarra .nb{width:40px;height:40px;padding:0;margin:0 2px;border-radius:20px;background:transparent;-webkit-flex:none;flex:none}
+#nbarra .nb:active{background:rgba(255,255,255,.12)}
+#nbarra .ic{width:24px;height:24px;fill:#d7dbe0}
+#n-form{-webkit-flex:1;flex:1;min-width:0;margin:0 6px;height:36px;border-radius:10px;background:#36393f;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;position:relative}
+#n-cad{position:absolute;left:0;right:36px;top:0;bottom:0;line-height:36px;text-align:center;color:#e8eaed;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;padding:0 8px}
+#n-adr{-webkit-flex:1;flex:1;min-width:0;height:36px;border:0;background:transparent;color:transparent;font-size:16px;padding:0 10px;border-radius:10px;-webkit-appearance:none}
+#n-form.edita #n-adr{color:#fff}
+#n-form.edita #n-cad{display:none}
+#n-rec{width:36px;height:36px;padding:0;background:transparent;-webkit-flex:none;flex:none}
+#n-rec .ic{width:20px;height:20px}
+#n-prog{position:absolute;left:0;right:0;bottom:-1px;height:2px;overflow:hidden}
+#n-prog div{height:2px;width:0;background:#4f8ff7;-webkit-transition:width .4s,opacity .4s;transition:width .4s,opacity .4s}
+#marc{overflow:hidden}
+#tecl{position:absolute;left:0;right:0;bottom:0;padding:8px 10px;background:#1b1f25;display:none;z-index:3}
+#tecl form{display:-webkit-flex;display:flex}
+#tecl input{-webkit-flex:1;flex:1;min-width:0;font-size:17px;padding:10px 12px}
+#tecl button{margin-left:6px}
 </style>
 </head>
 <body>
 <div id="pag">
   <div class="capc"><h1>Webs</h1><button onclick="if(Casa)Casa.obre('config','webs')">Afegir o editar</button></div>
+  <form class="nav-cerca" onsubmit="obreNav($('nav-q').value);return false"><input id="nav-q" type="text" autocapitalize="off" autocorrect="off" placeholder="Busca o escriu una adreça web"><button class="pri" type="submit">Obre</button></form>
   <div class="webs" id="webs"><div class="gris">Carregant…</div></div>
-  <p class="gris petit" style="margin-top:20px">Les webs s'obren en un navegador amagat al PC i aquí en veus la imatge. Toca la imatge per fer-hi un clic.</p>
+  <p class="gris petit" style="margin-top:20px">Les webs s'obren en un navegador amagat al PC, de la mida d'aquesta pantalla, i aquí en veus la imatge. Toca per fer-hi un clic, arrossega per moure-la i fes servir ⌨ per escriure.</p>
 </div>
 <div id="vista">
   <div class="cap"><button onclick="tanca()">‹ Webs</button><div class="t" id="v-t"></div>
-    <button onclick="roda(-500)" id="b-amunt">▲</button><button onclick="roda(500)">▼</button><button onclick="recarrega()">⟳</button></div>
-  <div id="marc"><div id="estat">Carregant…</div><img id="img" alt=""><div id="punt"></div></div>
+    <button onclick="roda(-500)" id="b-amunt">▲</button><button onclick="roda(500)" id="b-avall">▼</button><button onclick="recarrega()">⟳</button></div>
+  <div id="nbarra">
+    <button class="nb" onclick="tanca()" title="Webs"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg></button>
+    <button class="nb" onclick="navAcc('nav-enrere')" title="Enrere"><svg class="ic" viewBox="0 0 24 24"><path d="M15.4 7.4L14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg></button>
+    <button class="nb" onclick="navAcc('nav-endavant')" title="Endavant"><svg class="ic" viewBox="0 0 24 24"><path d="M8.6 16.6L10 18l6-6-6-6-1.4 1.4 4.6 4.6z"/></svg></button>
+    <form id="n-form" onsubmit="navVes($('n-adr').value);return false"><span id="n-cad"></span><input id="n-adr" type="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Busca o escriu una adreça" onfocus="navAdrFocus(true)" onblur="navAdrFocus(false)"><button type="button" id="n-rec" onclick="navAcc('nav-recarrega')" title="Recarrega"><svg class="ic" viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button></form>
+    <button class="nb" onclick="navTeclat()" title="Escriu a la web"><svg class="ic" viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg></button>
+    <div id="n-prog"><div></div></div>
+  </div>
+  <div id="marc"><div id="estat">Carregant…</div><img id="img" alt=""><div id="punt"></div>
+    <div id="tecl"><form onsubmit="navEscriu(true);return false"><input id="tecl-t" type="text" autocapitalize="off" autocorrect="off"><button type="button" onclick="navEscriu(false)">Posa</button><button class="pri" type="submit">Envia ↵</button><button type="button" onclick="$('tecl').style.display='none'">✕</button></form></div></div>
 </div>
 <script src="comu.js"></script>
 <script>
@@ -97,6 +133,7 @@ function carrega() {
   nou.src = u;
 }
 $('img').addEventListener('click', function (e) {
+  if (W.obert && W.obert.nav) { if (+new Date() - (W.touchT || 0) > 700) navClic(e.clientX, e.clientY); return; }
   var r = this.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
   var p = $('punt');
   p.style.left = (e.clientX - $('marc').getBoundingClientRect().left) + 'px';
@@ -107,9 +144,146 @@ $('img').addEventListener('click', function (e) {
 }, false);
 function roda(d) { post(api('web/roda', { id: W.obert.id, d: d }), '', function () { clearTimeout(W.t); setTimeout(carrega, 500); }, errXarxa('moure la web')); }
 function recarrega() { post(api('web/recarrega', { id: W.obert.id }), '', function () { clearTimeout(W.t); setTimeout(carrega, 2500); }, errXarxa('recarregar')); }
-function tanca() { W.obert = null; clearTimeout(W.t); $('vista').style.display = 'none'; refrescaCards(0); }
+function tanca() { W.obert = null; clearTimeout(W.t); clearTimeout(W.ti); $('vista').style.display = 'none'; $('vista').className = ''; $('tecl').style.display = 'none'; refrescaCards(0); }
+
+/* ---------- Navegador: l'Edge del PC obre la web de la mida d'aquesta pantalla i aquí arriba una captura
+   cada cop que toques, mous o escrius (no és un vídeo). Tocar = clic, arrossegar = moure, ⌨ = escriure. ---------- */
+function navId() { var i = ls('navId'); if (!i) { i = 'nav-' + Math.random().toString(36).substring(2, 10); ls('navId', i); } return i; }
+function navMida() { var m = $('marc'); return { w: m.clientWidth, h: m.clientHeight }; }
+function obreNav(q) {
+  var w = { id: navId(), nav: true, nom: 'Navegador' };
+  W.obert = w;
+  clearTimeout(W.t);
+  $('vista').className = 'nav';
+  $('vista').style.display = 'block';
+  $('estat').textContent = 'Obrint…'; $('estat').style.display = 'block';
+  $('img').style.display = 'none';
+  navPinta(q || '');
+  var mi = navMida();
+  post(api('web/nav-obre', { id: w.id, w: mi.w, h: mi.h, mobil: mi.w < 700 ? 1 : '' }), '', function () {
+    if (q) navVes(q); else navRefresca();
+  }, function () { $('estat').textContent = 'No s\'ha pogut obrir el navegador al PC.'; });
+}
+function navAdrFocus(f) {
+  $('n-form').className = f ? 'edita' : '';
+  if (f) setTimeout(function () { try { $('n-adr').setSelectionRange(0, 9999); } catch (e) { } }, 0);
+}
+function navPinta(url, titol) {
+  $('n-adr').value = url || '';
+  var m = /^https?:\/\/(?:www\.)?([^\/?#]+)/i.exec(url || '');
+  $('n-cad').textContent = m ? (/^https:/i.test(url) ? '🔒 ' : '') + m[1] : (url || '');
+}
+/* barra de progrés: corre mentre s'espera que la web canviï */
+function navProg(on) {
+  var b = $('n-prog').firstChild;
+  if (on) { b.style.opacity = '1'; b.style.width = '15%'; setTimeout(function () { if (W.carregant) b.style.width = '70%'; }, 60); }
+  else { b.style.width = '100%'; setTimeout(function () { if (!W.carregant) { b.style.opacity = '0'; setTimeout(function () { b.style.width = '0'; }, 400); } }, 300); }
+  W.carregant = on;
+}
+function navVes(u) {
+  if (!W.obert || !W.obert.nav) return;
+  $('n-adr').blur();
+  navPinta(u);
+  navProg(true);
+  $('estat').textContent = 'Carregant…';
+  post(api('web/nav-ves', { id: W.obert.id, u: u }), '', navRefresca, errXarxa('obrir la web'));
+}
+function navAcc(a) { navProg(true); post(api('web/' + a, { id: W.obert.id }), '', navRefresca, errXarxa('navegar')); }
+/* després de cada acció: captures seguides una estona (la web pot trigar a canviar) i després una de tant en tant */
+function navRefresca() {
+  var w = W.obert; if (!w || !w.nav) return;
+  W.seq = [250, 900, 2000, 4000];
+  clearTimeout(W.t);
+  W.t = setTimeout(navCaptura, 120);
+  clearTimeout(W.ti); W.ti = setTimeout(function () { navInfo(); W.ti = setTimeout(navInfo, 2500); }, 1000);
+}
+function navCaptura() {
+  var w = W.obert; if (!w || !w.nav || !W.actiu) return;
+  var u = api('web/imatge', { id: w.id, min: 200, t: Date.now() }), nou = new Image();
+  nou.onload = function () {
+    if (W.obert != w) return;
+    var im = $('img');
+    im.src = u; im.style.display = 'block';
+    im.style.webkitTransform = im.style.transform = '';
+    im.style.left = '0'; im.style.top = '0'; im.style.width = nou.width + 'px'; im.style.height = nou.height + 'px';
+    $('estat').style.display = 'none';
+    if (W.carregant && W.seq.length <= 2) navProg(false);
+    W.t = setTimeout(navCaptura, W.seq.length ? W.seq.shift() : 6000);
+  };
+  nou.onerror = function () { $('estat').textContent = 'El PC no respon. Torno a provar…'; $('estat').style.display = 'block'; W.t = setTimeout(navCaptura, 4000); };
+  nou.src = u;
+}
+function navInfo() {
+  var w = W.obert; if (!w || !w.nav) return;
+  getJson(api('web/nav-info', { id: w.id }), function (d) {
+    if (W.obert != w || !d) return;
+    if (document.activeElement != $('n-adr')) navPinta(d.url, d.titol);
+    W.info = d;
+    if (d.edita && $('tecl').style.display != 'block') navMostraTeclat(d);
+    else if (!d.edita && document.activeElement != $('tecl-t')) $('tecl').style.display = 'none';
+  });
+}
+function navMostraTeclat(d) {
+  var t = $('tecl-t');
+  t.type = d && d.contrasenya ? 'password' : 'text';
+  t.value = d ? d.valor || '' : '';
+  $('tecl').style.display = 'block';
+}
+function navTeclat() { navMostraTeclat(W.info && W.info.edita ? W.info : null); $('tecl-t').focus(); }
+function navEscriu(enter) {
+  var t = $('tecl-t');
+  post(api('web/nav-escriu', { id: W.obert.id, t: t.value, enter: enter ? 1 : '' }), '', function () { if (enter) { t.blur(); $('tecl').style.display = 'none'; } navRefresca(); }, errXarxa('escriure'));
+}
+function navClic(cx, cy) {
+  var r = $('img').getBoundingClientRect(), fx = (cx - r.left) / r.width, fy = (cy - r.top) / r.height;
+  if (fx < 0 || fy < 0 || fx > 1 || fy > 1) return;
+  var p = $('punt'), mr = $('marc').getBoundingClientRect();
+  p.style.left = (cx - mr.left) + 'px'; p.style.top = (cy - mr.top) + 'px'; p.style.display = 'block';
+  setTimeout(function () { p.style.display = 'none'; }, 500);
+  navProg(true);
+  post(api('web/clic', { id: W.obert.id, x: fx.toFixed(4), y: fy.toFixed(4) }), '', navRefresca, errXarxa('fer el clic'));
+}
+function navMou(dx, dy, x0, y0) {
+  var r = $('img').getBoundingClientRect();
+  post(api('web/roda', { id: W.obert.id, d: Math.round(-dy), dx: Math.round(-dx), x: ((x0 - r.left) / r.width).toFixed(3), y: ((y0 - r.top) / r.height).toFixed(3) }), '', navRefresca, errXarxa('moure la web'));
+}
+(function () {
+  var m = $('marc'), T0 = null;
+  m.addEventListener('touchstart', function (e) {
+    if (!W.obert || !W.obert.nav || e.touches.length != 1 || e.target.tagName == 'INPUT' || e.target.tagName == 'BUTTON') { T0 = null; return; }
+    var t = e.touches[0]; T0 = { x: t.clientX, y: t.clientY, x1: t.clientX, y1: t.clientY };
+  }, false);
+  m.addEventListener('touchmove', function (e) {
+    if (!T0) return;
+    var t = e.touches[0]; T0.x1 = t.clientX; T0.y1 = t.clientY;
+    e.preventDefault();
+    /* la imatge segueix el dit mentre arriba la nova */
+    var im = $('img'), tr = 'translate(' + Math.round(T0.x1 - T0.x) + 'px,' + Math.round(T0.y1 - T0.y) + 'px)';
+    im.style.webkitTransform = tr; im.style.transform = tr;
+  }, false);
+  m.addEventListener('touchend', function (e) {
+    if (!T0) return;
+    var dx = T0.x1 - T0.x, dy = T0.y1 - T0.y, a = T0; T0 = null;
+    W.touchT = +new Date();
+    e.preventDefault();
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) navClic(a.x, a.y);
+    else navMou(Math.abs(dx) > Math.abs(dy) * 2 ? dx * 1.2 : 0, dy * 1.2, a.x, a.y);
+  }, false);
+  m.addEventListener('wheel', function (e) {
+    if (!W.obert || !W.obert.nav) return;
+    e.preventDefault();
+    clearTimeout(W.rw); W.rdy = (W.rdy || 0) + e.deltaY; W.rx = e.clientX; W.ry = e.clientY;
+    W.rw = setTimeout(function () { var d = W.rdy; W.rdy = 0; navMou(0, -d, W.rx, W.ry); }, 120);
+  }, false);
+})();
+/* si la pantalla gira o canvia de mida, la web del PC també */
+window.addEventListener('resize', function () {
+  if (!W.obert || !W.obert.nav) return;
+  clearTimeout(W.rz);
+  W.rz = setTimeout(function () { var mi = navMida(); post(api('web/nav-obre', { id: W.obert.id, w: mi.w, h: mi.h, mobil: mi.w < 700 ? 1 : '' }), '', navRefresca); }, 400);
+});
 window.addEventListener('resize', function () { setTimeout(encaixa, 50); });
-window.casaMostra = function () { W.actiu = true; if (W.obert) carrega(); else refrescaCards(0); };
+window.casaMostra = function () { W.actiu = true; if (W.obert && W.obert.nav) navRefresca(); else if (W.obert) carrega(); else refrescaCards(0); };
 window.casaAmaga = function () { W.actiu = false; clearTimeout(W.t); };
 window.casaTanca = window.casaAmaga;
 window.casaObre = function (a) {

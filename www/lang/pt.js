@@ -994,3 +994,9 @@ TR.pt["Omplir, però sencera si és vertical en una pantalla horitzontal (o al r
 TR.pt["Sempre sencera, amb el fons difuminat"]="Sempre inteira, com o fundo desfocado";
 TR.pt["Més"]="Mais";
 TR.pt["Encara buscant en més llocs…"]="Ainda a procurar em mais sítios…";
+TR.pt["Busca o escriu una adreça web"]="Pesquise ou escreva um endereço web";
+TR.pt["Busca o escriu una adreça"]="Pesquise ou escreva um endereço";
+TR.pt["Obre"]="Abrir";
+TR.pt["Posa"]="Pôr";
+TR.pt["Envia ↵"]="Enviar ↵";
+TR.pt["Les webs s'obren en un navegador amagat al PC, de la mida d'aquesta pantalla, i aquí en veus la imatge. Toca per fer-hi un clic, arrossega per moure-la i fes servir ⌨ per escriure."]="As páginas abrem num navegador escondido no PC, do tamanho deste ecrã, e aqui vês a imagem. Toca para clicar, arrasta para mover e usa ⌨ para escrever.";
