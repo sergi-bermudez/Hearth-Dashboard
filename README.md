@@ -4,7 +4,7 @@
 
 <p align="center"><b>Give your old iPad a second life as a home dashboard.</b><br>
 Photos, YouTube, radio, TV, Spotify, movies, music, calendar and football, served from a Windows PC at home.<br>
-Runs on <b>Safari 9 (iOS 9.3.5)</b>: iPad 2, iPad 3, iPad mini 1 and any newer tablet or phone.</p>
+Runs on <b>Safari 9 (iOS 9.3.5)</b>: iPad 2, iPad 3, iPad mini 1 and any newer tablet, phone, PC or TV browser — even an iPod touch 4 gets a simplified home screen.</p>
 
 <p align="center">
   <a href="https://github.com/sergi-bermudez/Hearth-Dashboard/releases/latest"><b>⬇ Download the latest release</b></a>
@@ -27,19 +27,19 @@ No app store, no subscription, no account with us, no cloud. Everything runs on 
 |---|---|
 | **Home screen** | Big clock, weather and forecast, today's agenda, a photo background with "on this day" memories, and what's playing. Four styles inspired by the best: **Ambient** (Nest Hub), **Widgets** (iPadOS), **StandBy** (iPhone) and **Dark**. |
 | **Slideshow** | Full-screen photo frame when nobody touches the tablet: **Classic**, **Ken Burns**, **Magazine** (three photos from the same day or trip) and **Whole photo** (no cropping, blurred background). |
-| **Watch** | **Movies**: a Plex-like library that finds every video in every folder, skips samples and short extras, and organises by genre and decade, with covers and details from the internet and a file browser for anything not recognised. **TV**: free-to-air channels by country and language. **YouTube**: search, channels and HD, converted by the PC so even iOS 9 can play it. |
-| **Football** | Live scores, fixtures and results for your leagues and teams (LaLiga, Liga Portugal, Champions League, Premier League…), with a radio button to listen to the match commentary on Catalunya Ràdio, RAC1, SER, COPE, Antena 1, TSF… |
-| **Listen** | **Music** (your MP3/M4A library by artist, album, genre and decade), **Radio** (thousands of stations from radio-browser.info), **Podcasts**, and **Spotify** (optional: plays in Edge on the PC and streams to the tablet). |
-| **Cast** | Send whatever is playing to a **Chromecast, Google TV, Google Nest** speaker or a **DLNA TV (LG, Samsung, Sony…)**. The tablet becomes the remote. |
-| **Photos** | Your PC photo folders as a timeline, plus a nightly sync of recent photos and chosen albums from **Google Photos**. |
+| **Watch** | **Movies**: a Netflix/Plex-style library with a featured movie, sliding rows (continue watching, recently added, genres) and search. It finds every video in every folder, skips samples and short extras, and gets covers and details from TMDB, iTunes, Wikipedia and Wikidata in several languages. Doubtful or unrecognised titles are flagged under **To review** with the closest matches to confirm; any movie can be searched again and a wrong pick undone. **TV**: free-to-air channels by country and language. **YouTube**: search, channels and HD, converted by the PC so even iOS 9 can play it. |
+| **Football** | Live scores, fixtures and results for your leagues, plus any team you add (its own schedule in every competition), where each match is broadcast, and a radio button to listen to the commentary on Catalunya Ràdio, RAC1, SER, COPE, Antena 1, TSF… |
+| **Listen** | **Music** (your MP3/M4A library by artist, album, genre and decade), **Radio** (thousands of stations from radio-browser.info), **Podcasts**, and **Spotify** (optional: plays in Edge on the PC and streams to the tablet, with a home like the app: shortcuts, recently played, your playlists, albums and artists). |
+| **Cast** | Send whatever is playing to a **Chromecast, Google TV, Google Nest** speaker, a **DLNA TV (LG, Samsung, Sony…)** or **other Hearth screens** — one, several or all of them in sync, with a per-device delay. Incoming sends start by themselves after a few seconds. **Show Hearth on the TV** projects the PC to a Miracast TV in TV mode (bigger layout, remote-control arrows). |
+| **Photos** | Your PC photo folders as a timeline, plus recent photos and chosen albums from **Google Photos**, either copied to the PC nightly or **on demand** (each photo downloaded when first viewed, 1 GB cache). Each device chooses which folders and albums it shows. |
 | **Calendar** | Your Google calendars or any iCal link, each in its own colour. |
 | **Smart home** | Tuya / Smart Life lights, plugs and scenes, and any web page from the PC (e.g. Google Home or a camera) shown live on the tablet. |
-| **Shopping** | Shared shopping list picked like a restaurant till: products by category with photos, prices and current deals, read nightly from your supermarkets' websites (any shop with an online store, in any country — just add its address). Favourites, quantities, estimated total, and one-tap sending by WhatsApp grouped by shop. |
+| **Shopping** | Shared shopping list picked like a restaurant till: products by category with photos, prices and current deals, read nightly from your supermarkets' websites (any shop with an online store, in any country — just add its address). Pick a concept ("eggs") and see the cheapest similar product and where; kg or pieces with +/−; the list grouped by shop; fill the shop's online cart from the PC; send the whole list or one shop's list by WhatsApp (to yourself first). |
 | **Messages** | Optional WhatsApp reading and replying, with a red badge for new messages. |
 | **Documents** | A simple WordPad-style editor, great for kids learning to type, with photos from the tablet's camera roll. |
-| **Family** | **Kids mode** with a PIN and only the apps you choose. **Per-device settings**: every tablet can have its own style, slideshow and kids mode. |
+| **Family** | **Kids mode** with a PIN and only the apps you choose. **This device** settings: name, keep the screen always on, dock at the bottom or on the right (automatic on wide screens), light mode for old iPads, TV mode, sound delay and photo folders; every device can also have its own style, slideshow and night mode. |
 | **Installable** | Add to Home Screen on iPad/iPhone for full screen; installable PWA on Android and desktop. Five languages: English, Català, Español, Português, Français. |
-| **Auto-update** | Checks GitHub every hour and updates itself at night. Before switching it checks that the new version compiles, and if it doesn't start it rolls back. |
+| **Reliable at home** | Checks GitHub every hour and updates itself at night (it compiles the new version first and rolls back if it doesn't start). Pages always load matching files after an update and repair themselves if a device's saved data breaks. Missed nightly jobs run when the PC wakes up, the PC is kept awake while a screen is connected, and if the server stops answering the screens say so and dim what needs it. |
 
 <p align="center">
   <img src="docs/screens/football.png" width="49%" alt="Football">

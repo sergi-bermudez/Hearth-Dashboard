@@ -329,6 +329,9 @@ function ajustosDispositiu(ok) {
       if (p && p.propi && p.ajustos) for (k in p.ajustos) if (p.ajustos.hasOwnProperty(k)) a[k] = p.ajustos[k];
       /* el mode tele és sempre només d'aquest aparell (mai dels ajustos generals) */
       a.tele = !!(p && p.tele === true);
+      /* i el que és sempre d'aquest aparell */
+      var nomes = ['retard', 'despert', 'moll', 'fotosAmaga'];
+      for (var n = 0; n < nomes.length; n++) { delete a[nomes[n]]; if (p && p[nomes[n]] !== undefined) a[nomes[n]] = p[nomes[n]]; }
       ok(a, g, p);
     });
   });

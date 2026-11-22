@@ -167,31 +167,39 @@ body{background:#000}
     <label class="check"><input type="checkbox" id="fn-futbol" onchange="desaFuncions()">Futbol (resultats, calendari i ràdios que narren els partits)</label>
   </div>
 
+  <div class="sec" id="s-aparell">
+    <h2>Aquest aparell</h2>
+    <div class="desc">El que només afecta l'aparell on ets ara (aquest iPad, mòbil, tele…). La resta d'aparells no canvien.</div>
+    <div class="disp">
+      <div class="fila"><label>Nom</label><input type="text" id="dp-nom" style="width:220px"><button onclick="dpDesaNom()">Canviar el nom</button></div>
+      <label class="check"><input type="checkbox" id="dp-propi" onchange="dpPropi(this.checked)"> <span>Aspecte propi (estil, fons, passi de fotos i mode nit diferents de la resta)</span></label>
+      <div class="gris petit" id="dp-desc"></div>
+      <details style="margin-top:8px"><summary class="gris petit" style="cursor:pointer">Aparells connectats</summary><div id="dp-llista"></div></details>
+    </div>
+    <h2>Pantalla</h2>
+    <div class="fila"><label>Sempre encesa</label><label class="check"><input type="checkbox" id="aj-despert"> No deixis que s'adormi mai (per a un marc o un aparell sempre a la vista)</label></div>
+    <div class="fila"><label>Moll d'apps</label><select id="aj-moll" class="sel"><option value="">Automàtic (a la dreta si la pantalla és molt apaïsada)</option><option value="baix">Sempre a baix</option><option value="dreta">Sempre a la dreta</option></select></div>
+    <div class="fila"><label>Mode lleuger</label><select id="aj-lleuger" class="sel"><option value="">Automàtic (iPads amb iOS 9 o anterior)</option><option value="si">Sempre activat</option><option value="no">Desactivat</option></select></div>
+    <div class="gris petit" style="margin:-4px 0 10px">Treu animacions i ombres, fa servir fotos de fons més petites i les canvia menys sovint. Ajuda els iPads antics a anar més fluids i a no tancar Safari.</div>
+    <h2>Tele</h2>
+    <div class="fila"><label>Mode tele</label><label class="check"><input type="checkbox" id="aj-tele"> Tot més gran i navegació amb les fletxes del comandament</label></div>
+    <div class="fila"><label>Projectar</label><button class="pri" onclick="teleObre()">📺 Mostra Hearth a la tele…</button></div>
+    <div class="desc petit">També des de la pantalla d'inici de qualsevol aparell, amb la icona 📺: tries la tele (les que accepten Miracast), el PC hi obre Hearth en mode tele i el comandament de la tele el controla.</div>
+    <h2>So i fotos</h2>
+    <div class="fila"><label>Retard del so</label><input type="number" id="aj-retard" min="-3000" max="3000" step="50" style="width:110px"> <span class="gris petit" style="margin-left:10px">ms · quan sona alhora a diverses pantalles: positiu si aquesta va avançada</span></div>
+    <div class="fila"><label>Fotos</label><div style="-webkit-flex:1;flex:1"><div class="gris petit" style="margin-bottom:6px">Les carpetes que es veuen en aquest aparell (a l'app Fotos i al fons):</div><div id="aj-fotos" class="gris">Carregant…</div></div></div>
+    <div class="peu"><button class="pri" onclick="desaInici()">Desar</button></div>
+  </div>
+
   <div class="sec" id="s-inici">
     <h2>Pantalla d'inici</h2>
-    <div class="desc">L'estil, el temps, la salutació, el fons i els modes lleuger i nit.</div>
-    <div class="disp">
-      <div class="fila"><label>Aquest dispositiu</label><input type="text" id="dp-nom" style="width:220px"><button onclick="dpDesaNom()">Canviar el nom</button></div>
-      <label class="check"><input type="checkbox" id="dp-propi" onchange="dpPropi(this.checked)"> <span>Configuració pròpia per a aquest dispositiu</span></label>
-      <div class="gris petit" id="dp-desc"></div>
-      <div id="dp-llista"></div>
-    </div>
+    <div class="desc">L'estil, la salutació, el temps i el fons de la pantalla d'inici.</div>
     <div class="estils" id="estils"></div>
     <div class="fila"><label>Nom (salutació)</label><input type="text" id="aj-nom" placeholder="p. ex. família"></div>
     <div class="fila"><label>Ciutat del temps</label><input type="text" id="aj-ciutat"><button onclick="cercaCiutat()">Cercar</button></div>
     <div class="llista" id="ciutats" style="margin:-4px 0 12px 150px"></div>
     <div class="fila"><label>Foscor del fons</label><input type="range" id="aj-foscor" min="0" max="80" step="5" style="width:220px" oninput="$('aj-foscor-v').textContent=this.value+'%'"><span id="aj-foscor-v" class="gris" style="margin-left:10px"></span><span class="gris petit" style="margin-left:12px">més fosc = el text es llegeix millor</span></div>
     <div class="fila"><label>Fons: segons</label><input type="number" id="aj-fons" min="8" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto del fons</span></div>
-    <h2>Mode lleuger</h2>
-    <div class="fila"><label>Mode lleuger</label><select id="aj-lleuger" class="sel"><option value="">Automàtic (iPads amb iOS 9 o anterior)</option><option value="si">Sempre activat</option><option value="no">Desactivat</option></select></div>
-    <div class="fila"><label>Fotos</label><div style="-webkit-flex:1;flex:1"><div class="gris petit" style="margin-bottom:6px">Les carpetes que es veuen en aquest aparell (a l'app Fotos i al fons):</div><div id="aj-fotos" class="gris">Carregant…</div></div></div>
-    <div class="fila"><label>Pantalla</label><label class="check"><input type="checkbox" id="aj-despert"> Mantén-la sempre encesa (no s'adorm mai)</label></div>
-    <div class="fila"><label>Moll d'apps</label><select id="aj-moll"><option value="">Automàtic (a la dreta si la pantalla és molt apaïsada)</option><option value="baix">Sempre a baix</option><option value="dreta">Sempre a la dreta</option></select></div>
-    <div class="fila"><label>Retard del so</label><input type="number" id="aj-retard" min="-3000" max="3000" step="50" style="width:110px"> <span class="gris petit">ms · quan sona alhora en diverses pantalles: positiu si aquesta va avançada</span></div>
-    <div class="fila"><label>Mode tele</label><label class="check"><input type="checkbox" id="aj-tele"> Per a la tele: tot més gran i navegació amb les fletxes del comandament</label></div>
-    <div class="fila"><label>Tele</label><button class="pri" onclick="teleObre()">📺 Mostra Hearth a la tele…</button></div>
-    <div class="desc petit">També des de la pantalla d'inici de qualsevol aparell, amb la icona 📺: tries la tele de la llista (les que accepten projecció, Miracast), el PC hi obre Hearth en mode tele i el comandament de la tele el controla (fletxes, OK, Enrere).</div>
-    <div class="gris petit" style="margin:-4px 0 10px">Treu animacions i ombres, fa servir fotos de fons més petites i les canvia menys sovint. Ajuda els iPads antics a anar més fluids i a no tancar Safari.</div>
     <h2>Mode nit</h2>
     <label class="check"><input type="checkbox" id="aj-nit"> <span>De nit, només un rellotge fosc i tènue (es desperta tocant la pantalla)</span></label>
     <div class="fila"><label>De</label><input type="time" id="aj-nit-des" style="width:130px"><span style="margin:0 10px">a</span><input type="time" id="aj-nit-fins" style="width:130px"></div>
@@ -529,12 +537,14 @@ function desaInici() {
   v.foscor = parseInt($('aj-foscor').value, 10) || 0;
   v.estil = v.estil || 'ambient';
   v.lleuger = $('aj-lleuger').value;
-  v.retard = parseInt($('aj-retard').value, 10) || 0;
-  v.despert = $('aj-despert').checked;
-  v.moll = $('aj-moll').value;
-  if (C.fotosCarp) { var am = [], cf = document.querySelectorAll('.aj-fc'); for (var fi = 0; fi < cf.length; fi++) if (!cf[fi].checked) am.push(cf[fi].value); v.fotosAmaga = am; }
+  /* sempre d'aquest aparell, encara que no tingui aspecte propi */
+  delete v.retard; delete v.despert; delete v.moll; delete v.fotosAmaga;
+  C.dp.retard = parseInt($('aj-retard').value, 10) || 0;
+  C.dp.despert = $('aj-despert').checked;
+  C.dp.moll = $('aj-moll').value;
+  if (C.fotosCarp) { var am = [], cf = document.querySelectorAll('.aj-fc'); for (var fi = 0; fi < cf.length; fi++) if (!cf[fi].checked) am.push(cf[fi].value); C.dp.fotosAmaga = am; }
   delete v.tele;
-  C.dp = C.dp || {}; C.dp.tele = $('aj-tele').checked;
+  C.dp = C.dp || { propi: false, ajustos: {} }; C.dp.tele = $('aj-tele').checked;
   v.fonsPassi = $('aj-fonspassi').checked;
   v.nit = $('aj-nit').checked; v.nitDes = $('aj-nit-des').value || '22:00'; v.nitFins = $('aj-nit-fins').value || '07:00';
   desaDades('ajustos', a, function () {
@@ -1003,7 +1013,7 @@ var ICM = {
   imatge: 'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z'
 };
 var MENU = [
-  ['General', [['llengua', 'Idioma i país', ICM.globus, '#0a84ff'], ['inici', 'Pantalla d\'inici', ICM.pantalla, '#5e5ce6'], ['passi', 'Passi de fotos', ICM.imatge, '#ff375f'], ['agenda', 'Agenda', ICM.agenda, '#ff453a'], ['funcions', 'Funcions opcionals', ICM.interruptor, '#30d158']]],
+  ['General', [['aparell', 'Aquest aparell', 'M18 0H6C4.34 0 3 1.34 3 3v18c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V3c0-1.66-1.34-3-3-3zm-6 22.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 18H5V3h14v15z', '#ff9f0a'], ['llengua', 'Idioma i país', ICM.globus, '#0a84ff'], ['inici', 'Pantalla d\'inici', ICM.pantalla, '#5e5ce6'], ['passi', 'Passi de fotos', ICM.imatge, '#ff375f'], ['agenda', 'Agenda', ICM.agenda, '#ff453a'], ['funcions', 'Funcions opcionals', ICM.interruptor, '#30d158']]],
   ['Contingut', [['carpetes', 'Carpetes del PC', IC.carpeta, '#0a84ff'], ['gfotos', 'Google Fotos', ICM.imatge, '#ff9f0a'], ['media', 'Caràtules i fitxes', IC.pelis, '#bf5af2'], ['tv', 'Canals de TV', IC.tv, '#64d2ff'], ['youtube', 'YouTube', IC.video, '#ff3b30'], ['webs', 'Webs', IC.web, '#5ac8fa']]],
   ['Connexions', [['casa', 'Casa (Tuya / Smart Life)', ICM.casa, '#ff9f0a'], ['spotify', 'Spotify', IC.spotify, '#1db954'], ['whatsapp', 'WhatsApp', IC.missatges, '#25d366']]],
   ['Compra', [['compra', 'Botigues i preus', 'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42a.25.25 0 01-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0020 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z', '#ff9f0a']]],
@@ -1158,10 +1168,11 @@ function omplInici() {
   $('aj-fons').value = v.fonsSeg || 20;
   $('aj-lleuger').value = v.lleuger === true ? 'si' : v.lleuger === false ? '' : (v.lleuger || '');
   $('aj-tele').checked = !!(C.dp && C.dp.tele === true);
-  $('aj-retard').value = v.retard || 0;
-  $('aj-despert').checked = v.despert === true;
-  $('aj-moll').value = v.moll || '';
-  pintaCarpetesFotos(v.fotosAmaga || []);
+  var dp = C.dp || {};
+  $('aj-retard').value = dp.retard || 0;
+  $('aj-despert').checked = dp.despert === true;
+  $('aj-moll').value = dp.moll || '';
+  pintaCarpetesFotos(dp.fotosAmaga || []);
   /* en mode tele, una manera clara de sortir-ne */
   var bt = $('surt-tele');
   if (C.dp && C.dp.tele === true && !bt) {
