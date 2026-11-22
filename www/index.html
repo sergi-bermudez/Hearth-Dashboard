@@ -1137,6 +1137,9 @@ function notifica() {
 function desbloqueja() {
   if (A.desbloquejat) return;
   A.desbloquejat = true;
+  /* si ja sona alguna cosa (p. ex. una ràdio enviada des d'un altre aparell), no cal: i fer sonar un silenci en un
+     altre reproductor, a l'Android i a les teles, atura el que sona (només deixen sonar una cosa alhora) */
+  if ((au.getAttribute('src') && !au.paused) || TV.canal) return;
   try {
     if (!au.getAttribute('src')) { au.src = SILENCI; var p = au.play(); setTimeout(function () { if (au.src.indexOf('data:') === 0) { au.pause(); au.removeAttribute('src'); } }, 300); }
     var v = $('tv-v');
