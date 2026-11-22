@@ -340,6 +340,7 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 #agenda .ag{cursor:pointer}
 #agenda .ag.imp{font-weight:600}
 #agenda .ag.xoc b{color:#ff9f0a}
+#agenda .ag.xoc .ex{background:#ff9f0a;color:#1c1300}
 #agenda .ag .xc{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:rgba(255,159,10,.22);color:#ffb340;font-size:12px;font-weight:700;vertical-align:2px}
 #agenda .ag .ex,#marc .seg-ag .ex{display:inline-block;width:18px;height:18px;line-height:18px;border-radius:9px;background:#ff453a;color:#fff;font-size:13px;font-weight:800;text-align:center;margin-right:7px;vertical-align:1px;font-style:normal}
 #marc .hora .seg-ag{display:block;font-size:18px;margin-top:6px;opacity:.95}
@@ -2151,10 +2152,10 @@ function pintaAgenda() {
     if (!g.length || usades + 2 > cap) continue;
     h += '<div class="ag-d">' + grups[j][0] + '</div>'; usades++;
     for (i = 0; i < g.length && usades < cap; i++, usades++) {
-      var x = g[i], hi = dataDe(x.ini), imp = esImportant(x);
+      var x = g[i], hi = dataDe(x.ini), imp = esImportant(x) || x.xoc;
       if (i == cap - usades - 1 && g.length - i > 1) { h += '<div class="ag gris">' + Tf('i {1} més', g.length - i) + '</div>'; usades++; break; }
       AG.vis.push(x);
-      h += '<div class="ag' + (imp ? ' imp' : '') + (x.xoc ? ' xoc' : '') + '" onclick="marcaAg(' + (AG.vis.length - 1) + ',event)">' + (imp ? '<em class="ex">!</em>' : '<i style="background:' + esc(x.color) + '"></i>') + '<b>' + (x.dia ? T('Tot el dia') : hi.getHours() + ':' + dos(hi.getMinutes())) + '</b>' + esc(x.t) + (x.xoc ? '<span class="xc">' + esc(T('coincideix')) + '</span>' : '') + '</div>';
+      h += '<div class="ag' + (imp ? ' imp' : '') + (x.xoc ? ' xoc' : '') + '" onclick="marcaAg(' + (AG.vis.length - 1) + ',event)">' + (imp ? '<em class="ex">!</em>' : '<i style="background:' + esc(x.color) + '"></i>') + '<b>' + (x.dia ? T('Tot el dia') : hi.getHours() + ':' + dos(hi.getMinutes())) + '</b>' + esc(x.t) + '</div>';
     }
   }
   var ag = $('agenda');
