@@ -14,6 +14,12 @@
 .sec .desc{color:#8d95a1;font-size:14px;margin-bottom:14px}
 .fila{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-bottom:12px}
 .fila label{width:150px;-webkit-flex:none;flex:none;color:#c3c9d2}
+.fila.amunt{-webkit-align-items:flex-start;align-items:flex-start}
+.fila>label.check{width:auto;-webkit-flex:1 1 auto;flex:1 1 auto;min-width:0}
+.fila .ple{-webkit-flex:1 1 auto;flex:1 1 auto;min-width:0}
+.fila .ple label{width:auto;color:inherit;margin-bottom:0}
+#aj-fotos{-webkit-column-width:170px;-moz-column-width:170px;column-width:170px;-webkit-column-gap:16px;column-gap:16px}
+#aj-fotos label.check{-webkit-column-break-inside:avoid;break-inside:avoid}
 .fila .ok{width:28px;text-align:center;-webkit-flex:none;flex:none;font-size:18px}
 .fila button{margin-left:8px;-webkit-flex:none;flex:none}
 .peu{text-align:right;margin-top:6px}
@@ -89,6 +95,9 @@ body{background:#000}
   .fila label{width:100%;margin-bottom:6px}
   .fila input[type=text],.fila input[type=password],.fila .sel{-webkit-flex:1;flex:1;min-width:0}
   .fila .gris.petit{width:100%;margin:6px 0 0 !important}
+  /* sense aixo, a l'iPad vertical el bloc es posa al costat de l'etiqueta amb amplada zero */
+  .fila .ple{width:100%;-webkit-flex:none;flex:none}
+  .fila .ple .gris.petit{margin:0 0 6px !important}
   #ciutats{margin-left:0 !important}
 }
 @media (max-width:760px){
@@ -187,7 +196,7 @@ body{background:#000}
     <div class="desc petit">També des de la pantalla d'inici de qualsevol aparell, amb la icona 📺: tries la tele (les que accepten Miracast), el PC hi obre Hearth en mode tele i el comandament de la tele el controla.</div>
     <h2>So i fotos</h2>
     <div class="fila"><label>Retard del so</label><input type="number" id="aj-retard" min="-3000" max="3000" step="50" style="width:110px"> <span class="gris petit" style="margin-left:10px">ms · quan sona alhora a diverses pantalles: positiu si aquesta va avançada</span></div>
-    <div class="fila"><label>Fotos</label><div style="-webkit-flex:1;flex:1"><div class="gris petit" style="margin-bottom:6px">Les carpetes que es veuen en aquest aparell (a l'app Fotos i al fons):</div><div id="aj-fotos" class="gris">Carregant…</div></div></div>
+    <div class="fila amunt"><label>Fotos</label><div class="ple"><div class="gris petit" style="margin-bottom:6px">Les carpetes que es veuen en aquest aparell (a l'app Fotos i al fons):</div><div id="aj-fotos" class="gris">Carregant…</div></div></div>
     <div class="peu"><button class="pri" onclick="desaInici()">Desar</button></div>
   </div>
 
@@ -1187,7 +1196,7 @@ function omplInici() {
   if (C.dp && C.dp.tele === true && !bt) {
     bt = document.createElement('div'); bt.id = 'surt-tele';
     bt.style.cssText = 'background:rgba(10,132,255,.15);border-radius:12px;padding:12px 14px;margin:0 0 14px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center';
-    bt.innerHTML = '<div style="-webkit-flex:1;flex:1">' + T('Aquest aparell és en mode tele.') + '</div><button class="pri" onclick="$(\'aj-tele\').checked=false;desaInici()">' + T('Surt del mode tele') + '</button>';
+    bt.innerHTML = '<div class="ple">' + T('Aquest aparell és en mode tele.') + '</div><button class="pri" onclick="$(\'aj-tele\').checked=false;desaInici()">' + T('Surt del mode tele') + '</button>';
     var pg = $('pag'); pg.insertBefore(bt, pg.firstChild);
   } else if (!(C.dp && C.dp.tele === true) && bt) bt.parentNode.removeChild(bt);
   $('aj-fonspassi').checked = v.fonsPassi !== false;
