@@ -74,7 +74,7 @@
 <script src="comu.js"></script>
 <script>
 dinsCasa('webs');
-var W = { defs: [], obert: null, t: null, cards: {}, actiu: true };
+var W = { defs: [], obert: null, t: null, cards: {}, actiu: true, seq: [] };
 function url(w, completa) { return api('web/imatge', { id: w.id, min: w.mode == 'directe' ? 300 : Math.max(2, w.interval || 10) * 1000, t: Date.now() }); }
 function pinta() {
   var h = '';
@@ -149,7 +149,9 @@ function tanca() { W.obert = null; clearTimeout(W.t); clearTimeout(W.ti); $('vis
 /* ---------- Navegador: l'Edge del PC obre la web de la mida d'aquesta pantalla i aquí arriba una captura
    cada cop que toques, mous o escrius (no és un vídeo). Tocar = clic, arrossegar = moure, ⌨ = escriure. ---------- */
 function navId() { var i = ls('navId'); if (!i) { i = 'nav-' + Math.random().toString(36).substring(2, 10); ls('navId', i); } return i; }
-function navMida() { var m = $('marc'); return { w: m.clientWidth, h: m.clientHeight }; }
+/* la mida en punts de la pantalla i la densitat (retina = 2): el PC pinta la web exactament així */
+function navMida() { var m = $('marc'); W.mida = { w: m.clientWidth, h: m.clientHeight, dsf: Math.min(2, Math.max(1, window.devicePixelRatio || 1)) }; return W.mida; }
+function navParams(id) { var mi = navMida(); return { id: id, w: mi.w, h: mi.h, dsf: mi.dsf, mobil: mi.w < 700 ? 1 : '' }; }
 function obreNav(q) {
   var w = { id: navId(), nav: true, nom: 'Navegador' };
   W.obert = w;
@@ -159,8 +161,7 @@ function obreNav(q) {
   $('estat').textContent = 'Obrint…'; $('estat').style.display = 'block';
   $('img').style.display = 'none';
   navPinta(q || '');
-  var mi = navMida();
-  post(api('web/nav-obre', { id: w.id, w: mi.w, h: mi.h, mobil: mi.w < 700 ? 1 : '' }), '', function () {
+  post(api('web/nav-obre', navParams(w.id)), '', function () {
     if (q) navVes(q); else navRefresca();
   }, function () { $('estat').textContent = 'No s\'ha pogut obrir el navegador al PC.'; });
 }
@@ -195,7 +196,7 @@ function navRefresca() {
   W.seq = [250, 900, 2000, 4000];
   clearTimeout(W.t);
   W.t = setTimeout(navCaptura, 120);
-  clearTimeout(W.ti); W.ti = setTimeout(function () { navInfo(); W.ti = setTimeout(navInfo, 2500); }, 1000);
+  clearTimeout(W.ti); W.infoFins = Date.now() + 15000; W.ti = setTimeout(navInfo, 600);
 }
 function navCaptura() {
   var w = W.obert; if (!w || !w.nav || !W.actiu) return;
@@ -205,9 +206,11 @@ function navCaptura() {
     var im = $('img');
     im.src = u; im.style.display = 'block';
     im.style.webkitTransform = im.style.transform = '';
-    im.style.left = '0'; im.style.top = '0'; im.style.width = nou.width + 'px'; im.style.height = nou.height + 'px';
+    /* la captura ve a la densitat de la pantalla: es mostra a la mida en punts */
+    var mi = W.mida || navMida(), d = mi.dsf || 1;
+    im.style.left = '0'; im.style.top = '0'; im.style.width = Math.round(nou.width / d) + 'px'; im.style.height = Math.round(nou.height / d) + 'px';
     $('estat').style.display = 'none';
-    if (W.carregant && W.seq.length <= 2) navProg(false);
+    if (W.carregant && W.seq.length <= 2 && !(W.info && W.info.carregant)) navProg(false);
     W.t = setTimeout(navCaptura, W.seq.length ? W.seq.shift() : 6000);
   };
   nou.onerror = function () { $('estat').textContent = 'El PC no respon. Torno a provar…'; $('estat').style.display = 'block'; W.t = setTimeout(navCaptura, 4000); };
@@ -218,7 +221,15 @@ function navInfo() {
   getJson(api('web/nav-info', { id: w.id }), function (d) {
     if (W.obert != w || !d) return;
     if (document.activeElement != $('n-adr')) navPinta(d.url, d.titol);
+    var abans = W.info;
     W.info = d;
+    /* mentre la web es carrega (o acaba de canviar d'adreça), captures seguides fins que acabi */
+    if (d.carregant || (abans && abans.url != d.url)) {
+      if (!W.carregant) navProg(true);
+      if (W.seq.length < 2) { W.seq = [800]; clearTimeout(W.t); W.t = setTimeout(navCaptura, 400); }
+    } else if (W.carregant && W.seq.length <= 2) navProg(false);
+    clearTimeout(W.ti);
+    if (Date.now() < W.infoFins) W.ti = setTimeout(navInfo, d.carregant ? 700 : 1500);
     if (d.edita && $('tecl').style.display != 'block') navMostraTeclat(d);
     else if (!d.edita && document.activeElement != $('tecl-t')) $('tecl').style.display = 'none';
   });
@@ -251,7 +262,7 @@ function navMou(dx, dy, x0, y0) {
   var m = $('marc'), T0 = null;
   m.addEventListener('touchstart', function (e) {
     if (!W.obert || !W.obert.nav || e.touches.length != 1 || e.target.tagName == 'INPUT' || e.target.tagName == 'BUTTON') { T0 = null; return; }
-    var t = e.touches[0]; T0 = { x: t.clientX, y: t.clientY, x1: t.clientX, y1: t.clientY };
+    var t = e.touches[0]; T0 = { x: t.clientX, y: t.clientY, x1: t.clientX, y1: t.clientY, t: Date.now() };
   }, false);
   m.addEventListener('touchmove', function (e) {
     if (!T0) return;
@@ -266,7 +277,9 @@ function navMou(dx, dy, x0, y0) {
     var dx = T0.x1 - T0.x, dy = T0.y1 - T0.y, a = T0; T0 = null;
     W.touchT = +new Date();
     e.preventDefault();
-    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) navClic(a.x, a.y);
+    /* un toc encara que el dit es mogui una mica (passa molt a l'iPad) */
+    var dist = Math.sqrt(dx * dx + dy * dy), curt = Date.now() - a.t < 300;
+    if (dist < 14 || (curt && dist < 28)) { var im = $('img'); im.style.webkitTransform = im.style.transform = ''; navClic(a.x, a.y); }
     else navMou(Math.abs(dx) > Math.abs(dy) * 2 ? dx * 1.2 : 0, dy * 1.2, a.x, a.y);
   }, false);
   m.addEventListener('wheel', function (e) {
@@ -280,7 +293,7 @@ function navMou(dx, dy, x0, y0) {
 window.addEventListener('resize', function () {
   if (!W.obert || !W.obert.nav) return;
   clearTimeout(W.rz);
-  W.rz = setTimeout(function () { var mi = navMida(); post(api('web/nav-obre', { id: W.obert.id, w: mi.w, h: mi.h, mobil: mi.w < 700 ? 1 : '' }), '', navRefresca); }, 400);
+  W.rz = setTimeout(function () { post(api('web/nav-obre', navParams(W.obert.id)), '', navRefresca); }, 400);
 });
 window.addEventListener('resize', function () { setTimeout(encaixa, 50); });
 window.casaMostra = function () { W.actiu = true; if (W.obert && W.obert.nav) navRefresca(); else if (W.obert) carrega(); else refrescaCards(0); };

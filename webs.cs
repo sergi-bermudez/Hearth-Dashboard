@@ -18,7 +18,7 @@ public static class Webs
         public byte[] Darrera;
         public DateTime Quan = DateTime.MinValue, Vist = DateTime.Now;
         public readonly object Lk = new object();
-        public int W, H;
+        public int W, H; public double Dsf = 1; public bool Mobil;
         public double Cx, Cy, Cw, Ch;
         public bool Retall;
     }
@@ -55,7 +55,7 @@ public static class Webs
     const string NAV_SCRIPT = "(function(){try{window.open=function(u){if(u)location.href=u;return window;};" +
         "document.addEventListener('click',function(e){var a=e.target;while(a&&a.tagName!='A')a=a.parentElement;if(a&&a.target&&a.target!='_self')a.target='_self';},true);}catch(e){}})();";
 
-    static Captura ObreNav(string id, int w, int h, bool mobil)
+    static Captura ObreNav(string id, int w, int h, bool mobil, double dsf)
     {
         Captura c;
         lock (lk)
@@ -71,16 +71,21 @@ public static class Webs
                 c.Pag.Connecta(Edge.WsPagina(c.Target));
                 c.Pag.Envia("Page.enable", null, 5000);
                 c.Pag.Envia("Page.addScriptToEvaluateOnNewDocument", CasaServidor.Dic("source", NAV_SCRIPT), 5000);
-                c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", c.W, "height", c.H, "deviceScaleFactor", 1, "mobile", mobil), 5000);
+                c.Dsf = dsf > 0 ? dsf : 1; c.Mobil = mobil;
+                c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", c.W, "height", c.H, "deviceScaleFactor", c.Dsf, "mobile", mobil), 5000);
+                if (mobil) try { c.Pag.Envia("Emulation.setTouchEmulationEnabled", CasaServidor.Dic("enabled", true, "maxTouchPoints", 1), 5000); } catch { }
                 c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", NAV_INICI), 10000);
                 c.Cx = 0; c.Cy = 0; c.Cw = c.W; c.Ch = c.H; c.Retall = false;
                 obertes[id] = c;
                 if (neteja == null) neteja = new Timer(Neteja, null, 60000, 60000);
             }
-            else if (w > 0 && h > 0 && (w != c.W || h != c.H))
+            else if (w > 0 && h > 0 && (w != c.W || h != c.H || (dsf > 0 && Math.Abs(dsf - c.Dsf) > 0.01) || mobil != c.Mobil))
             {
                 c.W = w; c.H = h; c.Cw = w; c.Ch = h; c.Quan = DateTime.MinValue;
-                c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", w, "height", h, "deviceScaleFactor", 1, "mobile", mobil), 5000);
+                if (dsf > 0) c.Dsf = dsf;
+                c.Mobil = mobil;
+                c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", w, "height", h, "deviceScaleFactor", c.Dsf, "mobile", mobil), 5000);
+                try { c.Pag.Envia("Emulation.setTouchEmulationEnabled", CasaServidor.Dic("enabled", mobil, "maxTouchPoints", 1), 5000); } catch { }
             }
             c.Vist = DateTime.Now;
         }
@@ -111,11 +116,11 @@ public static class Webs
         "if(e){t=(e.tagName||'').toLowerCase();var ty=(e.type||'').toLowerCase();" +
         "ed=(t=='textarea')||(t=='input'&&!/^(button|submit|checkbox|radio|range|color|file|image|reset|hidden)$/.test(ty))||e.isContentEditable===true;" +
         "if(ed)v=e.isContentEditable?(e.innerText||''):(e.value||'');}" +
-        "return {url:location.href,titol:document.title,edita:ed,valor:v.substring(0,2000),contrasenya:!!(e&&e.type=='password'),cercador:!!(e&&(e.type=='search'||e.getAttribute&&e.getAttribute('role')=='combobox'))};})()";
+        "return {url:location.href,titol:document.title,carregant:document.readyState!='complete',edita:ed,valor:v.substring(0,2000),contrasenya:!!(e&&e.type=='password'),cercador:!!(e&&(e.type=='search'||e.getAttribute&&e.getAttribute('role')=='combobox'))};})()";
 
     static Captura Obre(string id)
     {
-        if (id.StartsWith("nav-")) return ObreNav(id, 0, 0, false);
+        if (id.StartsWith("nav-")) return ObreNav(id, 0, 0, false, 0);
         Dictionary<string, object> def = null;
         foreach (Dictionary<string, object> d in Definicions()) if (d.ContainsKey("id") && d["id"].ToString() == id) def = d;
         if (def == null) throw new Exception("Aquesta web no existeix");
@@ -169,7 +174,8 @@ public static class Webs
         {
             c.Vist = DateTime.Now;
             if (!completa && c.Darrera != null && (DateTime.Now - c.Quan).TotalMilliseconds < minMs) return c.Darrera;
-            Dictionary<string, object> p = CasaServidor.Dic("format", "jpeg", "quality", 78);
+            // a pantalles de retina la captura ja ve al doble: una mica mes comprimida perque l'iPad antic la rebi de pressa
+            Dictionary<string, object> p = CasaServidor.Dic("format", "jpeg", "quality", c.Dsf > 1.2 ? 68 : 78);
             if (!completa && c.Retall) p["clip"] = CasaServidor.Dic("x", c.Cx, "y", c.Cy, "width", c.Cw, "height", c.Ch, "scale", 1);
             Dictionary<string, object> r = c.Pag.Envia("Page.captureScreenshot", p, 15000);
             byte[] b = Convert.FromBase64String((string)r["data"]);
@@ -182,9 +188,20 @@ public static class Webs
     {
         Captura c = Obre(id);
         double x = c.Cx + fx * c.Cw, y = c.Cy + fy * c.Ch;
-        c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseMoved", "x", x, "y", y), 5000);
-        c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mousePressed", "x", x, "y", y, "button", "left", "clickCount", 1), 5000);
-        c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseReleased", "x", x, "y", y, "button", "left", "clickCount", 1), 5000);
+        if (c.Mobil)
+        {
+            // webs de mobil: un toc de debo (moltes nomes escolten tocs)
+            object[] pt = new object[] { CasaServidor.Dic("x", x, "y", y) };
+            c.Pag.Envia("Input.dispatchTouchEvent", CasaServidor.Dic("type", "touchStart", "touchPoints", pt), 5000);
+            c.Pag.Envia("Input.dispatchTouchEvent", CasaServidor.Dic("type", "touchEnd", "touchPoints", new object[0]), 5000);
+        }
+        else
+        {
+            c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseMoved", "x", x, "y", y), 5000);
+            Thread.Sleep(40);
+            c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mousePressed", "x", x, "y", y, "button", "left", "buttons", 1, "clickCount", 1), 5000);
+            c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseReleased", "x", x, "y", y, "button", "left", "buttons", 0, "clickCount", 1), 5000);
+        }
         c.Quan = DateTime.MinValue;
     }
 
@@ -235,7 +252,10 @@ public static class Webs
                         int w, h; int.TryParse(CasaServidor.Q(q, "w"), out w); int.TryParse(CasaServidor.Q(q, "h"), out h);
                         if (!id.StartsWith("nav-")) throw new Exception("id");
                         w = Math.Max(240, Math.Min(2000, w)); h = Math.Max(240, Math.Min(2000, h));
-                        ObreNav(id, w, h, CasaServidor.Q(q, "mobil") == "1");
+                        double dsf;
+                        if (!double.TryParse(CasaServidor.Q(q, "dsf"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out dsf)) dsf = 1;
+                        dsf = Math.Max(1, Math.Min(2, dsf));
+                        ObreNav(id, w, h, CasaServidor.Q(q, "mobil") == "1", dsf);
                         CasaServidor.Text(res, "{\"ok\":true}", "application/json");
                         return;
                     }
