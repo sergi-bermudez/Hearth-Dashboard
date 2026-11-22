@@ -2067,7 +2067,7 @@ function carregaAgenda() {
     ajuntaAgenda();
   }, function () { });
   carregaPartitsAgenda();
-  dades('agenda-imp', function (d) { AG.imp = d || {}; pintaAgenda(); });
+  dades('agenda_imp', function (d) { AG.imp = d || {}; pintaAgenda(); });
   AG.t = setTimeout(carregaAgenda, 10 * 60000);
 }
 /* Els partits dels meus equips (Futbol ▸ Els meus equips) també surten a l'agenda, marcats com a importants */
@@ -2109,7 +2109,7 @@ function marcaAg(i, ev) {
   AG.imp = AG.imp || {};
   var ara = esImportant(x);
   AG.imp[clauAg(x)] = ara ? 0 : 1;
-  desaDades('agenda-imp', AG.imp);
+  desaDades('agenda_imp', AG.imp);
   avis(ara ? T('Ja no és important') : T('Marcat com a important'));
   pintaAgenda();
 }
