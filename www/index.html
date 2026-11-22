@@ -2024,6 +2024,13 @@ function infoFoto(f) {
   var inf = $('mc-info');
   if (A.ajustos.passiInfo === false || !f) { inf.style.display = 'none'; return; }
   inf.style.display = '';
+  /* en pantalles estretes no hi cap al costat del rellotge: va just a sobre, alineat a l'esquerra */
+  var hr = document.querySelector('#marc .hora'), estreta = window.innerWidth < 760;
+  inf.style.textAlign = estreta ? 'left' : '';
+  inf.style.left = estreta && hr ? hr.offsetLeft + 'px' : '';
+  inf.style.right = estreta ? 'auto' : '';
+  inf.style.maxWidth = estreta ? '85%' : '';
+  inf.style.bottom = estreta && hr ? (window.innerHeight - hr.getBoundingClientRect().top + 14) + 'px' : '';
   var d = f[1] ? new Date(f[1]) : null;
   $('mc-idata').textContent = d && d.getFullYear() > 1980 ? dataCurta(d) : '';
   $('mc-illoc').textContent = '';
