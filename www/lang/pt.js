@@ -985,3 +985,4 @@ TR.pt["Hearth, Chromecast i teles: totes o les que triïs"]="Hearth, Chromecast 
 TR.pt["No s'ha pogut enviar a {1}"]="Não foi possível enviar para {1}";
 TR.pt["Enviant a {1} aparells…"]="A enviar para {1} aparelhos…";
 TR.pt["Mostra la data i el lloc de cada foto"]="Mostrar a data e o local de cada foto";
+TR.pt["Toca per escoltar"]="Toque para ouvir";

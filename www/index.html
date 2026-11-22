@@ -1160,7 +1160,7 @@ function repToca() {
   }
   else {
     if (PCM.actiu) pcmAtura(true);
-    if (it.u) { au.src = mitja(it.u); au.play(); }
+    if (it.u) { au.src = mitja(it.u); provaPlay(au, it.t); }
     else { au.pause(); au.removeAttribute('src'); }
   }
   vigilaRadio();
@@ -1169,6 +1169,25 @@ function repToca() {
   if (A.vista == 'dash') pintaSona();
   if ($('cast').style.display == 'block' && $('cast-c').querySelector('.cua')) cuaPinta();
   notifica();
+}
+/* Quan arriba música enviada des d'un altre aparell, ningú no ha tocat aquesta pantalla i alguns navegadors
+   (els de les teles, Chrome) no deixen sonar res sense un toc: llavors es demana un toc (o OK al comandament) */
+function provaPlay(el, titol) {
+  var p;
+  try { p = el.play(); } catch (e) { }
+  if (p && p['catch']) p['catch'](function (e) { if (e && (e.name == 'NotAllowedError' || /gesture|interact|allowed/i.test(e.message || ''))) demanaToc(el, titol); });
+}
+function demanaToc(el, titol) {
+  var d = $('toca-play');
+  if (!d) {
+    d = document.createElement('div'); d.id = 'toca-play';
+    d.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;z-index:400;background:rgba(0,0,0,.6);display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center';
+    document.body.appendChild(d);
+  }
+  d.innerHTML = '<button class="pri" id="toca-b" style="font-size:24px;padding:20px 34px;border-radius:20px">▶ ' + esc(T('Toca per escoltar')) + (titol ? '<br><small style="font-size:16px;opacity:.85">' + esc(titol) + '</small>' : '') + '</button>';
+  d.style.display = 'flex';
+  d.onclick = function () { d.style.display = 'none'; try { var q = el.play(); if (q && q['catch']) q['catch'](function () { }); } catch (e) { } };
+  try { $('toca-b').focus(); } catch (e) { }
 }
 function repPlay() {
   if (TV.canal) { var v = $('tv-v'); if (v.paused) v.play(); else v.pause(); return; }
@@ -2472,7 +2491,7 @@ function pantRebutja() { clearInterval(PANT.compte); PANT.ordre = null; castTanc
 function pantAccepta() { clearInterval(PANT.compte); castTanca(); fesOrdre(); }
 function fesOrdre(alHora) {
   var o = PANT.ordre; PANT.ordre = null; if (!o) return;
-  if (o.tipus == 'tv' && o.canal) tvObre(o.canal);
+  if (o.tipus == 'tv' && o.canal) { tvObre(o.canal); setTimeout(function () { var v = $('tv-v'); if (v.paused) provaPlay(v, o.canal.nom); }, 2500); }
   else if (o.tipus == 'cua' && o.cua && o.cua.length) repInicia(o.cua, o.pos || 0);
 }
 /* ---------- Controlar les altres pantalles (pausa, atura, apaga) ---------- */
