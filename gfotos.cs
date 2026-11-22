@@ -143,7 +143,7 @@ public static class GFotos
             c.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", 1400, "height", 1000, "deviceScaleFactor", 1, "mobile", false), 5000);
             // El pont s'injecta abans que la pagina carregui, per capturar les respostes internes amb les fotos
             try { c.Envia("Page.addScriptToEvaluateOnNewDocument", CasaServidor.Dic("source", Pont()), 5000); } catch { }
-            int noves = 0;
+            int noves = 0, fallades = 0; string darrerError = "";
             foreach (string[] lloc in llocs)
             {
                 estat = "Llegint \u00ab" + lloc[1] + "\u00bb\u2026";
@@ -169,7 +169,12 @@ public static class GFotos
                     string id = it["id"].ToString();
                     string clau = lloc[1] + "/" + id;
                     fetes++;
-                    if (ix.ContainsKey(clau) && File.Exists(Path.Combine(fotos, ix[clau]))) continue;
+                    if (ix.ContainsKey(clau) && File.Exists(Path.Combine(fotos, ix[clau])))
+                    {
+                        // les d'abans que en realitat eren una pagina d'error es tornen a baixar
+                        if (EsFitxerImatge(Path.Combine(fotos, ix[clau]))) continue;
+                        try { File.Delete(Path.Combine(fotos, ix[clau])); } catch { }
+                    }
                     long ms = 0;
                     try { ms = Convert.ToInt64(it["data"]); } catch { }
                     DateTime data = ms > 0 ? new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(ms).ToLocalTime() : DateTime.Now;
@@ -178,18 +183,18 @@ public static class GFotos
                     estat = "Baixant \u00ab" + lloc[1] + "\u00bb (" + fetes + " de " + total + ")";
                     try
                     {
-                        Baixa(c, it["url"].ToString() + "=w2560-h2560", desti);
+                        Baixa(c, it["url"].ToString() + "=w2560-h2560-rj", desti);
                         File.SetLastWriteTime(desti, data);
                         ix[clau] = "Google Fotos/" + lloc[1] + "/" + Path.GetFileName(desti);
                         noves++;
                         if (noves % 25 == 0) DesaIndex(ix);
                     }
-                    catch (Exception e) { Console.WriteLine("  Google Fotos: " + e.Message); }
+                    catch (Exception e) { Console.WriteLine("  Google Fotos: " + e.Message); fallades++; darrerError = e.Message; }
                 }
                 DesaIndex(ix);
             }
             if (total == 0) return;
-            estat = "Fet: " + noves + " fotos noves (" + DateTime.Now.ToString("dd/MM HH:mm") + ")";
+            estat = "Fet: " + noves + " fotos noves" + (fallades > 0 ? ", " + fallades + " no s'han pogut baixar (" + darrerError + ")" : "") + " (" + DateTime.Now.ToString("dd/MM HH:mm") + ")";
             CasaServidor.RefrescaFotos();
         }
         finally
@@ -202,7 +207,41 @@ public static class GFotos
     static void Baixa(Cdp c, string url, string desti)
     {
         try { Descarrega(url, desti, null); return; }
-        catch (WebException) { }
+        catch (Exception) { }
+        try { BaixaAmbGaletes(c, url, desti); return; }
+        catch (Exception) { }
+        // Darrer recurs: la baixa el mateix Edge, que ja te la sessio de Google oberta
+        string b64 = Edge.Avalua(c, "(async()=>{const r=await fetch(" + new JavaScriptSerializer().Serialize(url) + ",{credentials:'include'});if(!r.ok)throw new Error('HTTP '+r.status);const a=new Uint8Array(await r.arrayBuffer());let s='';for(let i=0;i<a.length;i+=32768)s+=String.fromCharCode.apply(null,a.subarray(i,i+32768));return btoa(s);})()", 60000) as string;
+        if (string.IsNullOrEmpty(b64)) throw new Exception("La pagina no ha pogut baixar la foto");
+        byte[] bytes = Convert.FromBase64String(b64);
+        if (!EsImatge(bytes)) throw new Exception("No es una imatge");
+        File.WriteAllBytes(desti, bytes);
+    }
+
+    // JPEG, PNG, GIF o WebP (no una pagina d'error o d'inici de sessio)
+    static bool EsImatge(byte[] b)
+    {
+        if (b == null || b.Length < 1000) return false;
+        if (b[0] == 0xFF && b[1] == 0xD8) return true;
+        if (b[0] == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47) return true;
+        if (b[0] == 0x47 && b[1] == 0x49 && b[2] == 0x46) return true;
+        if (b[0] == 0x52 && b[1] == 0x49 && b[2] == 0x46 && b[3] == 0x46) return true;
+        return false;
+    }
+
+    static bool EsFitxerImatge(string f)
+    {
+        try
+        {
+            byte[] b = new byte[1000];
+            using (FileStream fr = new FileStream(f, FileMode.Open, FileAccess.Read)) { if (fr.Length < 1000) return false; fr.Read(b, 0, 1000); }
+            return EsImatge(b);
+        }
+        catch { return true; }
+    }
+
+    static void BaixaAmbGaletes(Cdp c, string url, string desti)
+    {
         // Si cal, amb les galetes de la sessio
         object[] galetes = c.Envia("Network.getCookies", CasaServidor.Dic("urls", new string[] { url, "https://photos.google.com/" }), 5000)["cookies"] as object[];
         StringBuilder sb = new StringBuilder();
@@ -220,12 +259,17 @@ public static class GFotos
         HttpWebRequest rq = (HttpWebRequest)WebRequest.Create(url);
         rq.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36 Edg/120.0";
         rq.Timeout = 30000;
+        rq.Accept = "image/jpeg,image/*;q=0.8";
+        rq.Referer = "https://photos.google.com/";
         if (galetes != null) rq.Headers["Cookie"] = galetes;
         string tmp = desti + ".part";
         using (WebResponse rs = rq.GetResponse())
         using (Stream s = rs.GetResponseStream())
         using (FileStream fs = new FileStream(tmp, FileMode.Create)) s.CopyTo(fs);
-        if (new FileInfo(tmp).Length < 1000) { File.Delete(tmp); throw new WebException("Imatge buida"); }
+        byte[] cap = new byte[8];
+        using (FileStream fr = new FileStream(tmp, FileMode.Open, FileAccess.Read)) fr.Read(cap, 0, 8);
+        byte[] prova = new byte[1000]; Array.Copy(cap, prova, 8);
+        if (new FileInfo(tmp).Length < 1000 || !EsImatge(prova)) { File.Delete(tmp); throw new WebException("No ha tornat una imatge"); }
         if (File.Exists(desti)) File.Delete(desti);
         File.Move(tmp, desti);
     }
