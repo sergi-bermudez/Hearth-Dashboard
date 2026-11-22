@@ -992,3 +992,4 @@ TR.en["Encaix de les fotos"]="Photo fit";
 TR.en["Omplir la pantalla (es retallen les vores)"]="Fill the screen (edges cropped)";
 TR.en["Omplir, però sencera si és vertical en una pantalla horitzontal (o al revés)"]="Fill, but whole if it's portrait on a landscape screen (or vice versa)";
 TR.en["Sempre sencera, amb el fons difuminat"]="Always whole, with a blurred background";
+TR.en["Més"]="More";

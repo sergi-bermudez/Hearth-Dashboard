@@ -992,3 +992,4 @@ TR.fr["Encaix de les fotos"]="Cadrage des photos";
 TR.fr["Omplir la pantalla (es retallen les vores)"]="Remplir l'écran (bords rognés)";
 TR.fr["Omplir, però sencera si és vertical en una pantalla horitzontal (o al revés)"]="Remplir, mais entière si portrait sur écran paysage (ou l'inverse)";
 TR.fr["Sempre sencera, amb el fons difuminat"]="Toujours entière, avec fond flou";
+TR.fr["Més"]="Plus";
