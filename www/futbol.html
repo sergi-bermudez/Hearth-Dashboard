@@ -89,37 +89,33 @@ function dataIso(s) {
 }
 function carrega() {
   var l = lliguesTriades(), avui = new Date(), d1 = new Date(avui.getTime() - 3 * 864e5), d2 = new Date(avui.getTime() + 8 * 864e5);
-  var tots = [], pendents = l.length;
-  if (!pendents) { F.partits = []; pinta(); return; }
   F.carregant = 1;
-  for (var i = 0; i < l.length; i++) (function (lg) {
-    getJson(viaX('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lg + '/scoreboard?limit=300&dates=' + ymd(d1) + '-' + ymd(d2)), function (d) {
-      var ev = (d && d.events) || [];
-      for (var j = 0; j < ev.length; j++) { var p = partit(ev[j], lg); if (p) tots.push(p); }
-      if (--pendents == 0) acaba();
-    }, function () { if (--pendents == 0) acaba(); });
-  })(l[i]);
-  function acaba() {
+  carregaMeus();
+  if (!l.length) { F.partits = []; F.carregant = 0; pinta(); return; }
+  /* el servidor demana totes les lligues alhora i n'envia només el que cal */
+  getJson(api('futbol/partits', { lg: l.join(','), d1: ymd(d1), d2: ymd(d2) }), function (d) {
+    var tots = d.partits || [];
+    for (var i = 0; i < tots.length; i++) tots[i].dt = dataIso(tots[i].data);
     tots.sort(function (a, b) { return a.dt - b.dt; });
-    F.partits = tots; F.carregant = 0; pinta();
+    F.partits = tots; F.errors = d.errors || {}; F.carregant = 0; pinta();
     var viu = false;
     for (var k = 0; k < tots.length; k++) if (tots[k].estat == 'in') viu = true;
     clearTimeout(F.t);
     F.t = setTimeout(carrega, viu ? 30000 : 300000);
-  }
+  }, function (st) { F.partits = []; F.errors = { '': 'HTTP ' + st }; F.carregant = 0; pinta(); clearTimeout(F.t); F.t = setTimeout(carrega, 120000); });
 }
-function partit(e, lg) {
-  var c = e.competitions && e.competitions[0];
-  if (!c || !c.competitors || c.competitors.length < 2) return null;
-  var p = { id: e.id, lg: lg, dt: dataIso(e.date), estat: (e.status && e.status.type && e.status.type.state) || 'pre', detall: (e.status && e.status.type && e.status.type.shortDetail) || '', rellotge: (e.status && e.status.displayClock) || '', eq: [] };
-  for (var i = 0; i < c.competitors.length; i++) {
-    var x = c.competitors[i], t = x.team || {};
-    var o = { id: String(t.id || ''), nom: t.shortDisplayName || t.displayName || t.name || '', llarg: t.displayName || '', logo: t.logo || '', gols: x.score, casa: x.homeAway == 'home', guanya: !!x.winner };
-    if (o.casa) p.eq.unshift(o); else p.eq.push(o);
-  }
-  p.tv = [];
-  if (c.broadcasts) for (i = 0; i < c.broadcasts.length; i++) if (c.broadcasts[i].names) p.tv = p.tv.concat(c.broadcasts[i].names);
-  return p;
+/* Els partits dels meus equips, de qualsevol competició i encara que no segueixi la lliga */
+function carregaMeus() {
+  var eqs = F.d.equips, pendents = eqs.length, tots = [], vist = {};
+  F.meus = F.meus || [];
+  if (!pendents) { F.meus = []; return; }
+  for (var i = 0; i < eqs.length; i++) (function (e) {
+    getJson(api('futbol/equip', { lg: e.lg || lliguesTriades()[0] || 'por.1', id: e.id }), function (l) {
+      for (var j = 0; j < (l || []).length; j++) if (!vist[l[j].id]) { vist[l[j].id] = 1; l[j].dt = dataIso(l[j].data); tots.push(l[j]); }
+      if (--pendents == 0) fet();
+    }, function () { if (--pendents == 0) fet(); });
+  })(eqs[i]);
+  function fet() { tots.sort(function (a, b) { return a.dt - b.dt; }); F.meus = tots; if (F.pest == 'meus') pinta(); }
 }
 function esMeu(eq) { for (var i = 0; i < F.d.equips.length; i++) if (F.d.equips[i].id == eq.id) return true; return false; }
 function partitMeu(p) { return esMeu(p.eq[0]) || esMeu(p.eq[1]); }
@@ -142,14 +138,15 @@ function htmlPartit(p, i) {
   return h + '</div>';
 }
 function pinta() {
-  var h = '', l = F.partits, i, dia = '';
+  var h = '', l = F.pest == 'meus' ? (F.meus || []) : F.partits, i, dia = '';
+  F.vista = l;
   if (F.pest == 'lligues') { pintaLligues(); return; }
   var ara = new Date(), fiAvui = new Date(ara.getFullYear(), ara.getMonth(), ara.getDate() + 1), iniAvui = new Date(ara.getFullYear(), ara.getMonth(), ara.getDate());
   var mostra = [];
   for (i = 0; i < l.length; i++) {
     var p = l[i], ok = false;
     if (F.pest == 'ara') ok = p.estat == 'in' || (p.dt >= iniAvui && p.dt < fiAvui);
-    else if (F.pest == 'meus') ok = partitMeu(p);
+    else if (F.pest == 'meus') ok = p.dt > new Date(ara.getTime() - 14 * 864e5) && p.dt < new Date(ara.getTime() + 45 * 864e5);
     else if (F.pest == 'calendari') ok = p.estat == 'pre';
     else if (F.pest == 'resultats') ok = p.estat == 'post';
     if (ok) mostra.push(i);
@@ -162,9 +159,11 @@ function pinta() {
   }
   if (!h) {
     if (F.carregant) h = '<div class="gris">' + T('Carregant…') + '</div>';
-    else if (F.pest == 'meus') h = '<div class="gris">' + T('Toca un partit i marca l\'estrella dels teus equips: sortiran aquí.') + '</div>';
+    else if (F.pest == 'meus') h = '<div class="gris">' + (F.d.equips.length ? T('Els teus equips no tenen partits aquests dies.') : T('Afegeix els teus equips a «Lligues», o toca un partit i marca l\'estrella.')) + '</div>';
     else if (F.pest == 'ara') h = '<div class="gris">' + T('Avui no hi ha partits de les teves lligues. Mira el calendari.') + '</div>';
     else h = '<div class="gris">' + T('No hi ha partits.') + '</div>';
+    var er = []; for (var k in (F.errors || {})) if (F.errors.hasOwnProperty(k)) er.push(((lligaDef(k) || [0, k])[1] || '') + ': ' + F.errors[k]);
+    if (er.length && !F.partits.length) h += '<div class="gris petit" style="margin-top:10px">' + esc(T('No s\'han pogut llegir:') + ' ' + er.join(' · ')) + '</div>';
   }
   $('llista').innerHTML = h;
 }
@@ -172,7 +171,8 @@ function pintaLligues() {
   var t = lliguesTriades(), h = '<div class="dia">' + T('Les lligues que segueixes') + '</div><div class="chips">';
   for (var i = 0; i < LLIGUES.length; i++) h += '<span class="' + (t.indexOf(LLIGUES[i][0]) >= 0 ? 'on' : '') + '" onclick="canviaLliga(\'' + LLIGUES[i][0] + '\')">' + esc(LLIGUES[i][1]) + '</span>';
   h += '</div><div class="dia">' + T('Els teus equips') + '</div>';
-  if (!F.d.equips.length) h += '<div class="gris">' + T('Toca un partit i marca l\'estrella dels teus equips.') + '</div>';
+  h += '<input id="cerca-eq" type="search" placeholder="' + esc(T('Busca un equip per afegir-lo…')) + '" oninput="buscaEquip()" style="width:100%;margin-bottom:10px"><div id="res-eq"></div>';
+  if (!F.d.equips.length) h += '<div class="gris">' + T('Busca\'l aquí dalt, o toca un partit i marca l\'estrella.') + '</div>';
   for (i = 0; i < F.d.equips.length; i++) h += '<div class="pt" style="cursor:default"><div class="eqs"><div class="eq"><div class="lg" style="background-image:' + bg(F.d.equips[i].logo ? imgx(F.d.equips[i].logo, 64) : '') + '"></div><div class="nm meu">' + esc(F.d.equips[i].nom) + '</div></div></div><button class="acc" onclick="treuEquip(' + i + ')">' + T('Treu') + '</button></div>';
   $('llista').innerHTML = h;
 }
@@ -181,15 +181,44 @@ function canviaLliga(id) {
   if (p >= 0) t.splice(p, 1); else t.push(id);
   F.d.lligues = t; desa(); pintaLligues(); carrega();
 }
-function treuEquip(i) { F.d.equips.splice(i, 1); desa(); pintaLligues(); }
+function treuEquip(i) { F.d.equips.splice(i, 1); desa(); carregaMeus(); pintaLligues(); }
+/* Buscar qualsevol equip de les lligues conegudes */
+function pla(t) { return String(t || '').toLowerCase().replace(/[àáâä]/g, 'a').replace(/[èéêë]/g, 'e').replace(/[ìíîï]/g, 'i').replace(/[òóôöõ]/g, 'o').replace(/[ùúûü]/g, 'u').replace(/ç/g, 'c').replace(/ñ/g, 'n'); }
+function buscaEquip() {
+  var q = pla($('cerca-eq').value).replace(/^\s+|\s+$/g, '');
+  if (q.length < 2) { $('res-eq').innerHTML = ''; return; }
+  if (!F.totsEquips) {
+    $('res-eq').innerHTML = '<div class="gris">' + T('Carregant els equips…') + '</div>';
+    if (F.carregantEq) return;
+    F.carregantEq = 1;
+    var ids = []; for (var i = 0; i < LLIGUES.length; i++) ids.push(LLIGUES[i][0]);
+    getJson(api('futbol/equips', { lg: ids.join(',') }), function (l) { F.totsEquips = l || []; F.carregantEq = 0; if ($('cerca-eq')) buscaEquip(); }, function () { F.carregantEq = 0; $('res-eq').innerHTML = '<div class="gris">' + T('No s\'han pogut carregar els equips.') + '</div>'; });
+    return;
+  }
+  var h = '', n = 0;
+  for (var j = 0; j < F.totsEquips.length && n < 12; j++) {
+    var e = F.totsEquips[j];
+    if (pla(e.nom + ' ' + e.curt).indexOf(q) < 0) continue;
+    n++;
+    h += '<div class="pt" onclick="afegeixEquip(' + j + ')"><div class="eqs"><div class="eq"><div class="lg" style="background-image:' + bg(e.logo ? imgx(e.logo, 64) : '') + '"></div><div class="nm' + (esMeu(e) ? ' meu' : '') + '">' + esc(e.nom) + '</div></div><div class="lliga" style="margin-left:38px">' + esc((lligaDef(e.lg) || [0, e.lg])[1]) + '</div></div>' + svg(esMeu(e) ? IC.estrella : IC.estrellaBuida) + '</div>';
+  }
+  $('res-eq').innerHTML = h || '<div class="gris">' + T('No he trobat cap equip amb aquest nom.') + '</div>';
+}
+function afegeixEquip(j) {
+  var e = F.totsEquips[j];
+  for (var i = 0; i < F.d.equips.length; i++) if (F.d.equips[i].id == e.id) { F.d.equips.splice(i, 1); desa(); carregaMeus(); pintaLligues(); return; }
+  F.d.equips.push({ id: e.id, nom: e.nom, logo: e.logo, lg: e.lg });
+  desa(); carregaMeus(); avis(Tf('Afegit: {1}', e.nom));
+  var v = $('cerca-eq').value; pintaLligues(); $('cerca-eq').value = v; buscaEquip();
+}
 function desa() { desaDades('futbol', F.d); }
 
 /* Fitxa: equips preferits i ràdios per escoltar-lo */
 function fitxa(i, nomesRadio) {
-  var p = F.partits[i]; if (!p) return;
+  var p = (F.vista || F.partits)[i]; if (!p) return;
   F.actual = i;
   var h = '<h3>' + esc(p.eq[0].llarg || p.eq[0].nom) + ' – ' + esc(p.eq[1].llarg || p.eq[1].nom) + '</h3><div class="gris">' + esc((lligaDef(p.lg) || [0, ''])[1]) + ' · ' + esc(nomDia(p.dt)) + ' ' + hora(p.dt) + (p.estat != 'pre' ? ' · ' + esc(p.detall) : '') + '</div>';
-  if (p.tv.length) h += '<div class="gris petit" style="margin-top:6px">TV: ' + esc(p.tv.join(', ')) + '</div>';
+  h += '<div class="gris petit" style="margin-top:6px">📺 ' + (p.tv && p.tv.length ? esc(T('On es pot veure:') + ' ' + p.tv.join(', ')) : esc(T('Encara no s\'ha anunciat quina tele l\'emet.'))) + '</div>';
   if (!nomesRadio) {
     h += '<div class="dia">' + T('Els teus equips') + '</div>';
     for (var k = 0; k < 2; k++) h += '<div class="eqb" onclick="canviaEquip(' + k + ')">' + svg(esMeu(p.eq[k]) ? IC.estrella : IC.estrellaBuida) + esc(p.eq[k].llarg || p.eq[k].nom) + '</div>';
@@ -206,10 +235,10 @@ function fitxa(i, nomesRadio) {
 }
 function tancaFitxa() { $('fitxa').style.display = 'none'; }
 function canviaEquip(k) {
-  var e = F.partits[F.actual].eq[k], meu = false;
+  var pa = (F.vista || F.partits)[F.actual], e = pa.eq[k], meu = false;
   for (var i = 0; i < F.d.equips.length; i++) if (F.d.equips[i].id == e.id) { F.d.equips.splice(i, 1); meu = true; break; }
-  if (!meu) F.d.equips.push({ id: e.id, nom: e.llarg || e.nom, logo: e.logo });
-  desa(); fitxa(F.actual); pinta();
+  if (!meu) F.d.equips.push({ id: e.id, nom: e.llarg || e.nom, logo: e.logo, lg: pa.lg });
+  desa(); carregaMeus(); fitxa(F.actual); pinta();
 }
 /* Ràdios del país de la lliga i, després, les del teu país */
 function radiosPer(p) {
