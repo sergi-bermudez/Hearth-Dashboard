@@ -958,3 +958,5 @@ TR.fr["Per veure Hearth a la tele: la icona"]="Pour voir Hearth sur la télé : 
 TR.fr["de la pantalla d'inici la projecta (Miracast) i el comandament de la tele la controla."]="de l'écran d'accueil le projette (Miracast) et la télécommande le pilote.";
 TR.fr["A Android, si l'adreça"]="Sur Android, si l'adresse";
 TR.fr["no obre res, fes servir la del número (a sota)."]="n'ouvre rien, utilisez l'adresse numérique (dessous).";
+TR.fr["Ja no és important"]="Plus important";
+TR.fr["Marcat com a important"]="Marqué comme important";

@@ -326,6 +326,9 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 #agenda .ag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
 #agenda .ag i{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:8px;vertical-align:0}
 #agenda .ag b{font-weight:600;margin-right:8px;font-variant-numeric:tabular-nums}
+#agenda .ag{cursor:pointer}
+#agenda .ag.imp{font-weight:600}
+#agenda .ag .ex,#marc .seg-ag .ex{display:inline-block;width:18px;height:18px;line-height:18px;border-radius:9px;background:#ff453a;color:#fff;font-size:13px;font-weight:800;text-align:center;margin-right:7px;vertical-align:1px;font-style:normal}
 #marc .hora .seg-ag{display:block;font-size:18px;margin-top:6px;opacity:.95}
 #marc .hora .seg-ag i{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:8px}
 /* Avisos de missatges */
@@ -1958,10 +1961,55 @@ var AG = { l: [], t: null };
 function carregaAgenda() {
   clearTimeout(AG.t);
   getJson(api('agenda', { dies: 7 }), function (d) {
-    AG.l = (d && d.esdeveniments) || [];
-    pintaAgenda();
+    AG.cal = (d && d.esdeveniments) || [];
+    ajuntaAgenda();
   }, function () { });
+  carregaPartitsAgenda();
+  dades('agenda-imp', function (d) { AG.imp = d || {}; pintaAgenda(); });
   AG.t = setTimeout(carregaAgenda, 10 * 60000);
+}
+/* Els partits dels meus equips (Futbol ▸ Els meus equips) també surten a l'agenda, marcats com a importants */
+function isoLocal(d) { return d.getFullYear() + '-' + dos(d.getMonth() + 1) + '-' + dos(d.getDate()) + 'T' + dos(d.getHours()) + ':' + dos(d.getMinutes()); }
+function carregaPartitsAgenda() {
+  if (A.ajustos.futbol === false) { AG.partits = []; return; }
+  if (AG.tp && Date.now() - AG.tp < 30 * 60000) return;
+  AG.tp = Date.now();
+  dades('futbol', function (f) {
+    var eqs = f && f.equips ? f.equips : [], pendents = eqs.length, l = [], vist = {};
+    if (!pendents) { AG.partits = []; ajuntaAgenda(); return; }
+    for (var i = 0; i < eqs.length; i++) (function (e) {
+      getJson(api('futbol/equip', { lg: e.lg || 'por.1', id: e.id }), function (ps) {
+        var ara = Date.now();
+        for (var j = 0; j < (ps || []).length; j++) {
+          var p = ps[j], m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(p.data || '');
+          if (!m || vist[p.id] || !p.eq || p.eq.length < 2) continue;
+          var ini = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]));
+          if (ini.getTime() < ara - 3 * 36e5 || ini.getTime() > ara + 8 * 864e5) continue;
+          vist[p.id] = 1;
+          l.push({ t: '⚽ ' + p.eq[0].nom + ' – ' + p.eq[1].nom, ini: isoLocal(ini), fi: isoLocal(new Date(ini.getTime() + 2 * 36e5)), color: '#30d158', imp: true, futbol: true });
+        }
+        if (--pendents == 0) { AG.partits = l; ajuntaAgenda(); }
+      }, function () { if (--pendents == 0) { AG.partits = l; ajuntaAgenda(); } });
+    })(eqs[i]);
+  });
+}
+function ajuntaAgenda() {
+  AG.l = (AG.cal || []).concat(AG.partits || []);
+  AG.l.sort(function (a, b) { return a.ini < b.ini ? -1 : a.ini > b.ini ? 1 : 0; });
+  pintaAgenda();
+}
+/* Important: els partits, els que porten "!" al títol i els que marquis tocant-los */
+function clauAg(x) { return x.t + '|' + x.ini; }
+function esImportant(x) { var m = AG.imp && AG.imp[clauAg(x)]; return m === 1 || (m !== 0 && (x.imp || /!/.test(x.t))); }
+function marcaAg(i, ev) {
+  if (ev) ev.stopPropagation();
+  var x = AG.vis && AG.vis[i]; if (!x) return;
+  AG.imp = AG.imp || {};
+  var ara = esImportant(x);
+  AG.imp[clauAg(x)] = ara ? 0 : 1;
+  desaDades('agenda-imp', AG.imp);
+  avis(ara ? T('Ja no és important') : T('Marcat com a important'));
+  pintaAgenda();
 }
 function dataDe(s) { var p = s.split(/[-T:]/); return new Date(+p[0], +p[1] - 1, +p[2], +(p[3] || 0), +(p[4] || 0)); }
 function pintaAgenda() {
@@ -1974,14 +2022,16 @@ function pintaAgenda() {
     for (j = 0; j < grups.length; j++) if (ini < grups[j][2] && fi > grups[j][1]) { grups[j][3].push(e); break; }
   }
   var m = $('mig'), cap = Math.max(0, Math.floor((m.clientHeight - 12) / 23)), h = '', usades = 0;
+  AG.vis = [];
   for (j = 0; j < grups.length; j++) {
     var g = grups[j][3];
     if (!g.length || usades + 2 > cap) continue;
     h += '<div class="ag-d">' + grups[j][0] + '</div>'; usades++;
     for (i = 0; i < g.length && usades < cap; i++, usades++) {
-      var x = g[i], hi = dataDe(x.ini);
+      var x = g[i], hi = dataDe(x.ini), imp = esImportant(x);
       if (i == cap - usades - 1 && g.length - i > 1) { h += '<div class="ag gris">' + Tf('i {1} més', g.length - i) + '</div>'; usades++; break; }
-      h += '<div class="ag"><i style="background:' + esc(x.color) + '"></i><b>' + (x.dia ? T('Tot el dia') : hi.getHours() + ':' + dos(hi.getMinutes())) + '</b>' + esc(x.t) + '</div>';
+      AG.vis.push(x);
+      h += '<div class="ag' + (imp ? ' imp' : '') + '" onclick="marcaAg(' + (AG.vis.length - 1) + ',event)">' + (imp ? '<em class="ex">!</em>' : '<i style="background:' + esc(x.color) + '"></i>') + '<b>' + (x.dia ? T('Tot el dia') : hi.getHours() + ':' + dos(hi.getMinutes())) + '</b>' + esc(x.t) + '</div>';
     }
   }
   var ag = $('agenda');
@@ -1989,7 +2039,7 @@ function pintaAgenda() {
   ag.style.display = h && m.clientHeight > 44 ? '' : 'none';
   ag.style.maxHeight = Math.max(0, m.clientHeight - 10) + 'px';
   var s = '';
-  if (seguent) { var si = dataDe(seguent.ini); s = '<i style="background:' + esc(seguent.color) + '"></i>' + (si.getDate() == ara.getDate() ? '' : esc(DIESC[si.getDay()]) + ' ') + si.getHours() + ':' + dos(si.getMinutes()) + ' · ' + esc(seguent.t); }
+  if (seguent) { var si = dataDe(seguent.ini); s = (esImportant(seguent) ? '<em class="ex">!</em>' : '<i style="background:' + esc(seguent.color) + '"></i>') + (si.getDate() == ara.getDate() ? '' : esc(DIESC[si.getDay()]) + ' ') + si.getHours() + ':' + dos(si.getMinutes()) + ' · ' + esc(seguent.t); }
   $('mc-ag').innerHTML = s;
 }
 

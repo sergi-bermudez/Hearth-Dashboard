@@ -958,3 +958,5 @@ TR.en["Per veure Hearth a la tele: la icona"]="To see Hearth on the TV: the";
 TR.en["de la pantalla d'inici la projecta (Miracast) i el comandament de la tele la controla."]="icon on the home screen casts it (Miracast) and the TV remote controls it.";
 TR.en["A Android, si l'adreça"]="On Android, if the address";
 TR.en["no obre res, fes servir la del número (a sota)."]="doesn't open, use the numeric one (below).";
+TR.en["Ja no és important"]="No longer important";
+TR.en["Marcat com a important"]="Marked as important";
