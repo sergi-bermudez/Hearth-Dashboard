@@ -1094,8 +1094,12 @@ function despertEngega() {
     DESPERT.t = setInterval(function () { if (!document.hidden && !R.cua.length && !TV.canal) { window.location.href = location.href.split('#')[0]; setTimeout(function () { window.stop(); }, 0); } }, 20000);
     return;
   }
+  /* les teles no s'adormen mentre el navegador és obert, i el seu navegador només pot fer sonar una cosa alhora:
+     un vídeo en bucle hi aturaria la ràdio */
+  if (/Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|BRAVIA/i.test(navigator.userAgent)) return;
   /* la resta: un vídeo mut i minúscul en bucle (cal un toc per començar) */
   var v = document.createElement('video');
+  v.addEventListener('play', function () { registra('vídeo despert play'); });
   v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.muted = true; v.loop = true; v.src = 'despert.mp4';
   v.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none';
   document.body.appendChild(v); DESPERT.v = v;
@@ -1272,9 +1276,19 @@ var REG = [];
 function registra(t) {
   var d = new Date(), it = R.cua[R.pos];
   REG.push(dos(d.getHours()) + ':' + dos(d.getMinutes()) + ':' + dos(d.getSeconds()) + ' ' + t + (it ? ' · ' + (it.t || '') : '') + ' · rs=' + au.readyState + ' t=' + Math.round(au.currentTime || 0));
-  if (REG.length > 40) REG.shift();
+  if (REG.length > 60) REG.shift();
+  REG.nou = true;
   try { ls('regSo', REG); } catch (e) { }
 }
+/* el registre també va al servidor, per poder-lo veure des d'una altra pantalla (Ajustos > Diagnòstic) */
+function enviaRegistre() {
+  if (!REG.nou || !REG.length) return;
+  REG.nou = false;
+  post(api('pantalles/registre', { d: DISP.id }), REG.join('\n') + '\n\n' + navigator.userAgent, function () { }, function () { REG.nou = true; });
+}
+document.addEventListener('visibilitychange', function () { registra(document.hidden ? 'pàgina amagada' : 'pàgina visible'); });
+window.addEventListener('blur', function () { registra('finestra sense focus'); });
+window.addEventListener('focus', function () { registra('finestra amb focus'); });
 (function () {
   var ev = ['play', 'playing', 'pause', 'waiting', 'stalled', 'suspend', 'emptied', 'ended', 'error', 'abort'];
   for (var i = 0; i < ev.length; i++) (function (n) { au.addEventListener(n, function () { registra(n + (n == 'error' && au.error ? ' ' + au.error.code : '')); }); })(ev[i]);
@@ -2511,6 +2525,7 @@ function pantHola() {
       else if (r.ver != PANT.ver && !TV.canal && !(R.cua.length && !sonaPausat()) && Date.now() - darrerToc > 60000) location.reload();
     }
     if (l && l.length) rebOrdre(l[l.length - 1]);
+    enviaRegistre();
   }, function () { connexio(false); });
 }
 function horaServidor() { return Date.now() + (PANT.dif || 0); }
@@ -2547,6 +2562,7 @@ function retardAqui() { return parseInt(A.ajustos.retard, 10) || 0; }
 /* Ordre rebuda d'una altra pantalla. Si ningú respon, s'accepta sola al cap d'uns segons. */
 function rebOrdre(o) {
   if (!o || !o.tipus) return;
+  registra('ordre rebuda ' + o.tipus + (o.t0 ? ' t0' : '') + ' de ' + (o.de || '?'));
   /* ordres de control d'una altra pantalla: s'executen de seguida */
   if (o.tipus == 'ctl') { fesControl(o.acc, o.de); return; }
   PANT.ordre = o;
@@ -2587,6 +2603,7 @@ function adaptaCua(cua) {
 }
 function fesOrdre(alHora) {
   var o = PANT.ordre; PANT.ordre = null; if (!o) return;
+  registra('ordre feta' + (alHora ? ' (sola)' : ''));
   if (o.tipus == 'tv' && o.canal) { tvObre(o.canal); setTimeout(function () { var v = $('tv-v'); if (v.paused) provaPlay(v, o.canal.nom); }, 2500); }
   else if (o.tipus == 'cua' && o.cua && o.cua.length) repInicia(adaptaCua(o.cua), o.pos || 0);
 }
