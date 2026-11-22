@@ -87,14 +87,33 @@
 .fx-bt button{margin:0 8px 8px 0;padding:12px 20px}
 .fx-sin.curta{max-height:7.5em;overflow:hidden;margin-bottom:6px}
 .fx-mes{color:#7fb0ff;cursor:pointer;margin:0 0 18px;font-weight:600}
+.fx-play{margin:16px 0 6px}
+.fx-acc button{margin:0 8px 8px 0;padding:9px 14px;font-size:14px;background:rgba(255,255,255,.08)}
+.fx-acc button .ic{width:18px;height:18px}
 .tr-cap{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-bottom:14px}
 .tr-cap input{-webkit-flex:1;flex:1;margin:0 10px;font-size:17px;padding:11px 14px;border-radius:12px;border:0;background:rgba(255,255,255,.1);color:#fff}
 .tr-gra .op{width:150px;margin:0 14px 18px 0}
 @media (max-width:800px){
   .heroi{height:340px}.heroi .txt{left:24px;width:80%;bottom:40px}.heroi h2{font-size:28px}
   .fila-in .it{width:116px}.cap-p input.cerca-p{width:120px}
-  #fx-poster{width:150px;height:225px}#fx-info{padding-top:110px}#fx-info h1{font-size:26px}
-  #fx-cos{display:block}#fx-poster{margin:60px 0 0}#fx-info{padding-top:16px}
+}
+/* Mòbil i pantalles estretes: com a Netflix o Prime, la imatge gran a dalt i la informació a sota */
+@media (max-width:700px){
+  #fx-fons{height:62vw;max-height:420px}
+  #fx-fons.difus{-webkit-filter:blur(14px);filter:blur(14px);-webkit-transform:scale(1.15);transform:scale(1.15)}
+  #fx-fons:after{background:-webkit-linear-gradient(top,rgba(14,17,22,0) 40%,#0e1116);background:linear-gradient(to bottom,rgba(14,17,22,0) 40%,#0e1116)}
+  #fx-cos{display:block;padding:0 18px 60px}
+  #fx-poster{width:110px;height:165px;margin:24vw 0 0;border-radius:10px}
+  #fitxa.amb-fons #fx-poster{display:none}
+  #fitxa.amb-fons #fx-info{padding-top:50vw}
+  #fx-info{padding-top:14px}
+  #fx-info h1{font-size:26px;line-height:1.15}
+  .fx-dades{font-size:14px;margin-bottom:10px}
+  .fx-bt button{width:100%;margin:0 0 10px;padding:14px;font-size:17px}
+  .fx-acc button{width:auto}
+  .fx-bt button.pri{background:#fff;color:#111}
+  .fx-bt button.pri .ic{fill:#111}
+  .fx-sin{font-size:15px;margin:12px 0 4px}
 }
 </style>
 </head>
@@ -393,7 +412,7 @@ function fitxa(p, play) {
   var v = (ls('veient') || {})[p];
   $('fitxa').style.display = 'block';
   $('fitxa').scrollTop = 0;
-  $('fx-fons').style.backgroundImage = 'none';
+  $('fx-fons').style.backgroundImage = 'none'; $('fx-fons').className = ''; $('fitxa').className = '';
   $('fx-poster').style.backgroundImage = bg(api('caratula', { p: p, m: 460, v: (P.tots[p] || {}).pv || 0 }));
   pintaFitxa({ titol: FX.e ? titol(FX.e) : netejaTitol(p.split('/').pop()) }, v);
   getJson(api('pelis/video', { p: p }), function (e) {
@@ -406,7 +425,8 @@ function fitxa(p, play) {
     FX.d = d;
     pintaFitxa(d, v);
     $('fx-poster').style.backgroundImage = bg(api('caratula', { p: p, m: 460, v: (P.tots[p] || {}).pv || 2 }));
-    if (d.fons) { var u = api('caratula', { p: p, fons: 1, m: 1280, v: (P.tots[p] || {}).pv || 0 }), im = new Image(); im.onload = function () { if (FX.p == p) $('fx-fons').style.backgroundImage = bg(u); }; im.src = u; }
+    if (d.fons) { var u = api('caratula', { p: p, fons: 1, m: 1280, v: (P.tots[p] || {}).pv || 0 }), im = new Image(); im.onload = function () { if (FX.p == p) { $('fx-fons').className = ''; $('fx-fons').style.backgroundImage = bg(u); $('fitxa').className = 'amb-fons'; } }; im.src = u; }
+    else if (d.poster) { $('fx-fons').className = 'difus'; $('fx-fons').style.backgroundImage = bg(api('caratula', { p: p, m: 460, v: (P.tots[p] || {}).pv || 2 })); }
   }, function () { });
 }
 function reprodueixDirecte(p) { fitxa(p, true); }
@@ -421,17 +441,21 @@ function pintaFitxa(d, v) {
   if (d.imdb) h += '<span class="nota">IMDb ' + esc(d.imdb) + '</span>';
   if (d.rotten) h += '<span class="nota">🍅 ' + esc(d.rotten) + '</span>';
   h += '</div>';
-  if (d.director) h += '<div class="gris" style="margin-top:12px">' + T('Direcció:') + ' ' + esc(d.director) + '</div>';
+  /* com a les apps de streaming: primer reproduir, després la sinopsi i les dades, i al final les accions de la fitxa */
   if (d.avis) h += '<div class="fx-avis">' + esc(d.avis) + '</div>';
   else if (d.fontNom && !d.confirmada && parseFloat(d.conf) < 0.75) h += '<div class="fx-avis">' + T('No estic segur que sigui aquesta. Confirma-ho o tria la correcta.') + '</div>';
-  var sin = d.sinopsi || '', llarga = sin.length > 420;
-  h += '<div class="fx-sin' + (llarga ? ' curta' : '') + '" id="fx-sin">' + esc(sin) + '</div>' + (llarga ? '<div class="fx-mes" onclick="var e=$(\'fx-sin\');e.className=\'fx-sin\';this.style.display=\'none\'">' + T('Més') + ' ›</div>' : '') + '<div class="fx-bt">';
+  h += '<div class="fx-bt fx-play">';
   if (!e) h += '<span class="gris">' + T('Buscant el fitxer…') + '</span>';
   else if (vlc) h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + T('Obrir a VLC') + '</button>';
   else if (v && v.d) h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + Tf('Continuar ({1})', durada(v.t)) + '</button><button onclick="reprodueix(true)">' + T('Des del principi') + '</button>';
   else h += '<button class="pri" onclick="reprodueix()">' + svg(IC.play) + ' ' + T('Reproduir') + '</button>';
+  h += '</div>';
+  var sin = d.sinopsi || '', llarga = sin.length > 420;
+  h += '<div class="fx-sin' + (llarga ? ' curta' : '') + '" id="fx-sin">' + esc(sin) + '</div>' + (llarga ? '<div class="fx-mes" onclick="var e=$(\'fx-sin\');e.className=\'fx-sin\';this.style.display=\'none\'">' + T('Més') + ' ›</div>' : '');
+  if (d.director) h += '<div class="gris" style="margin:4px 0 14px">' + T('Direcció:') + ' ' + esc(d.director) + '</div>';
+  h += '<div class="fx-acc">';
   if (d.fontNom && !d.confirmada && parseFloat(d.conf) < 0.75) h += '<button onclick="confirmaActual(FX.p)">' + T('Sí, és aquesta') + '</button>';
-  if (d.triada) h += '<button onclick="desfes(FX.p)">↶ ' + T('Desfés la tria') + '</button>';
+  if (d.triada) h += '<button onclick="desfes(FX.p)">' + T('Desfés la tria') + '</button>';
   h += '<button onclick="obreTria(FX.p)">' + svg(IC.cerca) + ' ' + T('No és aquesta? Torna a buscar') + '</button></div>';
   if (e) h += '<div class="fx-fitxer">' + esc(e.p) + ' · ' + mida(e.mida) + (d.fontNom ? ' · ' + esc(d.fontNom) : '') + '</div>';
   $('fx-info').innerHTML = h;
