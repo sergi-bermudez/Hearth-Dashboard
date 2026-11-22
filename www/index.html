@@ -2349,6 +2349,8 @@ function cuaVes(i) {
 }
 /* ---------- Altres pantalles de Hearth (iPad, mòbil, PC...) ---------- */
 var PANT = { l: [], ordre: null, dif: 0, compte: null };
+/* botó d'engegar (el caràcter ⏻ no existeix a les lletres d'iOS 9) */
+var IC_APAGA = 'M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12c0 3.87-3.13 7-7 7A6.995 6.995 0 017.58 6.58L6.17 5.17A8.932 8.932 0 003 12a9 9 0 0018 0c0-2.74-1.23-5.18-3.17-6.83z';
 var IC_PANT = 'M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z';
 function pantHola() {
   var t0 = Date.now();
@@ -2439,7 +2441,7 @@ function filaPantalla(i) {
   return '<div class="pc-fila"><div class="nm"><b>' + esc(p.nom || T('Pantalla')) + '</b><small>' + (p.sona ? (p.pausa ? '⏸ ' : '♪ ') + esc(p.sona) : esc(T('No sona res'))) + '</small></div>' +
     (p.sona ? '<button onclick="pantCtl(' + i + ',\'' + (p.pausa ? 'play' : 'pausa') + '\')" title="' + esc(T(p.pausa ? 'Reprèn' : 'Pausa')) + '">' + svg(p.pausa ? IC.play : IC.pausa) + '</button><button onclick="pantCtl(' + i + ',\'atura\')" title="' + esc(T('Atura')) + '">' + svg(IC.tanca) + '</button>' : '') +
     '<button onclick="pantEnvia(' + i + ')" title="' + esc(T('Envia-hi el que sona aquí')) + '">' + svg(IC_CAST) + '</button>' +
-    '<button onclick="pantCtl(' + i + ',\'apaga\')" title="' + esc(T('Apaga la pantalla')) + '">⏻</button></div>';
+    '<button onclick="pantCtl(' + i + ',\'apaga\')" title="' + esc(T('Apaga la pantalla')) + '">' + svg(IC_APAGA) + '</button></div>';
 }
 function pantControl() {
   $('cast').style.display = 'block';
@@ -2453,9 +2455,9 @@ function pantControlPinta() {
     var p = PANT.l[i];
     h += '<div class="pc-fila"><div class="nm"><b>' + esc(p.nom || T('Pantalla')) + '</b><small>' + (p.sona ? (p.pausa ? '⏸ ' : '♪ ') + esc(p.sona) : esc(T('No sona res'))) + '</small></div>' +
       (p.sona ? '<button onclick="pantCtl(' + i + ',\'' + (p.pausa ? 'play' : 'pausa') + '\')" title="' + esc(T(p.pausa ? 'Reprèn' : 'Pausa')) + '">' + svg(p.pausa ? IC.play : IC.pausa) + '</button><button onclick="pantCtl(' + i + ',\'atura\')" title="' + esc(T('Atura')) + '">' + svg(IC.tanca) + '</button>' : '') +
-      '<button onclick="pantCtl(' + i + ',\'apaga\')" title="' + esc(T('Apaga la pantalla')) + '">⏻</button></div>';
+      '<button onclick="pantCtl(' + i + ',\'apaga\')" title="' + esc(T('Apaga la pantalla')) + '">' + svg(IC_APAGA) + '</button></div>';
   }
-  if (PANT.l.length > 1) h += '<div style="text-align:right;margin-top:12px"><button onclick="pantCtlTots(\'atura\')">' + T('Atura-ho tot') + '</button> <button onclick="pantCtlTots(\'apaga\')">⏻ ' + T('Apaga-les totes') + '</button></div>';
+  if (PANT.l.length > 1) h += '<div style="text-align:right;margin-top:12px"><button onclick="pantCtlTots(\'atura\')">' + T('Atura-ho tot') + '</button> <button onclick="pantCtlTots(\'apaga\')">' + T('Apaga-les totes') + '</button></div>';
   h += '<div style="text-align:right;margin-top:10px"><button onclick="castTanca()">' + T('Tanca') + '</button></div>';
   $('cast-c').innerHTML = h;
 }
@@ -2503,7 +2505,7 @@ function castPinta(cercant) {
   if (PANT.l.length) {
     h += '<div class="cast-sec">' + T('Les altres pantalles') + '</div>';
     for (var k = 0; k < PANT.l.length; k++) h += filaPantalla(k);
-    if (PANT.l.length > 1) h += '<div style="text-align:right;margin:8px 0 4px"><button onclick="pantCtlTots(\'atura\')">' + T('Atura-ho tot') + '</button> <button onclick="pantCtlTots(\'apaga\')">⏻ ' + T('Apaga-les totes') + '</button></div>';
+    if (PANT.l.length > 1) h += '<div style="text-align:right;margin:8px 0 4px"><button onclick="pantCtlTots(\'atura\')">' + T('Atura-ho tot') + '</button> <button onclick="pantCtlTots(\'apaga\')">' + T('Apaga-les totes') + '</button></div>';
   }
   /* 2. Enviar el que sona aquí */
   h += '<div class="cast-sec">' + (sona ? T('Envia el que sona a…') : T('Envia a… (primer posa alguna cosa a sonar)')) + '</div>';
