@@ -510,7 +510,7 @@ public static class Media
             Dictionary<string, object> d = JsonDe("https://" + ll + ".wikipedia.org/api/rest_v1/page/summary/" + Uri.EscapeDataString(pagina.Replace(' ', '_')), 8000) as Dictionary<string, object>;
             if (d == null || S(d, "type") == "disambiguation") continue;
             if (!m.ContainsKey("sinopsi") && S(d, "extract") != "") m["sinopsi"] = S(d, "extract");
-            string mi = Miniatura500(d);
+            string mi = Miniatura500(d) ?? (m.ContainsKey("poster") ? null : PosterPagina(ll, pagina));
             if (!m.ContainsKey("poster") && mi != null) m["poster"] = mi;
             if (!m.ContainsKey("fontNom")) { m["titol"] = Regex.Replace(S(d, "title"), @"\s*\([^)]*\)\s*$", ""); m["fontNom"] = "Viquip\u00e8dia"; }
             if (m.ContainsKey("poster") && m.ContainsKey("sinopsi")) return;
@@ -651,10 +651,13 @@ public static class Media
         int a1, a2;
         if (any != "" && int.TryParse(any, out a1) && int.TryParse(S(o, "any"), out a2)) { if (a1 == a2) s += 0.3; else if (Math.Abs(a1 - a2) <= 1) s += 0.15; }
         if (S(o, "poster") != "") s += 0.05;
-        string clau = Pla(S(o, "titol")) + "|" + S(o, "any");
+        string pt = Pla(S(o, "titol")), po = Pla(S(o, "original")), ao = S(o, "any");
         foreach (Dictionary<string, object> x in l)
-            if (Pla(S(x, "titol")) + "|" + S(x, "any") == clau)
+            if ((S(o, "wd") != "" && S(o, "wd") == S(x, "wd"))
+                || ((Pla(S(x, "titol")) == pt || (po != "" && Pla(S(x, "original")) == po) || (po != "" && Pla(S(x, "titol")) == po) || (S(x, "original") != "" && Pla(S(x, "original")) == pt))
+                    && (ao == "" || S(x, "any") == "" || ao == S(x, "any"))))
             {
+                if (S(x, "any") == "" && ao != "") x["any"] = ao;
                 // la mateixa pel.licula des d'una altra font: completa el que falti
                 foreach (string k in new string[] { "poster", "fons", "sinopsi", "nota", "genere", "minuts", "edat", "original", "wImdb", "wRt", "wMc" }) if (S(x, k) == "" && S(o, k) != "") x[k] = o[k];
                 return;
@@ -754,7 +757,7 @@ public static class Media
             o["titol"] = Regex.Replace(t, @"\s*\([^)]*\)\s*$", "");
             Match ma = Regex.Match(t + " " + S(d, "description") + " " + S(d, "extract"), @"(19[2-9]\d|20[0-4]\d)"); if (ma.Success) o["any"] = ma.Value;
             if (S(d, "extract") != "") o["sinopsi"] = S(d, "extract");
-            string mi = Miniatura500(d);
+            string mi = Miniatura500(d) ?? PosterPagina(wl, t);
             if (mi != null) o["poster"] = mi;
             lock (l) AfegeixOpcio(l, o, titol, any);
         }
@@ -764,6 +767,37 @@ public static class Media
     {
         try { return JsonDe("https://" + wl + ".wikipedia.org/api/rest_v1/page/summary/" + Uri.EscapeDataString(pagina.Replace(' ', '_')), 8000) as Dictionary<string, object>; }
         catch { return null; }
+    }
+
+    // La caratula d'una pagina de la Viquipedia. El resum nomes dona imatges lliures, i les caratules de
+    // pel.licules no ho son (a l'anglesa hi son com a "fair use"): pageimages amb pilicense=any si que les dona.
+    // Si la pagina no en te, es mira la mateixa pagina a la Viquipedia anglesa.
+    static string PosterPagina(string wl, string pagina)
+    {
+        try
+        {
+            string u = "https://" + wl + ".wikipedia.org/w/api.php?action=query&format=json&redirects=1&prop=pageimages" + (wl != "en" ? "|langlinks&lllang=en" : "") + "&piprop=thumbnail&pithumbsize=500&pilicense=any&titles=" + Uri.EscapeDataString(pagina);
+            Dictionary<string, object> r = JsonDe(u, 8000) as Dictionary<string, object>;
+            Dictionary<string, object> q = r != null && r.ContainsKey("query") ? r["query"] as Dictionary<string, object> : null;
+            Dictionary<string, object> ps = q != null && q.ContainsKey("pages") ? q["pages"] as Dictionary<string, object> : null;
+            if (ps == null) return null;
+            foreach (object po in ps.Values)
+            {
+                Dictionary<string, object> pg = po as Dictionary<string, object>;
+                if (pg == null) continue;
+                Dictionary<string, object> th = pg.ContainsKey("thumbnail") ? pg["thumbnail"] as Dictionary<string, object> : null;
+                if (S(th, "source") != "") return S(th, "source");
+                object[] ll = pg.ContainsKey("langlinks") ? pg["langlinks"] as object[] : null;
+                if (ll != null && ll.Length > 0)
+                {
+                    Dictionary<string, object> l0 = ll[0] as Dictionary<string, object>;
+                    string en = S(l0, "*"); if (en == "") en = S(l0, "title");
+                    if (en != "") return PosterPagina("en", en);
+                }
+            }
+        }
+        catch { }
+        return null;
     }
 
     // La miniatura de la Viquipedia a 500 px d'ample (l'original pot fer molts MB)
@@ -843,7 +877,7 @@ public static class Media
                     Func<string, string> pag = delegate (string w) { return sl != null && sl.ContainsKey(w) ? S(sl[w] as Dictionary<string, object>, "title") : ""; };
                     string pl = pag(ll + "wiki"), pe = pag("enwiki");
                     Dictionary<string, object> dl = pl != "" ? Resum(ll, pl) : null, de = pe != "" ? Resum("en", pe) : null;
-                    string img = Miniatura500(de) ?? Miniatura500(dl);
+                    string img = (pe != "" ? PosterPagina("en", pe) : null) ?? Miniatura500(de) ?? Miniatura500(dl) ?? (pl != "" ? PosterPagina(ll, pl) : null);
                     if (img != null) o["poster"] = img;
                     string ext = S(dl, "extract"); if (ext == "") ext = S(de, "extract");
                     if (ext != "") o["sinopsi"] = ext;
@@ -1048,7 +1082,7 @@ public static class Media
                 {
                     string t = S(x as Dictionary<string, object>, "title");
                     if (Semblanca(tit, Regex.Replace(t, @"\s*\([^)]*\)\s*$", "")) < 0.5) continue;
-                    string img = Miniatura500(Resum("en", t));
+                    string img = PosterPagina("en", t) ?? Miniatura500(Resum("en", t));
                     if (img != null) { m["poster"] = img; return true; }
                 }
             }
