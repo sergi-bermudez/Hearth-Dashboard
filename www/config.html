@@ -357,6 +357,7 @@ body{background:#000}
 
   <div class="sec" id="s-diagnosi">
     <h2>Diagnòstic</h2>
+    <details style="margin:8px 0 14px"><summary class="gris" style="cursor:pointer">Registre del so d'aquest aparell (si la música o la ràdio es talla)</summary><pre id="reg-so" style="white-space:pre-wrap;font-size:12px;max-height:320px;overflow:auto;background:rgba(0,0,0,.25);padding:8px;border-radius:8px;-webkit-user-select:text;user-select:text"></pre></details>
     <div class="desc">L'estat de cada peça de Hearth. Si alguna cosa no va, toca «Copia l'informe» i envia-ho a qui t'ajudi.</div>
     <div id="dg-llista" class="dg"><div class="gris">…</div></div>
     <div class="peu" style="text-align:left;margin-top:12px"><button onclick="dgCarrega()">Torna a comprovar</button> <button class="pri" onclick="dgCopia()">Copia l'informe</button></div>
@@ -527,6 +528,8 @@ function pintaCarpetesFotos(amaga) {
     $('aj-fotos').innerHTML = h || 'No hi ha fotos.';
   }, function () { $('aj-fotos').textContent = 'No s\'han pogut llegir les carpetes.'; });
 }
+function pintaRegSo() { var l = ls('regSo') || []; if ($('reg-so')) $('reg-so').textContent = l.length ? l.join('\n') + '\n\n' + navigator.userAgent : 'Encara no hi ha res.'; }
+setTimeout(pintaRegSo, 500);
 function desaInici() {
   var a = C.aj;
   if (C.ciutat) { a.ciutat = C.ciutat.ciutat; a.lat = C.ciutat.lat; a.lon = C.ciutat.lon; }

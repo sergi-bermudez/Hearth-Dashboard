@@ -1264,9 +1264,24 @@ au.addEventListener('error', function () {
   avis(T('No s\'ha pogut reproduir:') + ' ' + (it ? it.t : ''), 4000);
   if (it && it.k == 'musica' && R.pos < R.cua.length - 1) setTimeout(function () { R.pos++; repToca(); }, 1500);
 });
+/* Registre del so d'aquest aparell (per entendre talls): els darrers 40 esdeveniments, a Configuració ▸ Diagnòstic */
+var REG = [];
+function registra(t) {
+  var d = new Date(), it = R.cua[R.pos];
+  REG.push(dos(d.getHours()) + ':' + dos(d.getMinutes()) + ':' + dos(d.getSeconds()) + ' ' + t + (it ? ' · ' + (it.t || '') : '') + ' · rs=' + au.readyState + ' t=' + Math.round(au.currentTime || 0));
+  if (REG.length > 40) REG.shift();
+  try { ls('regSo', REG); } catch (e) { }
+}
+(function () {
+  var ev = ['play', 'playing', 'pause', 'waiting', 'stalled', 'suspend', 'emptied', 'ended', 'error', 'abort'];
+  for (var i = 0; i < ev.length; i++) (function (n) { au.addEventListener(n, function () { registra(n + (n == 'error' && au.error ? ' ' + au.error.code : '')); }); })(ev[i]);
+})();
+/* el botó de play es manté al dia encara que el navegador no avisi de la pausa */
+setInterval(function () { if (R.cua.length || TV.canal) iconesPlay(); }, 1500);
 /* Ràdio en directe: si sona però el temps no avança durant 12 s (el navegador s'ha encallat), es reconnecta sola */
 var RDV = { t: -1, des: 0, intents: 0 };
 function reconnectaRadio() {
+  registra('Hearth reconnecta');
   var it = R.cua[R.pos], u = au.getAttribute('src');
   if (!it || it.k != 'radio' || !u) return;
   RDV.intents++;
@@ -1295,6 +1310,7 @@ function vigilaRadio() {
   }, 30000);
 }
 function provaAlternativa(it) {
+  registra('Hearth prova una altra via');
   if (!it.alt || !it.alt.length) return false;
   it.u = it.alt.shift();
   au.src = mitja(it.u); au.play();
@@ -2505,6 +2521,7 @@ function fesOrdre(alHora) {
 }
 /* ---------- Controlar les altres pantalles (pausa, atura, apaga) ---------- */
 function fesControl(acc, de) {
+  registra('ordre ' + acc + ' de ' + (de || '?'));
   var it = R.cua[R.pos], sona = TV.canal || it, pausat = TV.canal ? $('tv-v').paused : it ? sonaPausat() : true;
   if (acc == 'pausa' && sona && !pausat) repPlay();
   else if (acc == 'play' && sona && pausat) repPlay();

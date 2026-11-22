@@ -986,3 +986,4 @@ TR.fr["No s'ha pogut enviar a {1}"]="Impossible d'envoyer à {1}";
 TR.fr["Enviant a {1} aparells…"]="Envoi vers {1} appareils…";
 TR.fr["Mostra la data i el lloc de cada foto"]="Afficher la date et le lieu de chaque photo";
 TR.fr["Toca per escoltar"]="Touchez pour écouter";
+TR.fr["Registre del so d'aquest aparell (si la música o la ràdio es talla)"]="Journal du son de cet appareil (si la musique ou la radio se coupe)";
