@@ -812,7 +812,10 @@ public static class CasaServidor
         FileInfo fi = new FileInfo(full);
         string ext = fi.Extension.ToLowerInvariant();
         if (!qualsevol && Array.IndexOf(ExtImg, ext) < 0) return null;
-        string clau = Hash(full.ToLowerInvariant() + "|" + fi.Length + "|" + fi.LastWriteTimeUtc.Ticks + "|" + m);
+        // Les fotos de Google Fotos ja venen dretes (Google les gira en fer-les petites); si encara porten l'etiqueta
+        // de rotacio, girar-les un altre cop les deixa de costat. Aquestes no es giren.
+        bool jaDreta = full.Replace('/', '\\').IndexOf("\\Google Fotos", StringComparison.OrdinalIgnoreCase) >= 0 || full.IndexOf("gfotos-cau", StringComparison.OrdinalIgnoreCase) >= 0;
+        string clau = Hash(full.ToLowerInvariant() + "|" + fi.Length + "|" + fi.LastWriteTimeUtc.Ticks + "|" + m + (jaDreta ? "|dreta" : "") + "|r2");
         string desti = Path.Combine(Minis, clau.Substring(0, 2), clau + ".jpg");
         if (File.Exists(desti)) return desti;
         Sem.Wait();
@@ -824,7 +827,7 @@ public static class CasaServidor
             using (Image img = Image.FromStream(fs, true, false))
             {
                 int ori = 1;
-                if (Array.IndexOf(img.PropertyIdList, 0x0112) >= 0)
+                if (!jaDreta && Array.IndexOf(img.PropertyIdList, 0x0112) >= 0)
                 {
                     try { ori = BitConverter.ToUInt16(img.GetPropertyItem(0x0112).Value, 0); } catch { }
                 }

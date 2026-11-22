@@ -1933,8 +1933,13 @@ function marcFotos() {
   MC.n++;
   return [f];
 }
-function marcHtml(fs, urls) {
+function marcHtml(fs, urls, mides) {
   var e = estilPassi();
+  /* Una foto vertical en una pantalla horitzontal (o al revés) no es retalla: es veu sencera, amb el fons difuminat */
+  if (e != 'revista' && mides && mides[0] && mides[0][0] && mides[0][1]) {
+    var vf = mides[0][1] > mides[0][0] * 1.05, vp = window.innerHeight > window.innerWidth;
+    if (vf != vp) e = 'marc';
+  }
   if (e == 'kenburns') {
     var o = ['0% 0%', '100% 0%', '0% 100%', '100% 100%', '50% 50%', '30% 60%'][Math.floor(Math.random() * 6)];
     var d = (A.ajustos.marcSeg || 15) + 4;
@@ -1955,13 +1960,13 @@ function marcHtml(fs, urls) {
 }
 function marcSeguent() {
   clearTimeout(MC.t);
-  var fs = marcFotos(), e = estilPassi(), urls = [], fets = 0;
+  var fs = marcFotos(), e = estilPassi(), urls = [], fets = 0, mides = [];
   $('marc').className = e;
   for (var i = 0; i < fs.length; i++) urls.push(miniUrl('fotos', fs[i][0], e == 'revista' && i > 0 ? 800 : 1600));
   function llest() {
     if (++fets < urls.length || !marcObert()) return;
     var a = $(MC.capa ? 'mc-a' : 'mc-b'), b = $(MC.capa ? 'mc-b' : 'mc-a');
-    var h = marcHtml(fs, urls);
+    var h = marcHtml(fs, urls, mides);
     if (h) { a.style.backgroundImage = 'none'; a.innerHTML = h; } else { a.innerHTML = ''; a.style.backgroundImage = bg(urls[0]); }
     a.className = 'capa on'; b.className = 'capa';
     MC.capa = 1 - MC.capa;
@@ -1969,7 +1974,11 @@ function marcSeguent() {
     setTimeout(function () { if (b.className == 'capa') { b.style.backgroundImage = 'none'; b.innerHTML = ''; } }, 2200);
     MC.t = setTimeout(marcSeguent, (A.ajustos.marcSeg || 15) * 1000 * (e == 'revista' ? 1.5 : 1));
   }
-  for (i = 0; i < urls.length; i++) { var img = new Image(); img.onload = img.onerror = llest; img.src = urls[i]; }
+  for (i = 0; i < urls.length; i++) (function (k) {
+    var img = new Image();
+    img.onload = function () { mides[k] = [img.naturalWidth || img.width, img.naturalHeight || img.height]; llest(); };
+    img.onerror = llest; img.src = urls[k];
+  })(i);
 }
 /* Data i lloc de la foto que es veu (el lloc surt del GPS de la foto, si en té) */
 function infoFoto(f) {
