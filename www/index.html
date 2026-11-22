@@ -655,7 +655,7 @@ body.offline .app.cal-servidor,body.offline #nav div.cal-servidor{opacity:.3}
 
 <div id="tv">
   <video id="tv-v" webkit-playsinline playsinline></video>
-  <div class="tv-capa" id="tv-capa" onclick="tvToc()"></div>
+  <div class="tv-capa" id="tv-capa" onclick="if (+new Date() - (TV.touchT || 0) > 700) tvToc()"></div>
   <div class="tv-estat" id="tv-estat"></div>
   <div class="tv-ctl"><span class="directe" id="tv-directe" data-t>DIRECTE</span><div class="nm una" id="tv-nom"></div>
     <span id="tv-vol"></span><button onclick="castObre()" id="tv-b-cast"></button><button onclick="tvNatiu()" id="tv-b-natiu"></button><button onclick="tvMode('normal')" id="tv-b-petit"></button><button onclick="tvAtura()" id="tv-b-x"></button></div>
@@ -1527,6 +1527,13 @@ function tvEscoltes(v) {
     setTimeout(tvProva, 300);
   });
   v.addEventListener('waiting', function () { if (TV.canal && !TV.estat) tvEstat(T('Carregant…')); });
+  /* a l'iPad el segon toc d'un doble toc no arriba com a clic (Safari l'espera per fer zoom): es fan servir els tocs directament */
+  $('tv-capa').addEventListener('touchend', function (e) {
+    if (e.changedTouches && e.changedTouches.length > 1) return;
+    e.preventDefault();
+    TV.touchT = +new Date();
+    tvToc();
+  }, false);
   v.addEventListener('loadedmetadata', function () {
     tvAjusta();
     var r = TV.represa;
