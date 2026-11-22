@@ -2514,10 +2514,26 @@ function rebOrdre(o) {
 }
 function pantRebutja() { clearInterval(PANT.compte); PANT.ordre = null; castTanca(); }
 function pantAccepta() { clearInterval(PANT.compte); castTanca(); fesOrdre(); }
+/* El que arriba d'un altre aparell porta les adreces triades per a aquell aparell (p. ex. la ràdio en HLS per a l'iPad,
+   o preparada per al reproductor a trossos). Aquí es tornen a triar per a aquest aparell, com si s'hagués posat aquí. */
+function adaptaCua(cua) {
+  var r = [];
+  for (var i = 0; i < cua.length; i++) {
+    var it = cua[i], n;
+    if (it.k == 'radio' && it.id) {
+      n = radioItem({ u: it.id, t: it.t, s: it.s });
+      n.art = it.art;
+    } else {
+      n = {}; for (var k in it) if (it.hasOwnProperty(k) && k != 'pcm') n[k] = it[k];
+    }
+    r.push(n);
+  }
+  return r;
+}
 function fesOrdre(alHora) {
   var o = PANT.ordre; PANT.ordre = null; if (!o) return;
   if (o.tipus == 'tv' && o.canal) { tvObre(o.canal); setTimeout(function () { var v = $('tv-v'); if (v.paused) provaPlay(v, o.canal.nom); }, 2500); }
-  else if (o.tipus == 'cua' && o.cua && o.cua.length) repInicia(o.cua, o.pos || 0);
+  else if (o.tipus == 'cua' && o.cua && o.cua.length) repInicia(adaptaCua(o.cua), o.pos || 0);
 }
 /* ---------- Controlar les altres pantalles (pausa, atura, apaga) ---------- */
 function fesControl(acc, de) {
