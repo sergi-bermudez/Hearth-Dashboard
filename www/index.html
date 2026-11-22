@@ -2482,14 +2482,20 @@ function castDiverses() {
   PANT.vistaDiv = true;
   var h = '<h3>' + T('Envia a diverses pantalles') + '</h3>';
   if (!PANT.l.length && !CAST.llista.length) h += '<div class="gris" style="padding:8px 4px">' + T('No hi ha cap altra pantalla de Hearth connectada.') + '</div>';
-  h += '<label class="check" style="display:block;padding:8px 4px"><input type="checkbox" id="pd-tots" onchange="var c=document.querySelectorAll(\'.pd-p\');for(var i=0;i<c.length;i++)c[i].checked=this.checked"> <b>' + T('Totes') + '</b></label>';
+  h += '<label class="check" style="display:block;padding:8px 4px"><input type="checkbox" id="pd-tots" onchange="marcaTots(this.checked)"> <b>' + T('Totes') + '</b></label>';
   for (var j = 0; j < PANT.l.length; j++) h += '<label class="check" style="display:block;padding:8px 4px"><input type="checkbox" class="pd-p" value="' + j + '"> ' + esc(PANT.l[j].nom || T('Pantalla')) + '</label>';
   /* i els Chromecast, Google Nest i teles */
-  for (var c = 0; c < CAST.llista.length; c++) h += '<label class="check" style="display:block;padding:8px 4px"><input type="checkbox" class="pd-p pd-c" value="c' + c + '"> ' + esc(CAST.llista[c].nom) + ' <span class="gris petit">' + esc(CAST.llista[c].model || (CAST.llista[c].tipus == 'dlna' ? 'DLNA' : 'Chromecast')) + '</span></label>';
+  for (var c = 0; c < CAST.llista.length; c++) h += '<label class="check" style="display:block;padding:8px 4px"><input type="checkbox" class="pd-p pd-c' + (esGrupCast(CAST.llista[c]) ? ' pd-g' : CAST.llista[c].tipus != 'dlna' ? ' pd-m' : '') + '" value="c' + c + '"> ' + esc(CAST.llista[c].nom) + ' <span class="gris petit">' + esc(CAST.llista[c].model || (CAST.llista[c].tipus == 'dlna' ? 'DLNA' : 'Chromecast')) + '</span></label>';
   h += '<label class="check" style="display:block;padding:8px 4px"><input type="checkbox" id="pd-aqui" checked> ' + T('També aquí') + '</label>';
   h += '<div class="gris petit" style="margin:6px 4px 12px">' + T('Totes començaran alhora. Si alguna sona avançada o endarrerida, ajusta-li el retard a Configuració ▸ Aquest aparell.') + '</div>';
   h += '<div style="text-align:right"><button onclick="castObre()">' + T('Enrere') + '</button> <button class="pri" onclick="castDiversesEnvia()">' + T('Envia') + '</button></div>';
   $('cast-c').innerHTML = h;
+}
+/* Un grup de Google Cast ja fa sonar tots els seus altaveus (i sincronitzats): amb "Totes" s'envia al grup, no a cada Chromecast un per un */
+function esGrupCast(d) { return /group|grup|grupo|groupe/i.test(d.model || ''); }
+function marcaTots(on) {
+  var hiHaGrup = document.querySelectorAll('.pd-g').length > 0, c = document.querySelectorAll('.pd-p');
+  for (var i = 0; i < c.length; i++) c[i].checked = on && !(hiHaGrup && /pd-m/.test(c[i].className));
 }
 function castDiversesEnvia() {
   var c = document.querySelectorAll('.pd-p'), d = [], cc = [];
