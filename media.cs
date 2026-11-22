@@ -121,11 +121,12 @@ public static class Media
             if (File.Exists(f0)) return f0;
         }
         string err = Path.Combine(dir, h + ".err");
-        if (File.Exists(err) && (DateTime.Now - File.GetLastWriteTime(err)).TotalHours < 12) return null;
+        if (File.Exists(err) && (DateTime.Now - File.GetLastWriteTime(err)).TotalHours < 12) { string alt0 = OriginalWikimedia(url); return alt0 != null ? ImatgeExterna(alt0, ms) : null; }
         string tmp = Path.Combine(dir, h + ".part" + Thread.CurrentThread.ManagedThreadId);
         string hostImg = new Uri(url).Host;
         try { Torn(hostImg); } catch { return null; }
         xarxa.Wait();
+        bool alliberat = false;
         try
         {
             HttpWebRequest rq = (HttpWebRequest)WebRequest.Create(url);
@@ -152,10 +153,23 @@ public static class Media
             HttpWebResponse hr = we != null ? we.Response as HttpWebResponse : null;
             // "massa peticions" no vol dir que la imatge no existeixi: es torna a provar mes tard
             if (hr != null && (int)hr.StatusCode == 429) MassaPeticions(hostImg, we);
-            else if (we == null || we.Status != WebExceptionStatus.Timeout) try { File.WriteAllText(err, url); } catch { }
+            else if (we == null || we.Status != WebExceptionStatus.Timeout)
+            {
+                try { File.WriteAllText(err, url); } catch { }
+                // una miniatura de la Viquipedia mes gran que l'original falla (passa amb les caratules, que son petites): es baixa l'original
+                string alt = OriginalWikimedia(url);
+                if (alt != null) { xarxa.Release(); alliberat = true; return ImatgeExterna(alt, ms); }
+            }
             return null;
         }
-        finally { xarxa.Release(); }
+        finally { if (!alliberat) xarxa.Release(); }
+    }
+
+    // https://upload.wikimedia.org/wikipedia/en/thumb/a/ab/Nom.jpg/500px-Nom.jpg -> .../wikipedia/en/a/ab/Nom.jpg
+    static string OriginalWikimedia(string url)
+    {
+        Match m = Regex.Match(url, @"^(https://upload\.wikimedia\.org/wikipedia/[^/]+/)thumb/(.+?)/\d+px-[^/]+$");
+        return m.Success ? m.Groups[1].Value + m.Groups[2].Value : null;
     }
 
     static void EnviaImatge(HttpListenerContext ctx, string f, int m)
@@ -804,6 +818,9 @@ public static class Media
     static string Miniatura500(Dictionary<string, object> d)
     {
         if (d == null) return null;
+        // si l'original ja es petit (les caratules ho solen ser), l'original: una miniatura mes gran que l'original falla
+        Dictionary<string, object> or = d.ContainsKey("originalimage") ? d["originalimage"] as Dictionary<string, object> : null;
+        int ow; if (S(or, "source") != "" && int.TryParse(S(or, "width"), out ow) && ow > 0 && ow <= 520) return S(or, "source");
         Dictionary<string, object> t = d.ContainsKey("thumbnail") ? d["thumbnail"] as Dictionary<string, object> : null;
         string u = S(t, "source");
         if (u == "") return null;
