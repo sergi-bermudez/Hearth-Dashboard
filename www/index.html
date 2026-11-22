@@ -1736,13 +1736,25 @@ function tvMiniMida() {
 }
 /* Mida del reproductor de so a la pantalla d'inici: S / M / L */
 var AUD = { mida: ls('auMida') || 'g' };
+/* En canviar la mida, el reproductor (i el botó de la mida) canvien de lloc: a la tele, el punter del comandament es
+   queda on era i el clic següent requeia sobre una altra cosa (un canal de TV, ✕...) i aturava la ràdio.
+   Durant un moment després de canviar-la, només es deixa tornar a tocar la mida. */
+var MIDA_T = 0;
+document.addEventListener('click', function (e) {
+  if (Date.now() - MIDA_T > 1500) return;
+  var el = e.target;
+  while (el && el.nodeType == 1) { if (el.className && /\bmida\b/.test(el.className)) return; el = el.parentNode; }
+  e.stopPropagation(); e.preventDefault();
+}, true);
 function audMidaCanvia() {
+  MIDA_T = Date.now();
   AUD.mida = AUD.mida == 'p' ? 'm' : AUD.mida == 'm' ? 'g' : 'p';
   ls('auMida', AUD.mida);
   estatCos();
   pintaSona();
 }
 function tvMidaCanvia() {
+  MIDA_T = Date.now();
   TV.mida = TV.mida == 'p' ? 'm' : TV.mida == 'm' ? 'g' : 'p';
   ls('tvMida', TV.mida);
   pintaSona();
