@@ -236,7 +236,8 @@ body.amb-pest #apps iframe{height:-webkit-calc(100% - 52px);height:calc(100% - 5
 @media (max-width:480px){ #cfg-av span{display:none} #cfg-av{padding:3px 7px;margin-left:6px} }
 #b-tele{margin-left:10px;width:36px;height:36px;padding:7px;box-sizing:border-box;border-radius:50%;background:rgba(255,255,255,.14);cursor:pointer;-webkit-flex:none;flex:none}
 #b-tele .ic{width:22px;height:22px;display:block}
-body.tele #b-tele{display:none}
+body.tele #b-tele{display:block}
+.cast-sec{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#8d95a1;margin:14px 4px 4px}
 #b-pant{margin-left:10px;width:36px;height:36px;padding:7px;box-sizing:border-box;border-radius:50%;background:rgba(255,255,255,.14);cursor:pointer;-webkit-flex:none;flex:none;display:none}
 #b-pant.hi{display:block}
 #b-pant .ic{width:22px;height:22px;display:block}
@@ -614,7 +615,7 @@ body.offline .app.cal-servidor,body.offline #nav div.cal-servidor{opacity:.3}
 <div id="dash">
   <div class="d-cap">
     <div class="d-hora ombrat panell" style="position:relative">
-      <div class="salut-fila"><div id="cfg" onclick="obreConfig()"></div><div id="salut"></div><div id="cfg-av" onclick="obreAvis()"></div><div id="b-tele" onclick="teleMenu()" title="Mostra Hearth a la tele"></div><div id="b-pant" onclick="pantControl()" title="Controla les altres pantalles"></div></div>
+      <div class="salut-fila"><div id="cfg" onclick="obreConfig()"></div><div id="salut"></div><div id="cfg-av" onclick="obreAvis()"></div><div id="b-tele" onclick="castObre()" title="Envia i controla"></div></div>
       <div id="hora">--:--</div>
       <div id="data"></div>
     </div>
@@ -927,8 +928,7 @@ function pintaDock() {
   }
   n += '<div onclick="obreConfig()" id="nv-config" class="nv-cfg">' + svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config) + esc(T('Ajustos')) + '</div>';
   $('cfg').innerHTML = svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config);
-  $('b-pant').innerHTML = svg(IC_PANT);
-  $('b-tele').innerHTML = svg(IC.tv); $('b-tele').style.display = INF.actiu ? 'none' : '';
+  $('b-tele').innerHTML = svg(IC_CAST); $('b-tele').style.display = INF.actiu ? 'none' : '';
   $('dock').innerHTML = h;
   $('nav').innerHTML = n;
   if (window.NF) puntMissatges();
@@ -2359,7 +2359,6 @@ function pantHola() {
     /* diferència entre el rellotge del servidor i el d'aquest aparell (per començar alhora) */
     if (r && r.t) { var ara = Date.now(); PANT.dif = r.t - (t0 + ara) / 2; }
     connexio(true);
-    if (r && r.n !== undefined) $('b-pant').className = r.n > 0 && !INF.actiu ? 'hi' : '';
     if (l && l.length) rebOrdre(l[l.length - 1]);
   }, function () { connexio(false); });
 }
@@ -2435,6 +2434,13 @@ function fesControl(acc, de) {
   if (de) avis(Tf('{1} ho ha fet des d\'allà', de), 2500);
   pantHola();
 }
+function filaPantalla(i) {
+  var p = PANT.l[i];
+  return '<div class="pc-fila"><div class="nm"><b>' + esc(p.nom || T('Pantalla')) + '</b><small>' + (p.sona ? (p.pausa ? '⏸ ' : '♪ ') + esc(p.sona) : esc(T('No sona res'))) + '</small></div>' +
+    (p.sona ? '<button onclick="pantCtl(' + i + ',\'' + (p.pausa ? 'play' : 'pausa') + '\')" title="' + esc(T(p.pausa ? 'Reprèn' : 'Pausa')) + '">' + svg(p.pausa ? IC.play : IC.pausa) + '</button><button onclick="pantCtl(' + i + ',\'atura\')" title="' + esc(T('Atura')) + '">' + svg(IC.tanca) + '</button>' : '') +
+    '<button onclick="pantEnvia(' + i + ')" title="' + esc(T('Envia-hi el que sona aquí')) + '">' + svg(IC_CAST) + '</button>' +
+    '<button onclick="pantCtl(' + i + ',\'apaga\')" title="' + esc(T('Apaga la pantalla')) + '">⏻</button></div>';
+}
 function pantControl() {
   $('cast').style.display = 'block';
   $('cast-c').innerHTML = '<h3>' + T('Les altres pantalles') + '</h3><div class="gris" style="padding:8px 4px">' + T('Buscant…') + '</div>';
@@ -2458,7 +2464,7 @@ function pantCtl(i, acc) {
   post(api('pantalles/envia', { a: p.id }), JSON.stringify({ tipus: 'ctl', acc: acc, de: DISP.nom || nomDispositiuDefecte() }), function () {
     if (acc == 'pausa' || acc == 'play') p.pausa = acc == 'pausa';
     if (acc == 'atura' || acc == 'apaga') p.sona = '';
-    pantControlPinta();
+    if ($('cast').style.display == 'block' && !PANT.soloCtl) castPinta(false); else pantControlPinta();
     avis(acc == 'apaga' ? Tf('{1}: pantalla apagada', p.nom) : acc == 'atura' ? Tf('{1}: aturat', p.nom) : Tf('{1}: fet', p.nom), 2500);
   }, errXarxa(T('enviar')));
 }
@@ -2492,15 +2498,23 @@ function castObre() {
 }
 function castPinta(cercant) {
   if (PANT.vistaDiv) return;
-  var h = '<h3>' + T('Envia a…') + '</h3>', l = CAST.llista;
+  var l = CAST.llista, sona = !!ordreActual() || !!CAST.dev, h = '';
+  /* 1. Les altres pantalles de Hearth: què hi sona i aturar-les o apagar-les */
+  if (PANT.l.length) {
+    h += '<div class="cast-sec">' + T('Les altres pantalles') + '</div>';
+    for (var k = 0; k < PANT.l.length; k++) h += filaPantalla(k);
+    if (PANT.l.length > 1) h += '<div style="text-align:right;margin:8px 0 4px"><button onclick="pantCtlTots(\'atura\')">' + T('Atura-ho tot') + '</button> <button onclick="pantCtlTots(\'apaga\')">⏻ ' + T('Apaga-les totes') + '</button></div>';
+  }
+  /* 2. Enviar el que sona aquí */
+  h += '<div class="cast-sec">' + (sona ? T('Envia el que sona a…') : T('Envia a… (primer posa alguna cosa a sonar)')) + '</div>';
   h += '<div class="ce' + (!CAST.dev ? ' on' : '') + '" onclick="castAtura();castTanca()">' + svg('M18 0H6C4.34 0 3 1.34 3 3v18c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V3c0-1.66-1.34-3-3-3zm-6 22.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 18H5V3h14v15z') + '<div>' + T('Aquest aparell') + '</div></div>';
   if (PANT.l.length) h += '<div class="ce" onclick="castDiverses()">' + svg(IC_PANT) + '<div>' + T('Diverses pantalles alhora…') + '<small>' + T('Totes o les que triïs, sonant sincronitzades') + '</small></div></div>';
-  for (var j = 0; j < PANT.l.length; j++)
-    h += '<div class="ce" onclick="pantEnvia(' + j + ')">' + svg(PANT.l[j].tele ? IC.tv : IC_PANT) + '<div>' + esc(PANT.l[j].nom || T('Pantalla')) + '<small>' + T('Hearth') + '</small></div></div>';
   for (var i = 0; i < l.length; i++)
     h += '<div class="ce' + (CAST.dev == l[i].id ? ' on' : '') + '" onclick="castEnvia(' + i + ')">' + svg(l[i].tipus == 'dlna' ? IC.tv : /audio|mini|home|speaker|nest/i.test(l[i].model) ? IC.radio : IC_CAST) + '<div>' + esc(l[i].nom) + '<small>' + esc(l[i].model || (l[i].tipus == 'dlna' ? 'DLNA' : 'Chromecast')) + '</small></div></div>';
   if (cercant) h += '<div class="gris" style="padding:12px 6px">' + T('Buscant aparells a la xarxa…') + '</div>';
   else if (!l.length) h += '<div class="gris" style="padding:12px 6px">' + T('No he trobat cap Chromecast, Google Nest ni tele. Han d\'estar engegats i a la mateixa xarxa que el PC.') + '</div>';
+  /* 3. Hearth sencer a la tele (Miracast des del PC) */
+  if (!modeTele() && !INF.actiu) h += '<div class="cast-sec">' + T('Tele') + '</div><div class="ce" onclick="castTanca();teleMenu()">' + svg(IC.tv) + '<div>' + T('Mostra Hearth a la tele…') + '<small>' + T('El PC la projecta i el comandament la controla') + '</small></div></div>';
   h += '<div style="text-align:right;margin-top:8px"><button onclick="CAST.llista=[];castObre()">' + T('Torna a buscar') + '</button> <button onclick="castTanca()">' + T('Tanca') + '</button></div>';
   $('cast-c').innerHTML = h;
 }
