@@ -907,3 +907,6 @@ TR.es["Envia"]="Enviar";
 TR.es["Tria alguna pantalla"]="Elige alguna pantalla";
 TR.es["Diverses pantalles alhora…"]="Varias pantallas a la vez…";
 TR.es["Totes o les que triïs, sonant sincronitzades"]="Todas o las que elijas, sincronizadas";
+TR.es["Sense connexió amb el servidor de Hearth. Continua funcionant el que ja tens obert; la resta tornarà sola."]="Sin conexión con el servidor de Hearth. Sigue funcionando lo que ya tienes abierto; el resto volverá solo.";
+TR.es["Connectat de nou"]="Conectado de nuevo";
+TR.es["Això necessita el servidor, que ara no respon."]="Esto necesita el servidor, que ahora no responde.";

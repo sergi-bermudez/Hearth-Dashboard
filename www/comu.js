@@ -319,7 +319,7 @@ function nomDispositiuDefecte() {
   return 'Navegador';
 }
 /* Ajustos que poden ser propis de cada dispositiu */
-var AJ_DISP = ['estil', 'foscor', 'fonsSeg', 'marcSeg', 'marcMin', 'targeta', 'nom', 'passi', 'nit', 'nitDes', 'nitFins', 'lleuger', 'fonsPassi', 'tele', 'retard'];
+var AJ_DISP = ['estil', 'foscor', 'fonsSeg', 'marcSeg', 'marcMin', 'targeta', 'nom', 'passi', 'nit', 'nitDes', 'nitFins', 'lleuger', 'fonsPassi', 'tele', 'retard', 'despert', 'moll'];
 /* Llegeix els ajustos generals i hi aplica els d'aquest dispositiu (si en té) */
 function ajustosDispositiu(ok) {
   dades('ajustos', function (g) {

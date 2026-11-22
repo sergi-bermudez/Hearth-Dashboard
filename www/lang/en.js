@@ -907,3 +907,6 @@ TR.en["Envia"]="Send";
 TR.en["Tria alguna pantalla"]="Pick a screen";
 TR.en["Diverses pantalles alhora…"]="Several screens at once…";
 TR.en["Totes o les que triïs, sonant sincronitzades"]="All or the ones you pick, in sync";
+TR.en["Sense connexió amb el servidor de Hearth. Continua funcionant el que ja tens obert; la resta tornarà sola."]="No connection to the Hearth server. What's already open keeps working; the rest will come back by itself.";
+TR.en["Connectat de nou"]="Connected again";
+TR.en["Això necessita el servidor, que ara no respon."]="This needs the server, which isn't answering right now.";

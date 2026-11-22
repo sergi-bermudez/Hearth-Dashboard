@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Web.Script.Serialization;
 
 public static class Pantalles
@@ -13,6 +15,35 @@ public static class Pantalles
     static readonly Dictionary<string, P> llista = new Dictionary<string, P>();
     static readonly object lk = new object();
 
+    // ---------- Que el PC no s'adormi mentre hi hagi alguna pantalla connectada ----------
+    [DllImport("kernel32.dll")] static extern uint SetThreadExecutionState(uint esFlags);
+    const uint ES_CONTINUOUS = 0x80000000, ES_SYSTEM_REQUIRED = 0x00000001;
+    static Thread vetlla;
+    static void Vetlla()
+    {
+        bool abans = false;
+        while (true)
+        {
+            bool algu = false;
+            lock (lk) foreach (P p in llista.Values) if ((DateTime.Now - p.Vist).TotalSeconds < 90) { algu = true; break; }
+            if (algu != abans)
+            {
+                // l'estat val per a aquest fil, que no s'acaba mai
+                try { SetThreadExecutionState(algu ? ES_CONTINUOUS | ES_SYSTEM_REQUIRED : ES_CONTINUOUS); } catch { }
+                abans = algu;
+            }
+            Thread.Sleep(30000);
+        }
+    }
+    static void EngegaVetlla()
+    {
+        lock (lk)
+        {
+            if (vetlla != null) return;
+            vetlla = new Thread(Vetlla); vetlla.IsBackground = true; vetlla.Start();
+        }
+    }
+
     // pantalles/hola?d=&nom=  \u00b7  pantalles/llista?d=  \u00b7  pantalles/envia?a=  (POST: l'ordre en JSON)
     public static void Api(string nom, Dictionary<string, string> q, HttpListenerContext ctx)
     {
@@ -20,6 +51,7 @@ public static class Pantalles
         string d = CasaServidor.Q(q, "d");
         if (nom == "hola")
         {
+            EngegaVetlla();
             if (d == "") { CasaServidor.Error(res, 400, "Falta d"); return; }
             object[] ordres;
             lock (lk)

@@ -527,11 +527,44 @@ body.aud-l #rapid,body.aud-l #agenda{display:none !important}
 html.ios-vell #rapid .rapid-in,html.ios-vell #tv .tv-canals,html.ios-vell #cast .card{-webkit-overflow-scrolling:auto}
 /* Fora de la pantalla quan no es fa servir (a més d'amagat) */
 body:not(.en-app) #apps{top:-30000px;bottom:auto;height:10px}
+/* ---- Pantalles apaïsades (mòbil de costat, tele, PC): el moll i la barra de les apps, en columna a la dreta ---- */
+body.lat #dash{padding-right:132px}
+body.lat .d-dock{position:absolute;top:20px;right:16px;bottom:16px;width:100px;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:space-around;justify-content:space-around;padding:10px 2px;overflow-y:auto;overflow-x:hidden}
+body.lat .d-dock .app{width:auto;-webkit-flex:none;flex:none}
+body.lat.en-app #barra{top:0;left:auto;width:86px;border-top:0;border-left:1px solid rgba(255,255,255,.08)}
+body.lat #nav{height:100%;-webkit-flex-direction:column;flex-direction:column}
+body.lat #nav div{padding-top:0;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:center;justify-content:center}
+body.lat #nav .nv-cfg{width:auto;-webkit-flex:1 1 0;flex:1 1 0}
+body.lat #mini{position:fixed;left:0;right:86px;bottom:0;background:#0e1116;border-top:1px solid rgba(255,255,255,.08)}
+body.lat.en-app #apps{right:86px;bottom:0}
+body.lat.en-app.sona #apps{bottom:74px}
+/* ---- Pantalles molt petites (iPod touch, mòbils antics): només el rellotge, el que sona i les apps ---- */
+body.petit #mig,body.petit #rapid,body.petit #temps .t-dies,body.petit #agenda{display:none !important}
+body.petit #dash{padding:10px 10px 8px;overflow-y:auto}
+body.petit #hora{font-size:64px !important;line-height:1 !important}
+body.petit .d-dock{margin-top:auto}
+/* ---- Navegadors sense flexbox (iOS 6 i anteriors) ---- */
+html.sense-flex #dash{display:block;overflow-y:auto}
+html.sense-flex .d-cap>div{display:block;margin-bottom:10px}
+html.sense-flex .salut-fila>div{display:inline-block;vertical-align:middle}
+html.sense-flex .d-dock{display:block;text-align:center;white-space:normal;margin-top:10px}
+html.sense-flex .d-dock .app{display:inline-block;vertical-align:top;width:24%;margin:6px 0}
+html.sense-flex .app .bx{display:block;text-align:center;padding-top:10px;box-sizing:border-box}
+html.sense-flex #nav{display:table;width:100%;table-layout:fixed}
+html.sense-flex #nav div{display:table-cell;vertical-align:middle}
+html.sense-flex #mini{display:none !important}
+html.sense-flex body.sona #apps,html.sense-flex body.en-app.sona #apps{bottom:66px}
+/* ---- Sense connexió amb el servidor ---- */
+#fora{display:none;position:fixed;left:50%;top:10px;width:460px;margin-left:-230px;z-index:90;background:#3a2a10;color:#ffd79a;border-radius:12px;padding:10px 14px;font-size:14px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+body.offline #fora{display:block}
+body.offline .app.cal-servidor,body.offline #nav div.cal-servidor{opacity:.3}
+@media (max-width:500px){#fora{left:8px;right:8px;width:auto;margin-left:0}}
 </style>
 </head>
 <body class="e-ambient">
 <div id="fons"><div class="fimg" id="fons-a"></div><div class="fimg" id="fons-b"></div><div class="ombra"></div><div class="vel" id="vel"></div></div>
 
+<div id="fora"></div>
 <div id="dash">
   <div class="d-cap">
     <div class="d-hora ombrat panell" style="position:relative">
@@ -830,8 +863,8 @@ function pintaDock() {
     var g = GRUPS[i];
     if (g.id == 'webs' && !WB.defs.length) continue;
     if (!grupPermes(g)) continue;
-    h += '<div class="app" id="dk-' + g.id + '" onclick="obreGrup(\'' + g.id + '\')"><div class="bx" style="' + grad(g.c1, g.c2) + '">' + svg(g.ic) + '</div><span class="nm">' + esc(T(g.nom)) + '</span></div>';
-    n += '<div onclick="obreGrup(\'' + g.id + '\')" id="nv-' + g.id + '">' + svg(g.ic) + esc(T(g.nom)) + '</div>';
+    h += '<div class="app cal-servidor" id="dk-' + g.id + '" onclick="if(FORA.actiu){avis(T(\'Això necessita el servidor, que ara no respon.\'));return;}obreGrup(\'' + g.id + '\')"><div class="bx" style="' + grad(g.c1, g.c2) + '">' + svg(g.ic) + '</div><span class="nm">' + esc(T(g.nom)) + '</span></div>';
+    n += '<div class="cal-servidor" onclick="if(FORA.actiu){avis(T(\'Això necessita el servidor, que ara no respon.\'));return;}obreGrup(\'' + g.id + '\')" id="nv-' + g.id + '">' + svg(g.ic) + esc(T(g.nom)) + '</div>';
   }
   n += '<div onclick="obreConfig()" id="nv-config" class="nv-cfg">' + svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config) + esc(T('Ajustos')) + '</div>';
   $('cfg').innerHTML = svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config);
@@ -960,7 +993,65 @@ function estatCos() {
   if (R.cua.length && !TV.canal && window.AUD && AUD.mida == 'g') c.push('aud-l');
   if (lleuger()) c.push('lleu');
   if (modeTele()) c.push('tele');
+  if (esLat()) c.push('lat');
+  if (esPetit()) c.push('petit');
+  if (window.FORA && FORA.actiu) c.push('offline');
   document.body.className = c.join(' ');
+  aplicaDespert();
+}
+/* Apaïsat de debò (16:9 o més ample, com un mòbil de costat o una tele): el moll a la dreta. L'iPad (4:3) no. */
+function esLat() { var w = window.innerWidth, h = window.innerHeight; return A.ajustos.moll == 'baix' ? false : A.ajustos.moll == 'dreta' ? true : w / h >= 1.55 && w >= 560; }
+function esPetit() { return Math.min(window.innerWidth, window.innerHeight) <= 340 || (window.innerWidth <= 480 && window.innerHeight <= 480); }
+var RZ = null;
+window.addEventListener('resize', function () { clearTimeout(RZ); RZ = setTimeout(function () { if (window.A && A.ajustos) estatCos(); }, 200); });
+(function () { var s = document.documentElement.style; if (!('flex' in s) && !('webkitFlex' in s)) document.documentElement.className += ' sense-flex'; })();
+
+/* ---------- Mantenir la pantalla encesa (ajust de cada aparell) ---------- */
+var DESPERT = { on: false, t: null, v: null, wl: null };
+function aplicaDespert() {
+  if (!window.DESPERT) return;
+  var on = A.ajustos.despert === true;
+  if (on == DESPERT.on) return;
+  DESPERT.on = on;
+  if (on) despertEngega(); else despertAtura();
+}
+function despertEngega() {
+  if (navigator.wakeLock && navigator.wakeLock.request) {
+    var dem = function () { if (DESPERT.on && !document.hidden) navigator.wakeLock.request('screen').then(function (w) { DESPERT.wl = w; }, function () { }); };
+    dem(); DESPERT.vis = dem; document.addEventListener('visibilitychange', dem);
+    return;
+  }
+  if (IOS_VELL) {
+    /* iOS 9 o anterior: una navegació que s'atura de seguida fa que l'iPad no s'adormi */
+    DESPERT.t = setInterval(function () { if (!document.hidden && !R.cua.length && !TV.canal) { window.location.href = location.href.split('#')[0]; setTimeout(function () { window.stop(); }, 0); } }, 20000);
+    return;
+  }
+  /* la resta: un vídeo mut i minúscul en bucle (cal un toc per començar) */
+  var v = document.createElement('video');
+  v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.muted = true; v.loop = true; v.src = 'despert.mp4';
+  v.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none';
+  document.body.appendChild(v); DESPERT.v = v;
+  var prova = function () { if (DESPERT.v) { var p = DESPERT.v.play(); if (p && p['catch']) p['catch'](function () { }); } };
+  prova(); DESPERT.toc = prova; document.addEventListener('touchend', prova); document.addEventListener('click', prova);
+}
+function despertAtura() {
+  clearInterval(DESPERT.t); DESPERT.t = null;
+  if (DESPERT.wl) { try { DESPERT.wl.release(); } catch (e) { } DESPERT.wl = null; }
+  if (DESPERT.vis) { document.removeEventListener('visibilitychange', DESPERT.vis); DESPERT.vis = null; }
+  if (DESPERT.v) { try { DESPERT.v.pause(); DESPERT.v.parentNode.removeChild(DESPERT.v); } catch (e) { } DESPERT.v = null; }
+  if (DESPERT.toc) { document.removeEventListener('touchend', DESPERT.toc); document.removeEventListener('click', DESPERT.toc); DESPERT.toc = null; }
+}
+
+/* ---------- Sense connexió amb el servidor: es veu, i el que no pot funcionar queda apagat ---------- */
+var FORA = { actiu: false, errs: 0 };
+function connexio(ok) {
+  FORA.errs = ok ? 0 : FORA.errs + 1;
+  var fora = FORA.errs >= 2;
+  if (fora == FORA.actiu) return;
+  FORA.actiu = fora;
+  $('fora').innerHTML = fora ? esc(T('Sense connexió amb el servidor de Hearth. Continua funcionant el que ja tens obert; la resta tornarà sola.')) : '';
+  estatCos();
+  if (!fora) { avis(T('Connectat de nou')); carregaAjustos(); }
 }
 function notifica() {
   for (var k in FR) if (FR.hasOwnProperty(k)) {
@@ -2158,8 +2249,9 @@ function pantHola() {
     var l = r && r.o ? r.o : r;
     /* diferència entre el rellotge del servidor i el d'aquest aparell (per començar alhora) */
     if (r && r.t) { var ara = Date.now(); PANT.dif = r.t - (t0 + ara) / 2; }
+    connexio(true);
     if (l && l.length) rebOrdre(l[l.length - 1]);
-  }, function () { });
+  }, function () { connexio(false); });
 }
 function horaServidor() { return Date.now() + (PANT.dif || 0); }
 setInterval(function () { if (!document.hidden) pantHola(); }, 4000);

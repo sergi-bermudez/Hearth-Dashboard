@@ -907,3 +907,6 @@ TR.fr["Envia"]="Envoyer";
 TR.fr["Tria alguna pantalla"]="Choisissez un écran";
 TR.fr["Diverses pantalles alhora…"]="Plusieurs écrans à la fois…";
 TR.fr["Totes o les que triïs, sonant sincronitzades"]="Tous ou ceux choisis, synchronisés";
+TR.fr["Sense connexió amb el servidor de Hearth. Continua funcionant el que ja tens obert; la resta tornarà sola."]="Pas de connexion au serveur Hearth. Ce qui est déjà ouvert continue de fonctionner ; le reste reviendra tout seul.";
+TR.fr["Connectat de nou"]="Reconnecté";
+TR.fr["Això necessita el servidor, que ara no respon."]="Cela nécessite le serveur, qui ne répond pas.";
