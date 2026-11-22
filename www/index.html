@@ -1227,6 +1227,8 @@ au.addEventListener('play', function () { iconesPlay(); notifica(); });
 au.addEventListener('pause', function () { iconesPlay(); poDesaPos(); notifica(); });
 au.addEventListener('ended', function () {
   var it = R.cua[R.pos];
+  /* una ràdio en directe no s'acaba mai: si el navegador (p. ex. el d'una tele) la dona per acabada, es torna a connectar */
+  if (it && it.k == 'radio') { reconnectaRadio(); return; }
   if (it && it.k == 'podcast') { poDesaPos(true); iconesPlay(); notifica(); return; }
   if (R.pos < R.cua.length - 1) { R.pos++; repToca(); } else iconesPlay();
 });
@@ -1238,6 +1240,21 @@ au.addEventListener('error', function () {
   avis(T('No s\'ha pogut reproduir:') + ' ' + (it ? it.t : ''), 4000);
   if (it && it.k == 'musica' && R.pos < R.cua.length - 1) setTimeout(function () { R.pos++; repToca(); }, 1500);
 });
+/* Ràdio en directe: si sona però el temps no avança durant 12 s (el navegador s'ha encallat), es reconnecta sola */
+var RV = { t: -1, des: 0, intents: 0 };
+function reconnectaRadio() {
+  var it = R.cua[R.pos], u = au.getAttribute('src');
+  if (!it || it.k != 'radio' || !u) return;
+  RV.intents++;
+  au.src = u.replace(/([?&])_r=\d+/, '$1').replace(/[?&]$/, '') + (u.indexOf('?') < 0 ? '?' : '&') + '_r=' + Date.now();
+  var p = au.play(); if (p && p['catch']) p['catch'](function () { });
+}
+setInterval(function () {
+  var it = R.cua[R.pos];
+  if (!it || it.k != 'radio' || au.paused || (it.pcm && USA_PCM)) { RV.t = -1; RV.des = Date.now(); return; }
+  if (au.currentTime != RV.t) { RV.t = au.currentTime; RV.des = Date.now(); if (au.currentTime > 30) RV.intents = 0; return; }
+  if (Date.now() - RV.des > 12000 && RV.intents < 20) { RV.des = Date.now(); reconnectaRadio(); }
+}, 3000);
 /* Ràdio: si no comença a sonar en 20 s (o falla), prova l'altra via */
 var RW = { t: null, sonant: false };
 au.addEventListener('playing', function () { RW.sonant = true; });
