@@ -327,6 +327,8 @@ function ajustosDispositiu(ok) {
       var a = {}, k;
       if (g) for (k in g) if (g.hasOwnProperty(k)) a[k] = g[k];
       if (p && p.propi && p.ajustos) for (k in p.ajustos) if (p.ajustos.hasOwnProperty(k)) a[k] = p.ajustos[k];
+      /* el mode tele és sempre només d'aquest aparell (mai dels ajustos generals) */
+      a.tele = !!(p && p.tele === true);
       ok(a, g, p);
     });
   });
@@ -392,8 +394,9 @@ function desaInf(v, ok) { desaDades('inf_' + DISP.id, v, ok); }
    Per a la tele (Hearth al PC projectat amb Miracast, o al navegador de la tele). Funciona a la pantalla
    principal i a dins de cada app; quan no hi ha res més en una direcció, salta d'una a l'altra. */
 var TELE = (function () {
-  var actiu = false, cur = null;
-  try { actiu = /[?&]tele=1/.test(location.search) || /[?&]tele=1/.test(window.top.location.search) || ls('modeTele') === true; } catch (e) { actiu = ls('modeTele') === true; }
+  var actiu = false, perUrl = false, cur = null;
+  try { perUrl = /[?&]tele=1/.test(location.search) || /[?&]tele=1/.test(window.top.location.search); } catch (e) { }
+  actiu = perUrl || ls('modeTele') === true;
   function visible(el) {
     if (!el || !el.getBoundingClientRect) return false;
     var r = el.getBoundingClientRect();
@@ -486,5 +489,5 @@ var TELE = (function () {
     (document.head || document.documentElement).appendChild(st);
     document.addEventListener('keydown', tecla, true);
   }
-  return { actiu: actiu, entra: entra, mou: mou };
+  return { actiu: actiu, perUrl: perUrl, entra: entra, mou: mou };
 })();

@@ -881,3 +881,5 @@ TR.fr["Desfés la tria"]="Annuler le choix";
 TR.fr["Buscant a TMDB, iTunes, Viquipèdia i Wikidata, en diversos idiomes…"]="Recherche dans TMDB, iTunes, Wikipédia et Wikidata, en plusieurs langues…";
 TR.fr["He buscat:"]="J'ai cherché :";
 TR.fr["Errors:"]="Erreurs :";
+TR.fr["Aquest aparell és en mode tele."]="Cet appareil est en mode télé.";
+TR.fr["Surt del mode tele"]="Quitter le mode télé";

@@ -508,7 +508,8 @@ function desaInici() {
   v.foscor = parseInt($('aj-foscor').value, 10) || 0;
   v.estil = v.estil || 'ambient';
   v.lleuger = $('aj-lleuger').value;
-  v.tele = $('aj-tele').checked;
+  delete v.tele;
+  C.dp = C.dp || {}; C.dp.tele = $('aj-tele').checked;
   v.fonsPassi = $('aj-fonspassi').checked;
   v.nit = $('aj-nit').checked; v.nitDes = $('aj-nit-des').value || '22:00'; v.nitFins = $('aj-nit-fins').value || '07:00';
   desaDades('ajustos', a, function () {
@@ -1129,7 +1130,15 @@ function omplInici() {
   $('aj-min').value = v.marcMin || 0;
   $('aj-fons').value = v.fonsSeg || 20;
   $('aj-lleuger').value = v.lleuger === true ? 'si' : v.lleuger === false ? '' : (v.lleuger || '');
-  $('aj-tele').checked = v.tele === true;
+  $('aj-tele').checked = !!(C.dp && C.dp.tele === true);
+  /* en mode tele, una manera clara de sortir-ne */
+  var bt = $('surt-tele');
+  if (C.dp && C.dp.tele === true && !bt) {
+    bt = document.createElement('div'); bt.id = 'surt-tele';
+    bt.style.cssText = 'background:rgba(10,132,255,.15);border-radius:12px;padding:12px 14px;margin:0 0 14px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center';
+    bt.innerHTML = '<div style="-webkit-flex:1;flex:1">' + T('Aquest aparell és en mode tele.') + '</div><button class="pri" onclick="$(\'aj-tele\').checked=false;desaInici()">' + T('Surt del mode tele') + '</button>';
+    var pg = $('pag'); pg.insertBefore(bt, pg.firstChild);
+  } else if (!(C.dp && C.dp.tele === true) && bt) bt.parentNode.removeChild(bt);
   $('aj-fonspassi').checked = v.fonsPassi !== false;
   $('aj-nit').checked = !!v.nit; $('aj-nit-des').value = v.nitDes || '22:00'; $('aj-nit-fins').value = v.nitFins || '07:00';
   $('aj-foscor').value = v.foscor == null ? 25 : v.foscor; $('aj-foscor-v').textContent = $('aj-foscor').value + '%';

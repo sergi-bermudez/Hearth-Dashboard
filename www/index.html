@@ -717,6 +717,7 @@ function pintaTemps() {
 function carregaAjustos() {
   ajustosDispositiu(function (d) {
     if (d) for (var k in d) if (d.hasOwnProperty(k)) A.ajustos[k] = d[k];
+    A.ajustosCarregats = !!d;
     estatCos();
     rellotge();
     carregaTemps();
@@ -2258,10 +2259,11 @@ setInterval(nitComprova, 20000);
 /* ---------- Mode lleuger ---------- */
 /* Automàtic: activat a iOS 9 o anterior. Es pot forçar a Configuració ▸ Pantalla d'inici */
 /* Mode tele: tot més gran (com si la pantalla fos un iPad) i navegació amb les fletxes del comandament */
-function modeTele() { return TELE.actiu || A.ajustos.tele === true; }
+function modeTele() { return TELE.perUrl || (A.ajustosCarregats ? A.ajustos.tele === true : TELE.actiu); }
 function aplicaTele() {
   var t = modeTele();
-  if ((ls('modeTele') === true) != t) { ls('modeTele', t); if (t && !TELE.actiu) { location.reload(); return; } }
+  /* el mode tele el decideix l'ajust d'aquest aparell (o ?tele=1 a l'adreça); en canviar es torna a carregar perquè les apps ho agafin */
+  if (A.ajustosCarregats && (ls('modeTele') === true) != t) { ls('modeTele', t); if (!TELE.perUrl) { location.reload(); return; } }
   var z = t ? Math.min(window.innerWidth / 1024, window.innerHeight / 768) : 1;
   document.documentElement.style.zoom = t && z > 1.05 ? z.toFixed(2) : '';
 }

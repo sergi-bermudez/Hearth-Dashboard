@@ -881,3 +881,5 @@ TR.en["Desfés la tria"]="Undo the choice";
 TR.en["Buscant a TMDB, iTunes, Viquipèdia i Wikidata, en diversos idiomes…"]="Searching TMDB, iTunes, Wikipedia and Wikidata in several languages…";
 TR.en["He buscat:"]="Searched:";
 TR.en["Errors:"]="Errors:";
+TR.en["Aquest aparell és en mode tele."]="This device is in TV mode.";
+TR.en["Surt del mode tele"]="Leave TV mode";
