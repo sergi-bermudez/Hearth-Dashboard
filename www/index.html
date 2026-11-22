@@ -550,8 +550,13 @@ html.ios-vell #rapid .rapid-in,html.ios-vell #tv .tv-canals,html.ios-vell #cast 
 body:not(.en-app) #apps{top:-30000px;bottom:auto;height:10px}
 /* ---- Pantalles apaïsades (mòbil de costat, tele, PC): el moll i la barra de les apps, en columna a la dreta ---- */
 body.lat #dash{padding-right:132px}
-body.lat .d-dock{position:absolute;top:20px;right:16px;bottom:16px;width:100px;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:space-around;justify-content:space-around;padding:10px 2px;overflow-y:auto;overflow-x:hidden}
-body.lat .d-dock .app{width:auto;-webkit-flex:none;flex:none}
+/* el moll, només tan alt com les apps i centrat (abans ocupava tota l'alçada amb les icones molt separades) */
+body.lat .d-dock{position:absolute;top:50%;right:16px;bottom:auto;max-height:calc(100% - 36px);-webkit-transform:translateY(-50%);transform:translateY(-50%);width:100px;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:flex-start;justify-content:flex-start;padding:8px 2px;overflow-y:auto;overflow-x:hidden}
+body.lat .d-dock .app{width:auto;-webkit-flex:none;flex:none;margin:9px 0}
+/* navegador d'una tele: marges perquè res no quedi tocant la vora (moltes teles retallen una mica) */
+html.nav-tele #dash{padding:34px 44px 28px}
+html.nav-tele body.lat #dash{padding-right:150px}
+html.nav-tele body.lat .d-dock{right:30px}
 body.lat.en-app #barra{top:0;left:auto;width:86px;border-top:0;border-left:1px solid rgba(255,255,255,.08)}
 body.lat #nav{height:100%;-webkit-flex-direction:column;flex-direction:column}
 body.lat #nav div{padding-top:0;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:center;justify-content:center}
@@ -2772,8 +2777,10 @@ function aplicaTele() {
   var t = modeTele();
   /* el mode tele el decideix l'ajust d'aquest aparell (o ?tele=1 a l'adreça); en canviar es torna a carregar perquè les apps ho agafin */
   if (A.ajustosCarregats && (ls('modeTele') === true) != t) { ls('modeTele', t); if (!TELE.perUrl) { location.reload(); return; } }
-  var z = t ? Math.min(window.innerWidth / 1024, window.innerHeight / 768) : 1;
-  document.documentElement.style.zoom = t && z > 1.05 ? z.toFixed(2) : '';
+  /* al navegador d'una tele, tot més gran encara que no sigui mode tele: es mira des del sofà */
+  var z = t ? Math.min(window.innerWidth / 1024, window.innerHeight / 768) : NAV_TELE ? Math.min(window.innerWidth / 1280, window.innerHeight / 720) : 1;
+  if (NAV_TELE && document.documentElement.className.indexOf('nav-tele') < 0) document.documentElement.className += ' nav-tele';
+  document.documentElement.style.zoom = (t || NAV_TELE) && z > 1.05 ? z.toFixed(2) : '';
 }
 window.addEventListener('resize', function () { if (window.A && A.ajustos) aplicaTele(); });
 function lleuger() { var v = A.ajustos.lleuger; return v === 'si' || v === true ? true : v === 'no' ? false : IOS_VELL || NAV_TELE; }
