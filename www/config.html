@@ -210,6 +210,7 @@ body{background:#000}
     <h2>Passi de fotos</h2>
     <div class="desc">El mateix passi s'obre des de la pantalla d'inici (tocant la foto), des de Fotos o sol, al cap d'una estona sense tocar la tauleta. També decideix com canvien les fotos del fons de la pantalla d'inici.</div>
     <div class="estils" id="passis"></div>
+    <label class="check"><input type="checkbox" id="aj-pinfo"> <span>Mostra la data i el lloc de cada foto</span></label>
     <div class="fila"><label>Segons per foto</label><input type="number" id="aj-seg" min="5" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto</span></div>
     <div class="fila"><label>S'obre sol després de</label><input type="number" id="aj-min" min="0" max="240" style="width:120px"><span class="gris petit" style="margin-left:12px">minuts sense tocar la pantalla (0 = mai)</span></div>
     <label class="check"><input type="checkbox" id="aj-fonspassi"> <span>Les fotos del fons de la pantalla d'inici fan servir el mateix estil (Ken Burns o foto sencera)</span></label>
@@ -532,6 +533,7 @@ function desaInici() {
   var v = ajV();
   v.nom = retalla($('aj-nom').value);
   v.marcSeg = Math.max(5, parseInt($('aj-seg').value, 10) || 15);
+  v.passiInfo = $('aj-pinfo').checked;
   v.marcMin = Math.max(0, parseInt($('aj-min').value, 10) || 0);
   v.fonsSeg = Math.max(8, parseInt($('aj-fons').value, 10) || 20);
   v.foscor = parseInt($('aj-foscor').value, 10) || 0;
@@ -1164,6 +1166,7 @@ function omplInici() {
   var v = ajV();
   $('aj-nom').value = v.nom || '';
   $('aj-seg').value = v.marcSeg || 15;
+  $('aj-pinfo').checked = v.passiInfo !== false;
   $('aj-min').value = v.marcMin || 0;
   $('aj-fons').value = v.fonsSeg || 20;
   $('aj-lleuger').value = v.lleuger === true ? 'si' : v.lleuger === false ? '' : (v.lleuger || '');

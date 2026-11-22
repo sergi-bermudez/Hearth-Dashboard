@@ -243,6 +243,14 @@ public static class CasaServidor
                     Json(res, l ?? new List<object[]>());
                     return;
                 }
+            case "foto-info":
+                {
+                    // On es va fer la foto (les coordenades GPS de la foto, tradu\u00efdes a un nom de lloc)
+                    string full = Ruta("fotos", p);
+                    if (full == null || !File.Exists(full)) { Error(res, 404, "No trobat"); return; }
+                    Json(res, Dic("lloc", LlocDeFoto(full, Q(q, "ll"))));
+                    return;
+                }
             case "mini":
                 {
                     string full = Ruta(c, p);
@@ -691,6 +699,90 @@ public static class CasaServidor
         }
         foreach (DirectoryInfo d in subs)
             if (!Amagat(d.Attributes, d.Name)) Recorre(d, rel + d.Name + "/", llista, nou, ref canvis, ref comptador);
+    }
+
+    // ---------- Lloc de les fotos: GPS de l'EXIF + nom del lloc (OpenStreetMap, guardat a dades\llocs.json) ----------
+    static readonly object llocsLk = new object();
+    static Dictionary<string, object> llocs;
+    static DateTime darreraNominatim = DateTime.MinValue;
+
+    static double Graus(byte[] v)
+    {
+        // tres racionals: graus, minuts, segons
+        double r = 0, div = 1;
+        for (int i = 0; i < 3 && v.Length >= i * 8 + 8; i++)
+        {
+            uint n = BitConverter.ToUInt32(v, i * 8), d = BitConverter.ToUInt32(v, i * 8 + 4);
+            if (d != 0) r += (double)n / d / div;
+            div *= 60;
+        }
+        return r;
+    }
+
+    static bool GpsDeFoto(string f, out double lat, out double lon)
+    {
+        lat = lon = 0;
+        try
+        {
+            using (FileStream fs = new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (Image img = Image.FromStream(fs, false, false))
+            {
+                int[] ids = img.PropertyIdList;
+                if (Array.IndexOf(ids, 2) < 0 || Array.IndexOf(ids, 4) < 0) return false;
+                lat = Graus(img.GetPropertyItem(2).Value); lon = Graus(img.GetPropertyItem(4).Value);
+                if (Array.IndexOf(ids, 1) >= 0 && Encoding.ASCII.GetString(img.GetPropertyItem(1).Value).StartsWith("S")) lat = -lat;
+                if (Array.IndexOf(ids, 3) >= 0 && Encoding.ASCII.GetString(img.GetPropertyItem(3).Value).StartsWith("W")) lon = -lon;
+                return !(lat == 0 && lon == 0);
+            }
+        }
+        catch { return false; }
+    }
+
+    static string LlocDeFoto(string f, string llengua)
+    {
+        double lat, lon;
+        if (!GpsDeFoto(f, out lat, out lon)) return "";
+        if (llengua == "" || llengua.Length > 5) llengua = "ca";
+        string clau = lat.ToString("0.00", CultureInfo.InvariantCulture) + "," + lon.ToString("0.00", CultureInfo.InvariantCulture) + "," + llengua;
+        string fit = Path.Combine(DirDades, "llocs.json");
+        lock (llocsLk)
+        {
+            if (llocs == null)
+            {
+                try { llocs = File.Exists(fit) ? new JavaScriptSerializer().DeserializeObject(File.ReadAllText(fit, Encoding.UTF8)) as Dictionary<string, object> : null; } catch { }
+                if (llocs == null) llocs = new Dictionary<string, object>();
+            }
+            object v;
+            if (llocs.TryGetValue(clau, out v)) return Convert.ToString(v);
+            // OpenStreetMap demana com a molt una consulta per segon
+            double esp = 1100 - (DateTime.Now - darreraNominatim).TotalMilliseconds;
+            if (esp > 0) Thread.Sleep((int)esp);
+            darreraNominatim = DateTime.Now;
+            string nom = "";
+            try
+            {
+                HttpWebRequest rq = (HttpWebRequest)WebRequest.Create("https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&lat=" + lat.ToString(CultureInfo.InvariantCulture) + "&lon=" + lon.ToString(CultureInfo.InvariantCulture) + "&accept-language=" + Uri.EscapeDataString(llengua));
+                rq.UserAgent = "Hearth/4 (home photo frame; https://github.com/sergi-bermudez/Hearth-Dashboard)";
+                rq.Timeout = 8000;
+                string txt;
+                using (WebResponse rs = rq.GetResponse())
+                using (StreamReader sr = new StreamReader(rs.GetResponseStream(), Encoding.UTF8)) txt = sr.ReadToEnd();
+                Dictionary<string, object> d = new JavaScriptSerializer().DeserializeObject(txt) as Dictionary<string, object>;
+                Dictionary<string, object> a = d != null && d.ContainsKey("address") ? d["address"] as Dictionary<string, object> : null;
+                if (a != null)
+                {
+                    string poble = "";
+                    foreach (string k in new string[] { "city", "town", "village", "municipality", "hamlet", "county" }) if (a.ContainsKey(k) && Convert.ToString(a[k]) != "") { poble = Convert.ToString(a[k]); break; }
+                    string zona = "";
+                    foreach (string k in new string[] { "island", "state", "region", "country" }) if (a.ContainsKey(k) && Convert.ToString(a[k]) != "" && Convert.ToString(a[k]) != poble) { zona = Convert.ToString(a[k]); break; }
+                    nom = poble != "" && zona != "" ? poble + ", " + zona : poble + zona;
+                }
+            }
+            catch { return ""; }
+            llocs[clau] = nom;
+            try { File.WriteAllText(fit, new JavaScriptSerializer().Serialize(llocs), new UTF8Encoding(false)); } catch { }
+            return nom;
+        }
     }
 
     static DateTime? DataExif(string f)

@@ -984,3 +984,4 @@ TR.en["Envia i controla"]="Send and control";
 TR.en["Hearth, Chromecast i teles: totes o les que triïs"]="Hearth, Chromecast and TVs: all or the ones you pick";
 TR.en["No s'ha pogut enviar a {1}"]="Couldn't send to {1}";
 TR.en["Enviant a {1} aparells…"]="Sending to {1} devices…";
+TR.en["Mostra la data i el lloc de cada foto"]="Show each photo's date and place";

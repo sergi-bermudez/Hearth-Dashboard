@@ -376,6 +376,10 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 #marc.revista .hora{left:auto;right:24px;bottom:24px;text-align:right;background:rgba(0,0,0,.4);padding:10px 16px;border-radius:16px}
 #marc.revista .hora b{font-size:64px}
 #marc.revista .baix{display:none}
+#mc-info{position:absolute;right:28px;bottom:26px;z-index:3;text-align:right;text-shadow:0 1px 8px rgba(0,0,0,.7);max-width:45%;-webkit-transition:opacity .8s;transition:opacity .8s}
+#mc-info b{display:block;font-size:20px;font-weight:600}
+#mc-info span{display:block;font-size:17px;opacity:.9;margin-top:2px}
+#marc.revista #mc-info{display:none}
 #marc .baix{position:absolute;left:0;right:0;bottom:0;height:45%;background:-webkit-linear-gradient(transparent,rgba(0,0,0,.6));background:linear-gradient(transparent,rgba(0,0,0,.6));z-index:2}
 #marc .hora{position:absolute;left:34px;bottom:30px;z-index:3;text-shadow:0 2px 14px rgba(0,0,0,.85)}
 #marc .hora b{display:block;font-size:92px;font-weight:200;line-height:1;letter-spacing:-2px}
@@ -662,6 +666,7 @@ body.offline .app.cal-servidor,body.offline #nav div.cal-servidor{opacity:.3}
   <div class="capa" id="mc-a"></div><div class="capa" id="mc-b"></div><div class="baix"></div>
   <div class="hora"><b id="mc-hora"></b><span id="mc-data"></span><span class="seg-ag" id="mc-ag"></span></div>
   <div id="mc-sona" onclick="event.stopPropagation()"></div>
+  <div id="mc-info"><b id="mc-idata"></b><span id="mc-illoc"></span></div>
 </div>
 <div id="cast" onclick="if(event.target==this)castTanca()"><div class="card" id="cast-c"></div></div>
 <div id="castbar"><div class="nm"><b id="cb-t"></b><span id="cb-d"></span></div><button onclick="castOrdre('vol',-0.1)">−</button><button onclick="castOrdre('vol',0.1)">+</button><button onclick="castPausa()" id="cb-play"></button><button onclick="castAtura()" id="cb-x"></button></div>
@@ -1960,10 +1965,22 @@ function marcSeguent() {
     if (h) { a.style.backgroundImage = 'none'; a.innerHTML = h; } else { a.innerHTML = ''; a.style.backgroundImage = bg(urls[0]); }
     a.className = 'capa on'; b.className = 'capa';
     MC.capa = 1 - MC.capa;
+    infoFoto(fs[0]);
     setTimeout(function () { if (b.className == 'capa') { b.style.backgroundImage = 'none'; b.innerHTML = ''; } }, 2200);
     MC.t = setTimeout(marcSeguent, (A.ajustos.marcSeg || 15) * 1000 * (e == 'revista' ? 1.5 : 1));
   }
   for (i = 0; i < urls.length; i++) { var img = new Image(); img.onload = img.onerror = llest; img.src = urls[i]; }
+}
+/* Data i lloc de la foto que es veu (el lloc surt del GPS de la foto, si en té) */
+function infoFoto(f) {
+  var inf = $('mc-info');
+  if (A.ajustos.passiInfo === false || !f) { inf.style.display = 'none'; return; }
+  inf.style.display = '';
+  var d = f[1] ? new Date(f[1]) : null;
+  $('mc-idata').textContent = d && d.getFullYear() > 1980 ? dataCurta(d) : '';
+  $('mc-illoc').textContent = '';
+  MC.info = f[0];
+  getJson(api('foto-info', { p: f[0], ll: LANG }), function (r) { if (MC.info == f[0] && r && r.lloc) $('mc-illoc').textContent = r.lloc; }, function () { });
 }
 function tancaMarc() {
   clearTimeout(MC.t);
