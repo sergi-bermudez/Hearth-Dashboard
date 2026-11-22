@@ -1241,19 +1241,19 @@ au.addEventListener('error', function () {
   if (it && it.k == 'musica' && R.pos < R.cua.length - 1) setTimeout(function () { R.pos++; repToca(); }, 1500);
 });
 /* Ràdio en directe: si sona però el temps no avança durant 12 s (el navegador s'ha encallat), es reconnecta sola */
-var RV = { t: -1, des: 0, intents: 0 };
+var RDV = { t: -1, des: 0, intents: 0 };
 function reconnectaRadio() {
   var it = R.cua[R.pos], u = au.getAttribute('src');
   if (!it || it.k != 'radio' || !u) return;
-  RV.intents++;
+  RDV.intents++;
   au.src = u.replace(/([?&])_r=\d+/, '$1').replace(/[?&]$/, '') + (u.indexOf('?') < 0 ? '?' : '&') + '_r=' + Date.now();
   var p = au.play(); if (p && p['catch']) p['catch'](function () { });
 }
 setInterval(function () {
   var it = R.cua[R.pos];
-  if (!it || it.k != 'radio' || au.paused || (it.pcm && USA_PCM)) { RV.t = -1; RV.des = Date.now(); return; }
-  if (au.currentTime != RV.t) { RV.t = au.currentTime; RV.des = Date.now(); if (au.currentTime > 30) RV.intents = 0; return; }
-  if (Date.now() - RV.des > 12000 && RV.intents < 20) { RV.des = Date.now(); reconnectaRadio(); }
+  if (!it || it.k != 'radio' || au.paused || (it.pcm && USA_PCM)) { RDV.t = -1; RDV.des = Date.now(); return; }
+  if (au.currentTime != RDV.t) { RDV.t = au.currentTime; RDV.des = Date.now(); if (au.currentTime > 30) RDV.intents = 0; return; }
+  if (Date.now() - RDV.des > 12000 && RDV.intents < 20) { RDV.des = Date.now(); reconnectaRadio(); }
 }, 3000);
 /* Ràdio: si no comença a sonar en 20 s (o falla), prova l'altra via */
 var RW = { t: null, sonant: false };
@@ -1851,16 +1851,18 @@ function tocaRadio(i) { repInicia([radioItem(A.radios[i])], 0); }
 /* iOS 9 o anterior: el reproductor no s'entén bé amb la ràdio en directe "clàssica" (Icecast/Shoutcast) */
 var IOS_VELL = /(iPad|iPhone|iPod).* OS [4-9]_/.test(navigator.userAgent);
 if (IOS_VELL) document.documentElement.className += ' ios-vell';
+/* Navegadors de tele (LG webOS, Samsung Tizen, Android TV…): tallen la ràdio "clàssica" igual que l'iPad antic, així que fan servir la mateixa via (HLS preparat pel servidor) */
+var NAV_TELE = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|BRAVIA|Android TV|AFT[A-Z]|CrKey/i.test(navigator.userAgent);
 function radioItem(s) {
   /* Vies possibles, per ordre: iOS vell -> HLS fet pel servidor (com la TV, que sí que va bé);
      http -> directe (el més ràpid); https -> via el servidor; m3u8 -> HLS reescrit */
   var u = s.u, d = { t: s.t, s: s.s || T('Ràdio'), art: s.img ? imgx(s.img, 200) : '', k: 'radio', id: s.u }, vies = [];
   if (/\.m3u8(\?|$)/i.test(u)) vies.push(api('hls', { u: u }));
   else {
-    if (IOS_VELL) vies.push(api('radio/hls', { u: u }));
+    if (IOS_VELL || NAV_TELE) vies.push(api('radio/hls', { u: u }));
     if (/^http:/i.test(u)) vies.push(u);
     vies.push(api('x', { u: u, directe: 1 }));
-    if (!IOS_VELL) vies.push(api('radio/hls', { u: u }));
+    if (!IOS_VELL && !NAV_TELE) vies.push(api('radio/hls', { u: u }));
   }
   d.u = vies.shift();
   d.alt = vies;
