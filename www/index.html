@@ -2150,42 +2150,96 @@ function cuaVes(i) {
   R.pos = i; repToca(); castTanca();
 }
 /* ---------- Altres pantalles de Hearth (iPad, mòbil, PC...) ---------- */
-var PANT = { l: [], ordre: null };
+var PANT = { l: [], ordre: null, dif: 0, compte: null };
 var IC_PANT = 'M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z';
 function pantHola() {
-  getJson(api('pantalles/hola', { d: DISP.id, nom: modeTele() ? T('Tele') + (DISP.nom && DISP.nom != 'PC' ? ' (' + DISP.nom + ')' : '') : DISP.nom || nomDispositiuDefecte(), tele: modeTele() ? 1 : '', _: Date.now() }), function (l) {
+  var t0 = Date.now();
+  getJson(api('pantalles/hola', { d: DISP.id, v: 2, nom: modeTele() ? T('Tele') + (DISP.nom && DISP.nom != 'PC' ? ' (' + DISP.nom + ')' : '') : DISP.nom || nomDispositiuDefecte(), tele: modeTele() ? 1 : '', _: t0 }), function (r) {
+    var l = r && r.o ? r.o : r;
+    /* diferència entre el rellotge del servidor i el d'aquest aparell (per començar alhora) */
+    if (r && r.t) { var ara = Date.now(); PANT.dif = r.t - (t0 + ara) / 2; }
     if (l && l.length) rebOrdre(l[l.length - 1]);
   }, function () { });
 }
+function horaServidor() { return Date.now() + (PANT.dif || 0); }
 setInterval(function () { if (!document.hidden) pantHola(); }, 4000);
 setTimeout(pantHola, 1500);
-function pantEnvia(i) {
-  var p = PANT.l[i]; if (!p) return;
-  var o = null;
-  if (TV.canal) { var c = {}, k; for (k in TV.canal) if (TV.canal.hasOwnProperty(k) && typeof TV.canal[k] != 'object' || k == 'urls') c[k] = TV.canal[k]; o = { tipus: 'tv', canal: c, t: TV.canal.nom, de: DISP.nom }; }
-  else if (R.cua.length) o = { tipus: 'cua', cua: R.cua, pos: R.pos, t: R.cua[R.pos].t, de: DISP.nom };
-  if (!o) { avis(T('Primer posa alguna cosa a sonar (ràdio, música, TV o una pel·lícula).'), 4000); return; }
-  post(api('pantalles/envia', { a: p.id }), JSON.stringify(o), function () {
-    avis(Tf('Enviat a {1}', p.nom)); castTanca();
-    if (TV.canal) tvAtura(); else if (R.cua.length) repAtura();
-  }, function () { avis(T('Aquella pantalla ja no està connectada')); });
+/* El que sona ara, per enviar-ho a una altra pantalla */
+function ordreActual() {
+  if (TV.canal) { var c = {}, k; for (k in TV.canal) if (TV.canal.hasOwnProperty(k) && typeof TV.canal[k] != 'object' || k == 'urls') c[k] = TV.canal[k]; return { tipus: 'tv', canal: c, t: TV.canal.nom, de: DISP.nom || nomDispositiuDefecte() }; }
+  if (R.cua.length) return { tipus: 'cua', cua: R.cua, pos: R.pos, t: R.cua[R.pos].t, de: DISP.nom || nomDispositiuDefecte() };
+  return null;
 }
-/* Ordre rebuda d'una altra pantalla: als iPad/iPhone cal un toc per poder fer sonar res, així que es demana */
+function pantEnvia(i) { var p = PANT.l[i]; if (p) pantEnviaA([p], false); }
+/* Envia a una o més pantalles; si són diverses (o també aquí), totes comencen alhora */
+function pantEnviaA(dest, tambeAqui) {
+  var o = ordreActual();
+  if (!o) { avis(T('Primer posa alguna cosa a sonar (ràdio, música, TV o una pel·lícula).'), 4000); return; }
+  var sync = dest.length > 1 || tambeAqui;
+  if (sync) o.t0 = horaServidor() + 7000;
+  var pendents = dest.length, ok = 0;
+  for (var i = 0; i < dest.length; i++) (function (p) {
+    post(api('pantalles/envia', { a: p.id }), JSON.stringify(o), function () { ok++; if (--pendents == 0) fet(); }, function () { if (--pendents == 0) fet(); });
+  })(dest[i]);
+  castTanca();
+  function fet() {
+    avis(ok == dest.length ? (dest.length == 1 ? Tf('Enviat a {1}', dest[0].nom) : Tf('Enviat a {1} pantalles', ok)) : Tf('Enviat a {1} de {2} pantalles', ok, dest.length), 4000);
+  }
+  if (tambeAqui) {
+    /* aquí també, a la mateixa hora que les altres */
+    var o2 = o;
+    setTimeout(function () { PANT.ordre = o2; fesOrdre(true); }, Math.max(0, o.t0 + retardAqui() - horaServidor()));
+  } else { if (TV.canal) tvAtura(); else if (R.cua.length) repAtura(); }
+}
+function retardAqui() { return parseInt(A.ajustos.retard, 10) || 0; }
+/* Ordre rebuda d'una altra pantalla. Si ningú respon, s'accepta sola al cap d'uns segons. */
 function rebOrdre(o) {
   if (!o || !o.tipus) return;
   PANT.ordre = o;
-  /* a la tele (mode tele al PC) es reprodueix directament; als iPad cal un toc */
-  if (modeTele()) { fesOrdre(); return; }
+  clearInterval(PANT.compte);
+  var espera = o.t0 ? o.t0 + retardAqui() - horaServidor() : 8000;
+  if (modeTele() && !o.t0) { fesOrdre(); return; }
+  if (espera < 0) espera = 0;
   $('cast').style.display = 'block';
-  $('cast-c').innerHTML = '<h3>' + esc(Tf('Des de {1}', o.de || '')) + '</h3><div style="font-size:18px;margin:6px 0 16px">' + esc(o.t || '') + '</div>' +
-    '<div style="text-align:right"><button onclick="castTanca();PANT.ordre=null">' + T('Ara no') + '</button> <button class="pri" onclick="castTanca();fesOrdre()">▶ ' + T('Reprodueix aquí') + '</button></div>';
+  $('cast-c').innerHTML = '<h3>' + esc(Tf('Des de {1}', o.de || '')) + '</h3><div style="font-size:18px;margin:6px 0 10px">' + esc(o.t || '') + '</div>' +
+    '<div class="gris" id="pant-compte" style="margin-bottom:14px"></div>' +
+    '<div style="text-align:right"><button onclick="pantRebutja()">' + T('Ara no') + '</button> <button class="pri" onclick="pantAccepta()">▶ ' + T('Reprodueix aquí') + '</button></div>';
+  var fi = Date.now() + espera;
+  function compte() {
+    var s = Math.ceil((fi - Date.now()) / 1000), el = $('pant-compte');
+    if (s <= 0 || !PANT.ordre) { clearInterval(PANT.compte); if (PANT.ordre === o) { castTanca(); fesOrdre(true); } return; }
+    if (el) el.textContent = Tf('Començarà sol d\'aquí a {1} s', s);
+  }
+  compte();
+  PANT.compte = setInterval(compte, 250);
 }
-function fesOrdre() {
+function pantRebutja() { clearInterval(PANT.compte); PANT.ordre = null; castTanca(); }
+function pantAccepta() { clearInterval(PANT.compte); castTanca(); fesOrdre(); }
+function fesOrdre(alHora) {
   var o = PANT.ordre; PANT.ordre = null; if (!o) return;
   if (o.tipus == 'tv' && o.canal) tvObre(o.canal);
   else if (o.tipus == 'cua' && o.cua && o.cua.length) repInicia(o.cua, o.pos || 0);
 }
+/* Tria de diverses pantalles alhora */
+function castDiverses() {
+  PANT.vistaDiv = true;
+  var h = '<h3>' + T('Envia a diverses pantalles') + '</h3>';
+  if (!PANT.l.length) h += '<div class="gris" style="padding:8px 4px">' + T('No hi ha cap altra pantalla de Hearth connectada.') + '</div>';
+  h += '<label class="check" style="display:block;padding:8px 4px"><input type="checkbox" id="pd-tots" onchange="var c=document.querySelectorAll(\'.pd-p\');for(var i=0;i<c.length;i++)c[i].checked=this.checked"> <b>' + T('Totes') + '</b></label>';
+  for (var j = 0; j < PANT.l.length; j++) h += '<label class="check" style="display:block;padding:8px 4px"><input type="checkbox" class="pd-p" value="' + j + '"> ' + esc(PANT.l[j].nom || T('Pantalla')) + '</label>';
+  h += '<label class="check" style="display:block;padding:8px 4px"><input type="checkbox" id="pd-aqui" checked> ' + T('També aquí') + '</label>';
+  h += '<div class="gris petit" style="margin:6px 4px 12px">' + T('Totes començaran alhora. Si alguna sona avançada o endarrerida, ajusta-li el retard a Configuració ▸ Aquest aparell.') + '</div>';
+  h += '<div style="text-align:right"><button onclick="castObre()">' + T('Enrere') + '</button> <button class="pri" onclick="castDiversesEnvia()">' + T('Envia') + '</button></div>';
+  $('cast-c').innerHTML = h;
+}
+function castDiversesEnvia() {
+  var c = document.querySelectorAll('.pd-p'), d = [];
+  for (var i = 0; i < c.length; i++) if (c[i].checked) d.push(PANT.l[+c[i].value]);
+  if (!d.length) { avis(T('Tria alguna pantalla')); return; }
+  pantEnviaA(d, $('pd-aqui').checked);
+}
 function castObre() {
+  PANT.vistaDiv = false;
   $('cast').style.display = 'block';
   PANT.l = [];
   getJson(api('pantalles/llista', { d: DISP.id, _: Date.now() }), function (l) { PANT.l = l || []; castPinta(false); }, function () { });
@@ -2193,8 +2247,10 @@ function castObre() {
   getJson(api('cast/dispositius', { ara: CAST.llista.length ? 0 : 1 }), function (l) { CAST.llista = l || []; castPinta(false); }, function () { castPinta(false); });
 }
 function castPinta(cercant) {
+  if (PANT.vistaDiv) return;
   var h = '<h3>' + T('Envia a…') + '</h3>', l = CAST.llista;
   h += '<div class="ce' + (!CAST.dev ? ' on' : '') + '" onclick="castAtura();castTanca()">' + svg('M18 0H6C4.34 0 3 1.34 3 3v18c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V3c0-1.66-1.34-3-3-3zm-6 22.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 18H5V3h14v15z') + '<div>' + T('Aquest aparell') + '</div></div>';
+  if (PANT.l.length) h += '<div class="ce" onclick="castDiverses()">' + svg(IC_PANT) + '<div>' + T('Diverses pantalles alhora…') + '<small>' + T('Totes o les que triïs, sonant sincronitzades') + '</small></div></div>';
   for (var j = 0; j < PANT.l.length; j++)
     h += '<div class="ce" onclick="pantEnvia(' + j + ')">' + svg(PANT.l[j].tele ? IC.tv : IC_PANT) + '<div>' + esc(PANT.l[j].nom || T('Pantalla')) + '<small>' + T('Hearth') + '</small></div></div>';
   for (var i = 0; i < l.length; i++)
@@ -2204,7 +2260,7 @@ function castPinta(cercant) {
   h += '<div style="text-align:right;margin-top:8px"><button onclick="CAST.llista=[];castObre()">' + T('Torna a buscar') + '</button> <button onclick="castTanca()">' + T('Tanca') + '</button></div>';
   $('cast-c').innerHTML = h;
 }
-function castTanca() { $('cast').style.display = 'none'; }
+function castTanca() { PANT.vistaDiv = false; $('cast').style.display = 'none'; }
 function castEnvia(i) {
   var d = CAST.llista[i], m = castMedia();
   if (!d) return;

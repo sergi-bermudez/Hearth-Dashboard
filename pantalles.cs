@@ -33,7 +33,9 @@ public static class Pantalles
                 ordres = p.Ordres.ToArray();
                 p.Ordres.Clear();
             }
-            CasaServidor.Json(res, ordres);
+            // l'hora del servidor serveix perque totes les pantalles comencin alhora
+            if (CasaServidor.Q(q, "v") == "2") CasaServidor.Json(res, CasaServidor.Dic("o", ordres, "t", (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds));
+            else CasaServidor.Json(res, ordres);
             return;
         }
         if (nom == "llista")

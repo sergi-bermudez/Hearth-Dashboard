@@ -184,6 +184,7 @@ body{background:#000}
     <div class="fila"><label>Fons: segons</label><input type="number" id="aj-fons" min="8" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto del fons</span></div>
     <h2>Mode lleuger</h2>
     <div class="fila"><label>Mode lleuger</label><select id="aj-lleuger" class="sel"><option value="">Automàtic (iPads amb iOS 9 o anterior)</option><option value="si">Sempre activat</option><option value="no">Desactivat</option></select></div>
+    <div class="fila"><label>Retard del so</label><input type="number" id="aj-retard" min="-3000" max="3000" step="50" style="width:110px"> <span class="gris petit">ms · quan sona alhora en diverses pantalles: positiu si aquesta va avançada</span></div>
     <div class="fila"><label>Mode tele</label><label class="check"><input type="checkbox" id="aj-tele"> Per a la tele: tot més gran i navegació amb les fletxes del comandament</label></div>
     <div class="fila"><label>Tele</label><button class="pri" onclick="teleObre()">📺 Mostra Hearth a la tele…</button></div>
     <div class="desc petit">També des de la pantalla d'inici de qualsevol aparell, amb la icona 📺: tries la tele de la llista (les que accepten projecció, Miracast), el PC hi obre Hearth en mode tele i el comandament de la tele el controla (fletxes, OK, Enrere).</div>
@@ -508,6 +509,7 @@ function desaInici() {
   v.foscor = parseInt($('aj-foscor').value, 10) || 0;
   v.estil = v.estil || 'ambient';
   v.lleuger = $('aj-lleuger').value;
+  v.retard = parseInt($('aj-retard').value, 10) || 0;
   delete v.tele;
   C.dp = C.dp || {}; C.dp.tele = $('aj-tele').checked;
   v.fonsPassi = $('aj-fonspassi').checked;
@@ -1131,6 +1133,7 @@ function omplInici() {
   $('aj-fons').value = v.fonsSeg || 20;
   $('aj-lleuger').value = v.lleuger === true ? 'si' : v.lleuger === false ? '' : (v.lleuger || '');
   $('aj-tele').checked = !!(C.dp && C.dp.tele === true);
+  $('aj-retard').value = v.retard || 0;
   /* en mode tele, una manera clara de sortir-ne */
   var bt = $('surt-tele');
   if (C.dp && C.dp.tele === true && !bt) {
