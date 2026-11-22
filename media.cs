@@ -766,6 +766,7 @@ public static class Media
             if (!Regex.IsMatch(t + " " + S(x as Dictionary<string, object>, "snippet"), @"(film|pel|filme|movie)", RegexOptions.IgnoreCase) && Semblanca(titol, t) < 0.5) continue;
             Dictionary<string, object> d = JsonDe("https://" + wl + ".wikipedia.org/api/rest_v1/page/summary/" + Uri.EscapeDataString(t.Replace(' ', '_')), 8000) as Dictionary<string, object>;
             if (d == null || S(d, "type") == "disambiguation") continue;
+            if (!EsPagFilm(t, d)) continue;
             Dictionary<string, object> o = new Dictionary<string, object>();
             o["id"] = "wiki:" + wl + ":" + t; o["fontNom"] = "Viquip\u00e8dia";
             o["titol"] = Regex.Replace(t, @"\s*\([^)]*\)\s*$", "");
@@ -775,6 +776,21 @@ public static class Media
             if (mi != null) o["poster"] = mi;
             lock (l) AfegeixOpcio(l, o, titol, any);
         }
+    }
+
+    // Nomes pagines que parlen d'una pel.licula (no del director, l'actor o el musical): ho diu el titol,
+    // la descripcio curta o la primera frase ("es una pel.licula...", "is a 2007 American animated film")
+    static bool EsPagFilm(string titol, Dictionary<string, object> d)
+    {
+        const string F = @"(pel\u00b7l\u00edcula|pel.l\u00edcula|pel\u00edcula|film|filme|movie|curtmetratge|cortometraje|largometraje|llargmetratge|longa-metragem|curta-metragem)";
+        if (Regex.IsMatch(titol, @"\(" + F, RegexOptions.IgnoreCase)) return true;
+        string desc = S(d, "description");
+        if (desc != "" && Regex.IsMatch(desc, F, RegexOptions.IgnoreCase) && !Regex.IsMatch(desc, @"(director|directora|actor|actriz|actriu|actress|producer|productor|company|empresa|editor|music|m\u00fasic|personatge|character)", RegexOptions.IgnoreCase)) return true;
+        string ext = S(d, "extract"); int pt = ext.IndexOf(". "); if (pt > 0) ext = ext.Substring(0, pt);
+        if (ext.Length > 260) ext = ext.Substring(0, 260);
+        Match m = Regex.Match(ext, @"\b(\u00e9s|es|is|was|era|fou|foi|\u00e9)\s+(un|una|a|an|um|uma)\b([^.]{0,120}?)" + F, RegexOptions.IgnoreCase);
+        // "fou un actor ... de la pel.licula" parla d'una persona
+        return m.Success && !Regex.IsMatch(m.Groups[3].Value, @"(actor|actriu|actriz|actress|director|directora|cantant|cantante|singer|escriptor|escritor|writer|productor|producer|empresa|company|musical|personatge|personaje|character)", RegexOptions.IgnoreCase);
     }
 
     static Dictionary<string, object> Resum(string wl, string pagina)
