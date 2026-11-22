@@ -11,7 +11,7 @@ using System.Web.Script.Serialization;
 
 public static class Pantalles
 {
-    class P { public string Nom = ""; public string Sona = ""; public bool Pausa; public bool Tele; public DateTime Vist; public List<object> Ordres = new List<object>(); public string Registre = ""; public DateTime RegQuan; }
+    class P { public string Nom = ""; public string Sona = ""; public bool Pausa; public bool Tele; public DateTime Vist; public List<object> Ordres = new List<object>(); }
     static readonly Dictionary<string, P> llista = new Dictionary<string, P>();
     static readonly object lk = new object();
 
@@ -101,31 +101,6 @@ public static class Pantalles
                 p.Ordres.Add(o);
             }
             CasaServidor.Json(res, CasaServidor.Dic("ok", true));
-            return;
-        }
-        // el registre del so de cada pantalla, per veure'l des d'una altra (p. ex. el de la tele des de l'iPad)
-        if (nom == "registre" && ctx.Request.HttpMethod == "POST")
-        {
-            string text;
-            using (StreamReader sr = new StreamReader(ctx.Request.InputStream, Encoding.UTF8)) text = sr.ReadToEnd();
-            if (text.Length > 20000) text = text.Substring(text.Length - 20000);
-            lock (lk)
-            {
-                P p;
-                if (d == "" || !llista.TryGetValue(d, out p)) { CasaServidor.Error(res, 404, "No"); return; }
-                p.Registre = text; p.RegQuan = DateTime.Now;
-            }
-            CasaServidor.Json(res, CasaServidor.Dic("ok", true));
-            return;
-        }
-        if (nom == "registres")
-        {
-            List<object> r = new List<object>();
-            lock (lk)
-                foreach (KeyValuePair<string, P> kv in llista)
-                    if (kv.Value.Registre != "")
-                        r.Add(CasaServidor.Dic("id", kv.Key, "nom", kv.Value.Nom, "quan", kv.Value.RegQuan.ToString("HH:mm:ss"), "text", kv.Value.Registre));
-            CasaServidor.Json(res, r.ToArray());
             return;
         }
         CasaServidor.Error(res, 404, "No");
