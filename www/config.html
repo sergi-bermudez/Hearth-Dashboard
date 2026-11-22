@@ -184,6 +184,7 @@ body{background:#000}
     <div class="fila"><label>Fons: segons</label><input type="number" id="aj-fons" min="8" max="600" style="width:120px"><span class="gris petit" style="margin-left:12px">per cada foto del fons</span></div>
     <h2>Mode lleuger</h2>
     <div class="fila"><label>Mode lleuger</label><select id="aj-lleuger" class="sel"><option value="">Automàtic (iPads amb iOS 9 o anterior)</option><option value="si">Sempre activat</option><option value="no">Desactivat</option></select></div>
+    <div class="fila"><label>Fotos</label><div style="-webkit-flex:1;flex:1"><div class="gris petit" style="margin-bottom:6px">Les carpetes que es veuen en aquest aparell (a l'app Fotos i al fons):</div><div id="aj-fotos" class="gris">Carregant…</div></div></div>
     <div class="fila"><label>Pantalla</label><label class="check"><input type="checkbox" id="aj-despert"> Mantén-la sempre encesa (no s'adorm mai)</label></div>
     <div class="fila"><label>Moll d'apps</label><select id="aj-moll"><option value="">Automàtic (a la dreta si la pantalla és molt apaïsada)</option><option value="baix">Sempre a baix</option><option value="dreta">Sempre a la dreta</option></select></div>
     <div class="fila"><label>Retard del so</label><input type="number" id="aj-retard" min="-3000" max="3000" step="50" style="width:110px"> <span class="gris petit">ms · quan sona alhora en diverses pantalles: positiu si aquesta va avançada</span></div>
@@ -330,6 +331,7 @@ body{background:#000}
       <button onclick="gfAdmin('amaga','Fet')">Fet</button>
       <button onclick="gfAdmin('sincronitza','Sincronitzant…');gfPoll()">Sincronitza ara</button>
     </div>
+    <div class="fila"><label>Com es guarden</label><select id="gf-mode"><option value="copia">Còpia al PC (es baixen totes; funcionen encara que no hi hagi internet)</option><option value="nuvol">Sota demanda (només la llista; cada foto es baixa quan es mira i es guarda fins a 1 GB)</option></select></div>
     <div class="fila"><label>Fotos recents</label><input type="number" id="gf-rec" min="0" max="5000" style="width:120px"><span class="gris petit" style="margin-left:12px">les últimes (0 = cap)</span></div>
     <div class="fila"><label>Àlbums</label><button onclick="gfAlbums()">Carregar els meus àlbums</button></div>
     <div id="gf-albums" style="margin:0 0 12px 150px"></div>
@@ -500,6 +502,22 @@ function triaCiutat(i) {
   $('aj-ciutat').value = c.name;
   $('ciutats').innerHTML = '<div class="gris">✓ ' + esc(c.name) + '. Prem «Desar».</div>';
 }
+/* Carpetes de fotos (les de primer nivell, i els àlbums de Google Fotos un per un) per triar-les per aparell */
+function pintaCarpetesFotos(amaga) {
+  getJson(api('fotos'), function (d) {
+    var c = {}, ordre = [], i;
+    for (i = 0; i < d.length; i++) {
+      var parts = d[i][0].split('/'), k = parts.length == 1 ? '/' : /^Google Fotos/.test(parts[0]) && parts.length > 2 ? parts[0] + '/' + parts[1] : parts[0];
+      if (!c[k]) { c[k] = 0; ordre.push(k); }
+      c[k]++;
+    }
+    ordre.sort();
+    C.fotosCarp = ordre;
+    var h = '';
+    for (i = 0; i < ordre.length; i++) h += '<label class="check" style="display:block;padding:3px 0"><input type="checkbox" class="aj-fc" value="' + esc(ordre[i]) + '"' + (amaga.indexOf(ordre[i]) < 0 ? ' checked' : '') + '> ' + esc(ordre[i] == '/' ? 'Fotos soltes (a l\'arrel)' : ordre[i]) + ' <span class="gris petit">' + c[ordre[i]] + '</span></label>';
+    $('aj-fotos').innerHTML = h || 'No hi ha fotos.';
+  }, function () { $('aj-fotos').textContent = 'No s\'han pogut llegir les carpetes.'; });
+}
 function desaInici() {
   var a = C.aj;
   if (C.ciutat) { a.ciutat = C.ciutat.ciutat; a.lat = C.ciutat.lat; a.lon = C.ciutat.lon; }
@@ -514,6 +532,7 @@ function desaInici() {
   v.retard = parseInt($('aj-retard').value, 10) || 0;
   v.despert = $('aj-despert').checked;
   v.moll = $('aj-moll').value;
+  if (C.fotosCarp) { var am = [], cf = document.querySelectorAll('.aj-fc'); for (var fi = 0; fi < cf.length; fi++) if (!cf[fi].checked) am.push(cf[fi].value); v.fotosAmaga = am; }
   delete v.tele;
   C.dp = C.dp || {}; C.dp.tele = $('aj-tele').checked;
   v.fonsPassi = $('aj-fonspassi').checked;
@@ -863,6 +882,7 @@ function gfEstat() {
     if (!GF.carregat) {
       GF.carregat = true;
       $('gf-rec').value = GF.aj.recents != null ? GF.aj.recents : 300;
+      $('gf-mode').value = GF.aj.mode || 'copia';
       $('gf-hora').value = GF.aj.hora || '03:30';
       $('gf-actiu').checked = GF.aj.actiu === true || GF.aj.actiu === 'true';
       pintaAlbums();
@@ -899,6 +919,7 @@ function gfDesa() {
   a.recents = Math.max(0, parseInt($('gf-rec').value, 10) || 0);
   a.hora = /^\d{1,2}:\d\d$/.test(retalla($('gf-hora').value)) ? retalla($('gf-hora').value) : '03:30';
   a.actiu = $('gf-actiu').checked;
+  a.mode = $('gf-mode').value;
   desaDades('gfotos', a, function () { avis('Desat'); });
 }
 
@@ -1140,6 +1161,7 @@ function omplInici() {
   $('aj-retard').value = v.retard || 0;
   $('aj-despert').checked = v.despert === true;
   $('aj-moll').value = v.moll || '';
+  pintaCarpetesFotos(v.fotosAmaga || []);
   /* en mode tele, una manera clara de sortir-ne */
   var bt = $('surt-tele');
   if (C.dp && C.dp.tele === true && !bt) {

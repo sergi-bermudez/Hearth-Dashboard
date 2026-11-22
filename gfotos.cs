@@ -100,6 +100,84 @@ public static class GFotos
         return n == "" ? "Album" : n;
     }
 
+    // ---------- Mode sota demanda ("nuvol") ----------
+    public const string PrefixNuvol = "Google Fotos (sota demanda)";
+    static string FitxerNuvol { get { return Path.Combine(CasaServidor.DirDades, "gfotos-nuvol.json"); } }
+    static string FitxerGaletes { get { return Path.Combine(CasaServidor.DirDades, "gfotos-galetes.txt"); } }
+    static List<object> llistaNuvol;
+
+    static List<object> LlistaNuvol()
+    {
+        lock (lk)
+        {
+            if (llistaNuvol == null)
+            {
+                llistaNuvol = new List<object>();
+                try
+                {
+                    if (File.Exists(FitxerNuvol) && A(Ajustos(), "mode", "copia") == "nuvol")
+                    {
+                        object[] l = new JavaScriptSerializer() { MaxJsonLength = int.MaxValue }.DeserializeObject(File.ReadAllText(FitxerNuvol, Encoding.UTF8)) as object[];
+                        if (l != null) llistaNuvol.AddRange(l);
+                    }
+                }
+                catch { }
+            }
+            return llistaNuvol;
+        }
+    }
+
+    // Per a l'index de fotos: les del nuvol, com si fossin a la carpeta
+    public static List<object[]> Virtuals()
+    {
+        List<object[]> r = new List<object[]>();
+        if (A(Ajustos(), "mode", "copia") != "nuvol") return r;
+        foreach (object o in LlistaNuvol())
+        {
+            Dictionary<string, object> e = o as Dictionary<string, object>;
+            if (e == null) continue;
+            long d = 0; try { d = Convert.ToInt64(e["data"]); } catch { }
+            r.Add(new object[] { e["rel"].ToString(), d });
+        }
+        return r;
+    }
+
+    // La foto del nuvol, baixada ara si cal (es guarda a dades\gfotos-cau, que no passa d'1 GB)
+    public static string Local(string rel)
+    {
+        rel = rel.Replace('\\', '/');
+        Dictionary<string, object> e = null;
+        foreach (object o in LlistaNuvol()) { Dictionary<string, object> x = o as Dictionary<string, object>; if (x != null && x["rel"].ToString() == rel) { e = x; break; } }
+        if (e == null) return null;
+        string dir = Path.Combine(CasaServidor.DirDades, "gfotos-cau");
+        Directory.CreateDirectory(dir);
+        string f = Path.Combine(dir, CasaServidor.Hash(rel) + ".jpg");
+        if (File.Exists(f)) { try { File.SetLastAccessTime(f, DateTime.Now); } catch { } return f; }
+        string url = e["url"].ToString() + "=w2560-h2560-rj";
+        try { Descarrega(url, f, null); }
+        catch
+        {
+            string gal = File.Exists(FitxerGaletes) ? File.ReadAllText(FitxerGaletes) : null;
+            try { Descarrega(url, f, gal); } catch { return null; }
+        }
+        try { long d = Convert.ToInt64(e["data"]); File.SetLastWriteTime(f, new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(d).ToLocalTime()); } catch { }
+        ThreadPool.QueueUserWorkItem(delegate { Neteja(dir); });
+        return f;
+    }
+
+    static void Neteja(string dir)
+    {
+        try
+        {
+            FileInfo[] fs = new DirectoryInfo(dir).GetFiles();
+            long total = 0; foreach (FileInfo fi in fs) total += fi.Length;
+            if (total < 1024L * 1024 * 1024) return;
+            Array.Sort(fs, delegate (FileInfo a, FileInfo b) { return a.LastAccessTime.CompareTo(b.LastAccessTime); });
+            foreach (FileInfo fi in fs) { if (total < 800L * 1024 * 1024) break; total -= fi.Length; try { fi.Delete(); } catch { } }
+        }
+        catch { }
+    }
+
     public static void Comenca()
     {
         lock (lk) { if (enMarxa) return; enMarxa = true; }
@@ -144,6 +222,8 @@ public static class GFotos
             // El pont s'injecta abans que la pagina carregui, per capturar les respostes internes amb les fotos
             try { c.Envia("Page.addScriptToEvaluateOnNewDocument", CasaServidor.Dic("source", Pont()), 5000); } catch { }
             int noves = 0, fallades = 0; string darrerError = "";
+            bool nuvol = A(a, "mode", "copia") == "nuvol";
+            List<object> nuvolNou = new List<object>();
             foreach (string[] lloc in llocs)
             {
                 estat = "Llegint \u00ab" + lloc[1] + "\u00bb\u2026";
@@ -159,6 +239,24 @@ public static class GFotos
                 }
                 catch { }
                 if (items == null || items.Length == 0) { estat = "No he trobat fotos a \u00ab" + lloc[1] + "\u00bb. Envia'm el fitxer dades\\gfotos-diagnostic.txt"; continue; }
+                if (nuvol)
+                {
+                    // Mode sota demanda: nomes es guarda la llista; cada foto es baixa quan algu la mira
+                    foreach (object o in items)
+                    {
+                        Dictionary<string, object> it = o as Dictionary<string, object>;
+                        if (it == null) continue;
+                        long ms = 0; try { ms = Convert.ToInt64(it["data"]); } catch { }
+                        string id = it["id"].ToString();
+                        DateTime dt = ms > 0 ? new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(ms).ToLocalTime() : DateTime.Now;
+                        string rel = PrefixNuvol + "/" + lloc[1] + "/" + dt.ToString("yyyy-MM-dd_HHmmss") + "_" + (id.Length > 8 ? id.Substring(id.Length - 8) : id) + ".jpg";
+                        Dictionary<string, object> e = new Dictionary<string, object>();
+                        e["rel"] = rel; e["url"] = it["url"].ToString(); e["data"] = ms > 0 ? ms : (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds;
+                        nuvolNou.Add(e);
+                    }
+                    total += items.Length;
+                    continue;
+                }
                 string dir = Path.Combine(arrel, lloc[1]);
                 Directory.CreateDirectory(dir);
                 total += items.Length;
@@ -192,6 +290,26 @@ public static class GFotos
                     catch (Exception e) { Console.WriteLine("  Google Fotos: " + e.Message); fallades++; darrerError = e.Message; }
                 }
                 DesaIndex(ix);
+            }
+            if (nuvol)
+            {
+                if (nuvolNou.Count > 0)
+                {
+                    try
+                    {
+                        // les galetes de la sessio, per poder baixar les fotos despres sense obrir l'Edge
+                        object[] gl = c.Envia("Network.getCookies", CasaServidor.Dic("urls", new string[] { "https://photos.google.com/", "https://photos.fife.usercontent.google.com/", "https://lh3.googleusercontent.com/" }), 5000)["cookies"] as object[];
+                        StringBuilder sb = new StringBuilder();
+                        if (gl != null) foreach (object o in gl) { Dictionary<string, object> g = o as Dictionary<string, object>; if (g != null) sb.Append(g["name"]).Append('=').Append(g["value"]).Append("; "); }
+                        File.WriteAllText(FitxerGaletes, sb.ToString());
+                    }
+                    catch { }
+                    lock (lk) { llistaNuvol = nuvolNou; }
+                    File.WriteAllText(FitxerNuvol, new JavaScriptSerializer() { MaxJsonLength = int.MaxValue }.Serialize(nuvolNou), new UTF8Encoding(false));
+                    CasaServidor.RefrescaFotos();
+                }
+                estat = "Fet: " + nuvolNou.Count + " fotos a punt per veure sota demanda (" + DateTime.Now.ToString("dd/MM HH:mm") + ")";
+                return;
             }
             if (total == 0) return;
             estat = "Fet: " + noves + " fotos noves" + (fallades > 0 ? ", " + fallades + " no s'han pogut baixar (" + darrerError + ")" : "") + " (" + DateTime.Now.ToString("dd/MM HH:mm") + ")";

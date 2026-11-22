@@ -642,6 +642,7 @@ public static class CasaServidor
                 bool canvis = false;
                 int comptador = 0;
                 Recorre(new DirectoryInfo(arrel), "", llista, nou, ref canvis, ref comptador);
+                try { llista.AddRange(GFotos.Virtuals()); } catch { }
                 if (canvis || nou.Count != FotoCache.Count)
                 {
                     try
@@ -976,6 +977,8 @@ public static class CasaServidor
     internal static string Ruta(string c, string rel)
     {
         string arrel;
+        // Google Fotos sota demanda: la foto es baixa ara (i es guarda) quan algu la vol veure
+        if (c == "fotos" && rel != null && rel.Replace('\\', '/').TrimStart('/').StartsWith(GFotos.PrefixNuvol + "/")) return GFotos.Local(rel.Replace('\\', '/').TrimStart('/'));
         if (c == null || !Arrels.TryGetValue(c, out arrel)) return null;
         return Segur(arrel, rel);
     }

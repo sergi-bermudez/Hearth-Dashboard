@@ -771,6 +771,7 @@ function fotosLlista(cb) {
   if (FO.carregant) return;
   FO.carregant = true;
   getJson(api('fotos'), function (d) {
+    d = filtreFotos(d);
     FO.carregant = false; FO.llista = d; FO.fotos = []; FO.quan = Date.now();
     for (var i = 0; i < d.length; i++) if (!d[i][2]) FO.fotos.push(d[i]);
     var e = FO.esperen; FO.esperen = [];
@@ -778,6 +779,18 @@ function fotosLlista(cb) {
   }, function () { FO.carregant = false; FO.esperen = []; });
 }
 function fotosRecarrega() { FO.llista = null; fonsInicia(); }
+/* Les carpetes que aquest aparell no vol veure (Configuració ▸ Aquest aparell ▸ Fotos) */
+function filtreFotos(d) {
+  var am = A.ajustos.fotosAmaga;
+  if (!am || !am.length || !d) return d;
+  var r = [];
+  for (var i = 0; i < d.length; i++) {
+    var rel = d[i][0], fora = false, j;
+    for (j = 0; j < am.length && !fora; j++) if (am[j] == '/' ? rel.indexOf('/') < 0 : rel == am[j] || rel.indexOf(am[j] + '/') === 0) fora = true;
+    if (!fora) r.push(d[i]);
+  }
+  return r;
+}
 var FS = { ordre: [], n: 0, t: null, capa: 0, actual: null };
 function fonsInicia() {
   clearTimeout(FS.t);
@@ -2131,7 +2144,7 @@ window.Casa = {
   video: videoObre, videoActual: function () { return TV.canal && TV.canal.vod ? TV.canal : null; },
   obre: obre, inici: inici, avis: avis, toc: function () { toc(); desbloqueja(); }, marc: obreMarc,
   websCanviades: function (l) { WB.defs = l; pintaDock(); pintaWebDash(); },
-  fotos: fotosLlista, fotosRecarrega: fotosRecarrega,
+  fotos: fotosLlista, fotosRecarrega: fotosRecarrega, filtreFotos: filtreFotos,
   ajustos: function () { return A.ajustos; },
   teleMenu: function () { teleMenu(); },
   recarrega: function () { carregaAjustos(); carregaSuggeriments(); },

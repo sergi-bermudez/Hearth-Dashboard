@@ -55,7 +55,7 @@ function carrega(forcar) {
     mes();
   }
   if (Casa && !forcar) Casa.fotos(rep);
-  else getJson(api('fotos', forcar ? { nou: 1 } : null), rep, errXarxa('carregar les fotos'));
+  else getJson(api('fotos', forcar ? { nou: 1 } : null), function (d) { rep(Casa && Casa.filtreFotos ? Casa.filtreFotos(d) : d); }, errXarxa('carregar les fotos'));
 }
 function mes() {
   var l = F.llista, fi = Math.min(l.length, F.fets + 240), tl = $('tl');
