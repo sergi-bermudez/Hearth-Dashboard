@@ -656,7 +656,7 @@ public static class Media
             if (Pla(S(x, "titol")) + "|" + S(x, "any") == clau)
             {
                 // la mateixa pel.licula des d'una altra font: completa el que falti
-                foreach (string k in new string[] { "poster", "fons", "sinopsi", "nota", "genere", "minuts", "edat", "original" }) if (S(x, k) == "" && S(o, k) != "") x[k] = o[k];
+                foreach (string k in new string[] { "poster", "fons", "sinopsi", "nota", "genere", "minuts", "edat", "original", "wImdb", "wRt", "wMc" }) if (S(x, k) == "" && S(o, k) != "") x[k] = o[k];
                 return;
             }
         o["punts"] = Math.Round(s, 3);
@@ -833,6 +833,8 @@ public static class Media
             o["id"] = "wd:" + id; o["fontNom"] = "Wikidata";
             o["titol"] = local; if (en != "" && en != local) o["original"] = en;
             if (anyW != "") o["any"] = anyW;
+            o["wd"] = id;
+            NotesWikidata(claims, o);
             // la caratula i la sinopsi, de la Viquipedia (la caratula sol ser a l'anglesa; la sinopsi, en el nostre idioma si n'hi ha)
             if (n++ < 8)
                 try
@@ -851,6 +853,66 @@ public static class Media
             lock (l) AfegeixOpcio(l, o, titol, any);
         }
     }
+
+    // Les notes que guarda Wikidata (IMDb, Rotten Tomatoes, Metacritic) i la durada, sense cap clau
+    static void NotesWikidata(Dictionary<string, object> claims, Dictionary<string, object> o)
+    {
+        try
+        {
+            if (claims.ContainsKey("P444"))
+                foreach (object c in (object[])claims["P444"])
+                {
+                    try
+                    {
+                        Dictionary<string, object> cd = (Dictionary<string, object>)c;
+                        string val = S((cd["mainsnak"] as Dictionary<string, object>)["datavalue"] as Dictionary<string, object>, "value").Trim();
+                        Dictionary<string, object> q = cd.ContainsKey("qualifiers") ? cd["qualifiers"] as Dictionary<string, object> : null;
+                        if (val == "" || q == null || !q.ContainsKey("P447")) continue;
+                        string per = "";
+                        foreach (object qq in (object[])q["P447"]) { try { per = S(((qq as Dictionary<string, object>)["datavalue"] as Dictionary<string, object>)["value"] as Dictionary<string, object>, "id"); } catch { } }
+                        if (per == "Q37312") { Match m = Regex.Match(val, @"^(\d+(?:[.,]\d)?)\s*/\s*10$"); if (m.Success) o["wImdb"] = m.Groups[1].Value.Replace(',', '.'); }
+                        else if (per == "Q105584") { Match m = Regex.Match(val, @"^(\d{1,3})\s*%$"); if (m.Success) o["wRt"] = m.Groups[1].Value + "%"; }
+                        else if (per == "Q150248") { Match m = Regex.Match(val, @"^(\d{1,3})\s*/\s*100$"); if (m.Success) o["wMc"] = m.Groups[1].Value; }
+                    }
+                    catch { }
+                }
+            if (!o.ContainsKey("minuts") && claims.ContainsKey("P2047"))
+                foreach (object c in (object[])claims["P2047"])
+                {
+                    try
+                    {
+                        Dictionary<string, object> v = ((((Dictionary<string, object>)c)["mainsnak"] as Dictionary<string, object>)["datavalue"] as Dictionary<string, object>)["value"] as Dictionary<string, object>;
+                        if (!S(v, "unit").EndsWith("/Q7727")) continue;
+                        double mn; if (double.TryParse(S(v, "amount").TrimStart('+'), NumberStyles.Any, CultureInfo.InvariantCulture, out mn) && mn > 20 && mn < 600) { o["minuts"] = ((int)Math.Round(mn)).ToString(); break; }
+                    }
+                    catch { }
+                }
+        }
+        catch { }
+    }
+
+    // Una fitxa reconeguda sense cap nota: es busca una vegada a Wikidata (en segon pla)
+    static bool CompletaNotes(Dictionary<string, object> m)
+    {
+        if (!Internet()) return false;
+        string t = S(m, "original") != "" ? S(m, "original") : S(m, "titol"), any = S(m, "any");
+        if (t.Length < 2) return false;
+        List<Dictionary<string, object>> l = new List<Dictionary<string, object>>();
+        foreach (string lg in new string[] { "en", Llengua() }) { OpWikidata(l, t, t, any, lg); if (l.Count > 0) break; }
+        Dictionary<string, object> mill = null; double mp = 0;
+        foreach (Dictionary<string, object> o in l)
+        {
+            if (any != "" && S(o, "any") != "" && S(o, "any") != any) continue;
+            double p = Math.Max(Math.Max(Semblanca(t, S(o, "titol")), Semblanca(t, S(o, "original"))), Semblanca(S(m, "titol"), S(o, "titol")));
+            if (p > mp) { mp = p; mill = o; }
+        }
+        if (mill == null || mp < 0.8) return false;
+        bool canvi = false;
+        foreach (string k in new string[] { "wImdb", "wRt", "wMc", "minuts" }) if (S(mill, k) != "" && S(m, k) == "") { m[k] = mill[k]; canvi = true; }
+        return canvi;
+    }
+
+    static bool SenseNotes(Dictionary<string, object> m) { foreach (string k in new string[] { "nota", "imdb", "rotten", "wImdb", "wRt", "wMc" }) if (S(m, k) != "") return false; return true; }
 
     // Les pel.licules que s'assemblen a un titol, de moltes fonts i idiomes alhora, per triar-ne una
     internal static List<Dictionary<string, object>> Opcions(List<string[]> cands, bool complet, List<string> errs)
@@ -1090,6 +1152,12 @@ public static class Media
                 {
                     mv["posterProvat"] = DateTime.Now.ToString("yyyy-MM-dd");
                     ThreadPool.QueueUserWorkItem(delegate { try { if (CompletaPoster(mv)) lock (lk) DesaMetes(); } catch { } });
+                }
+                // reconeguda pero sense cap nota: es busca una vegada a Wikidata
+                if (mv.ContainsKey("fontNom") && SenseNotes(mv) && !mv.ContainsKey("notesProvat"))
+                {
+                    mv["notesProvat"] = DateTime.Now.ToString("yyyy-MM-dd");
+                    ThreadPool.QueueUserWorkItem(delegate { try { CompletaNotes(mv); lock (lk) DesaMetes(); } catch { } });
                 }
                 return mv;
             }

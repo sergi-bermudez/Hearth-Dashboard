@@ -76,9 +76,11 @@
 #tria{z-index:45;padding:20px 24px 60px}
 #fx-fons{position:absolute;top:0;left:0;right:0;height:480px;background:#14181e center 20%/cover no-repeat}
 #fx-fons:after{content:"";position:absolute;left:0;right:0;bottom:0;height:100%;background:-webkit-linear-gradient(top,rgba(14,17,22,.25),#0e1116);background:linear-gradient(to bottom,rgba(14,17,22,.25),#0e1116)}
-#fx-cos{position:relative;padding:24px 28px 60px;display:-webkit-flex;display:flex}
-#fx-poster{width:230px;height:345px;border-radius:12px;background:#1d2229 center/cover no-repeat;-webkit-flex:none;flex:none;margin-right:28px;margin-top:80px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-#fx-info{-webkit-flex:1;flex:1;padding-top:150px}
+#fx-cos{position:relative;padding:12px 28px 18px;display:-webkit-flex;display:flex;-webkit-align-items:flex-start;align-items:flex-start}
+#fx-peu{position:relative;padding:0 28px 60px}
+#fx-poster{width:230px;height:345px;border-radius:12px;background:#1d2229 center/cover no-repeat;-webkit-flex:none;flex:none;margin-right:28px;margin-top:52px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#fx-info{-webkit-flex:1;flex:1;padding-top:52px}
+#fx-info h1{margin-top:0}
 #fx-info h1{font-size:36px;margin-bottom:6px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
 .fx-dades{color:#b4bbc5;margin-bottom:14px}
 .fx-dades span{margin-right:14px}
@@ -103,7 +105,8 @@
   #fx-fons{height:46vw;max-height:340px}
   #fx-fons.difus{-webkit-filter:blur(14px);filter:blur(14px);-webkit-transform:scale(1.15);transform:scale(1.15)}
   #fx-fons:after{background:-webkit-linear-gradient(top,rgba(14,17,22,0) 40%,#0e1116);background:linear-gradient(to bottom,rgba(14,17,22,0) 40%,#0e1116)}
-  #fx-cos{display:block;padding:0 16px 60px}
+  #fx-cos{display:block;padding:0 16px 4px}
+  #fx-peu{padding:0 16px 60px}
   /* sense imatge de fons: caràtula petita al costat del títol, començant just sota la fletxa */
   #fx-poster{float:left;width:96px;height:144px;margin:60px 14px 6px 0;border-radius:8px}
   #fx-info{padding-top:60px}
@@ -134,7 +137,7 @@
 <div id="fitxa">
   <div id="fx-fons"></div>
   <button id="fx-enrere" onclick="tancaFitxa()" title="Tornar">‹</button>
-  <div id="fx-cos"><div id="fx-poster"></div><div id="fx-info"></div></div>
+  <div id="fx-cos"><div id="fx-poster"></div><div id="fx-info"></div></div><div id="fx-peu"></div>
 </div>
 <div id="desfer"></div>
 <div id="tria">
@@ -441,9 +444,11 @@ function pintaFitxa(d, v) {
   if (d.genere) h += '<span>' + esc(generes(d).join(', ')) + '</span>';
   if (d.edat) h += '<span>' + esc(d.edat) + '</span>';
   h += '</div><div>';
+  var imdb = d.imdb || d.wImdb, rt = d.rotten || d.wRt;
   if (d.nota) h += '<span class="nota">★ ' + esc(d.nota) + '/10</span>';
-  if (d.imdb) h += '<span class="nota">IMDb ' + esc(d.imdb) + '</span>';
-  if (d.rotten) h += '<span class="nota">🍅 ' + esc(d.rotten) + '</span>';
+  if (imdb) h += '<span class="nota">IMDb ' + esc(imdb) + '</span>';
+  if (rt) h += '<span class="nota">🍅 ' + esc(rt) + '</span>';
+  if (d.wMc) h += '<span class="nota">Metacritic ' + esc(d.wMc) + '</span>';
   h += '</div>';
   /* com a les apps de streaming: primer reproduir, després la sinopsi i les dades, i al final les accions de la fitxa */
   if (d.avis) h += '<div class="fx-avis">' + esc(d.avis) + '</div>';
@@ -457,12 +462,13 @@ function pintaFitxa(d, v) {
   var sin = d.sinopsi || '', llarga = sin.length > 420;
   h += '<div class="fx-sin' + (llarga ? ' curta' : '') + '" id="fx-sin">' + esc(sin) + '</div>' + (llarga ? '<div class="fx-mes" onclick="var e=$(\'fx-sin\');e.className=\'fx-sin\';this.style.display=\'none\'">' + T('Més') + ' ›</div>' : '');
   if (d.director) h += '<div class="gris" style="margin:4px 0 14px">' + T('Direcció:') + ' ' + esc(d.director) + '</div>';
-  h += '<div class="fx-acc">';
+  $('fx-info').innerHTML = h;
+  h = '<div class="fx-acc">';
   if (d.fontNom && !d.confirmada && parseFloat(d.conf) < 0.75) h += '<button onclick="confirmaActual(FX.p)">' + T('Sí, és aquesta') + '</button>';
   if (d.triada) h += '<button onclick="desfes(FX.p)">' + T('Desfés la tria') + '</button>';
   h += '<button onclick="obreTria(FX.p)">' + svg(IC.cerca) + ' ' + T('No és aquesta? Torna a buscar') + '</button></div>';
   if (e) h += '<div class="fx-fitxer">' + esc(e.p) + ' · ' + mida(e.mida) + (d.fontNom ? ' · ' + esc(d.fontNom) : '') + '</div>';
-  $('fx-info').innerHTML = h;
+  $('fx-peu').innerHTML = h;
 }
 function reprodueix(desDelPrincipi) {
   var e = FX.e;
