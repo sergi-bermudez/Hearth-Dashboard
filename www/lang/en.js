@@ -981,3 +981,6 @@ TR.en["Mostra Hearth a la tele…"]="Show Hearth on the TV…";
 TR.en["El PC la projecta i el comandament la controla"]="The PC casts it and the remote controls it";
 TR.en["Envia-hi el que sona aquí"]="Send what's playing here";
 TR.en["Envia i controla"]="Send and control";
+TR.en["Hearth, Chromecast i teles: totes o les que triïs"]="Hearth, Chromecast and TVs: all or the ones you pick";
+TR.en["No s'ha pogut enviar a {1}"]="Couldn't send to {1}";
+TR.en["Enviant a {1} aparells…"]="Sending to {1} devices…";

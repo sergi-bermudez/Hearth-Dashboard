@@ -981,3 +981,6 @@ TR.fr["Mostra Hearth a la tele…"]="Afficher Hearth sur la télé…";
 TR.fr["El PC la projecta i el comandament la controla"]="Le PC le projette et la télécommande le pilote";
 TR.fr["Envia-hi el que sona aquí"]="Y envoyer ce qui joue ici";
 TR.fr["Envia i controla"]="Envoyer et contrôler";
+TR.fr["Hearth, Chromecast i teles: totes o les que triïs"]="Hearth, Chromecast et télés : tous ou ceux choisis";
+TR.fr["No s'ha pogut enviar a {1}"]="Impossible d'envoyer à {1}";
+TR.fr["Enviant a {1} aparells…"]="Envoi vers {1} appareils…";
