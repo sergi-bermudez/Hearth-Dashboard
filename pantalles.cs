@@ -11,7 +11,7 @@ using System.Web.Script.Serialization;
 
 public static class Pantalles
 {
-    class P { public string Nom = ""; public bool Tele; public DateTime Vist; public List<object> Ordres = new List<object>(); }
+    class P { public string Nom = ""; public string Sona = ""; public bool Pausa; public bool Tele; public DateTime Vist; public List<object> Ordres = new List<object>(); }
     static readonly Dictionary<string, P> llista = new Dictionary<string, P>();
     static readonly object lk = new object();
 
@@ -62,11 +62,17 @@ public static class Pantalles
                 string n = CasaServidor.Q(q, "nom");
                 if (n != "") p.Nom = n;
                 p.Tele = CasaServidor.Q(q, "tele") == "1";
+                // el que sona en aquella pantalla, per poder-la controlar des d'una altra
+                p.Sona = CasaServidor.Q(q, "sona"); p.Pausa = CasaServidor.Q(q, "pausa") == "1";
                 ordres = p.Ordres.ToArray();
                 p.Ordres.Clear();
             }
             // l'hora del servidor serveix perque totes les pantalles comencin alhora
-            if (CasaServidor.Q(q, "v") == "2") CasaServidor.Json(res, CasaServidor.Dic("o", ordres, "t", (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds));
+            if (CasaServidor.Q(q, "v") == "2") {
+                int altres = 0;
+                lock (lk) foreach (KeyValuePair<string, P> kv in llista) if (kv.Key != d && (DateTime.Now - kv.Value.Vist).TotalSeconds < 25) altres++;
+                CasaServidor.Json(res, CasaServidor.Dic("o", ordres, "t", (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds, "n", altres));
+            }
             else CasaServidor.Json(res, ordres);
             return;
         }
@@ -76,7 +82,7 @@ public static class Pantalles
             lock (lk)
                 foreach (KeyValuePair<string, P> kv in llista)
                     if (kv.Key != d && (DateTime.Now - kv.Value.Vist).TotalSeconds < 25)
-                        r.Add(CasaServidor.Dic("id", kv.Key, "nom", kv.Value.Nom, "tele", kv.Value.Tele));
+                        r.Add(CasaServidor.Dic("id", kv.Key, "nom", kv.Value.Nom, "tele", kv.Value.Tele, "sona", kv.Value.Sona, "pausa", kv.Value.Pausa));
             CasaServidor.Json(res, r.ToArray());
             return;
         }

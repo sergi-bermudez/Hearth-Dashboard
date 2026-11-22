@@ -237,6 +237,16 @@ body.amb-pest #apps iframe{height:-webkit-calc(100% - 52px);height:calc(100% - 5
 #b-tele{margin-left:10px;width:36px;height:36px;padding:7px;box-sizing:border-box;border-radius:50%;background:rgba(255,255,255,.14);cursor:pointer;-webkit-flex:none;flex:none}
 #b-tele .ic{width:22px;height:22px;display:block}
 body.tele #b-tele{display:none}
+#b-pant{margin-left:10px;width:36px;height:36px;padding:7px;box-sizing:border-box;border-radius:50%;background:rgba(255,255,255,.14);cursor:pointer;-webkit-flex:none;flex:none;display:none}
+#b-pant.hi{display:block}
+#b-pant .ic{width:22px;height:22px;display:block}
+.pc-fila{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:10px 4px;border-bottom:1px solid rgba(255,255,255,.08)}
+.pc-fila .nm{-webkit-flex:1;flex:1;min-width:0}
+.pc-fila .nm small{display:block;color:#8d95a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-fila button{margin-left:6px;padding:8px 10px;-webkit-flex:none;flex:none}
+.pc-fila button .ic{width:22px;height:22px}
+#nit.negre{background:#000}
+#nit.negre .h,#nit.negre .d,#nit.negre .a{display:none}
 #cfg.punt:after{content:'';position:absolute;top:0;right:0;width:10px;height:10px;border-radius:5px;background:#ff9f0a;box-shadow:0 0 0 2px rgba(0,0,0,.4)}
 #cfg.punt.act:after{background:#0a84ff}
 #cfg{position:relative;-webkit-flex:none;flex:none;margin-right:10px;width:36px;height:36px;padding:6px;box-sizing:border-box;opacity:.8;cursor:pointer;border-radius:50%;background:rgba(255,255,255,.14);-webkit-tap-highlight-color:rgba(255,255,255,.3)}
@@ -604,7 +614,7 @@ body.offline .app.cal-servidor,body.offline #nav div.cal-servidor{opacity:.3}
 <div id="dash">
   <div class="d-cap">
     <div class="d-hora ombrat panell" style="position:relative">
-      <div class="salut-fila"><div id="cfg" onclick="obreConfig()"></div><div id="salut"></div><div id="cfg-av" onclick="obreAvis()"></div><div id="b-tele" onclick="teleMenu()" title="Mostra Hearth a la tele"></div></div>
+      <div class="salut-fila"><div id="cfg" onclick="obreConfig()"></div><div id="salut"></div><div id="cfg-av" onclick="obreAvis()"></div><div id="b-tele" onclick="teleMenu()" title="Mostra Hearth a la tele"></div><div id="b-pant" onclick="pantControl()" title="Controla les altres pantalles"></div></div>
       <div id="hora">--:--</div>
       <div id="data"></div>
     </div>
@@ -917,6 +927,7 @@ function pintaDock() {
   }
   n += '<div onclick="obreConfig()" id="nv-config" class="nv-cfg">' + svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config) + esc(T('Ajustos')) + '</div>';
   $('cfg').innerHTML = svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config);
+  $('b-pant').innerHTML = svg(IC_PANT);
   $('b-tele').innerHTML = svg(IC.tv); $('b-tele').style.display = INF.actiu ? 'none' : '';
   $('dock').innerHTML = h;
   $('nav').innerHTML = n;
@@ -2341,11 +2352,14 @@ var PANT = { l: [], ordre: null, dif: 0, compte: null };
 var IC_PANT = 'M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z';
 function pantHola() {
   var t0 = Date.now();
-  getJson(api('pantalles/hola', { d: DISP.id, v: 2, nom: modeTele() ? T('Tele') + (DISP.nom && DISP.nom != 'PC' ? ' (' + DISP.nom + ')' : '') : DISP.nom || nomDispositiuDefecte(), tele: modeTele() ? 1 : '', _: t0 }), function (r) {
+  var it = R.cua[R.pos], sona = TV.canal ? TV.canal.nom : it ? it.t + (it.s ? ' · ' + it.s : '') : '';
+  var pausa = TV.canal ? $('tv-v').paused : it ? sonaPausat() : false;
+  getJson(api('pantalles/hola', { d: DISP.id, v: 2, sona: sona || '', pausa: pausa ? 1 : '', nom: modeTele() ? T('Tele') + (DISP.nom && DISP.nom != 'PC' ? ' (' + DISP.nom + ')' : '') : DISP.nom || nomDispositiuDefecte(), tele: modeTele() ? 1 : '', _: t0 }), function (r) {
     var l = r && r.o ? r.o : r;
     /* diferència entre el rellotge del servidor i el d'aquest aparell (per començar alhora) */
     if (r && r.t) { var ara = Date.now(); PANT.dif = r.t - (t0 + ara) / 2; }
     connexio(true);
+    if (r && r.n !== undefined) $('b-pant').className = r.n > 0 && !INF.actiu ? 'hi' : '';
     if (l && l.length) rebOrdre(l[l.length - 1]);
   }, function () { connexio(false); });
 }
@@ -2383,6 +2397,8 @@ function retardAqui() { return parseInt(A.ajustos.retard, 10) || 0; }
 /* Ordre rebuda d'una altra pantalla. Si ningú respon, s'accepta sola al cap d'uns segons. */
 function rebOrdre(o) {
   if (!o || !o.tipus) return;
+  /* ordres de control d'una altra pantalla: s'executen de seguida */
+  if (o.tipus == 'ctl') { fesControl(o.acc, o.de); return; }
   PANT.ordre = o;
   clearInterval(PANT.compte);
   var espera = o.t0 ? o.t0 + retardAqui() - horaServidor() : 8000;
@@ -2408,6 +2424,46 @@ function fesOrdre(alHora) {
   if (o.tipus == 'tv' && o.canal) tvObre(o.canal);
   else if (o.tipus == 'cua' && o.cua && o.cua.length) repInicia(o.cua, o.pos || 0);
 }
+/* ---------- Controlar les altres pantalles (pausa, atura, apaga) ---------- */
+function fesControl(acc, de) {
+  var it = R.cua[R.pos], sona = TV.canal || it, pausat = TV.canal ? $('tv-v').paused : it ? sonaPausat() : true;
+  if (acc == 'pausa' && sona && !pausat) repPlay();
+  else if (acc == 'play' && sona && pausat) repPlay();
+  else if (acc == 'atura') { if (sona) atura(); }
+  else if (acc == 'apaga') { if (sona) atura(); if (marcObert()) tancaMarc(); var n = $('nit'); n.className = 'negre'; n.style.display = 'block'; NIT.fins = 0; }
+  else if (acc == 'encen') { $('nit').className = ''; nitDesperta(); }
+  if (de) avis(Tf('{1} ho ha fet des d\'allà', de), 2500);
+  pantHola();
+}
+function pantControl() {
+  $('cast').style.display = 'block';
+  $('cast-c').innerHTML = '<h3>' + T('Les altres pantalles') + '</h3><div class="gris" style="padding:8px 4px">' + T('Buscant…') + '</div>';
+  getJson(api('pantalles/llista', { d: DISP.id, _: Date.now() }), function (l) { PANT.l = l || []; pantControlPinta(); }, function () { });
+}
+function pantControlPinta() {
+  var h = '<h3>' + T('Les altres pantalles') + '</h3>';
+  if (!PANT.l.length) h += '<div class="gris" style="padding:8px 4px">' + T('No hi ha cap altra pantalla de Hearth connectada.') + '</div>';
+  for (var i = 0; i < PANT.l.length; i++) {
+    var p = PANT.l[i];
+    h += '<div class="pc-fila"><div class="nm"><b>' + esc(p.nom || T('Pantalla')) + '</b><small>' + (p.sona ? (p.pausa ? '⏸ ' : '♪ ') + esc(p.sona) : esc(T('No sona res'))) + '</small></div>' +
+      (p.sona ? '<button onclick="pantCtl(' + i + ',\'' + (p.pausa ? 'play' : 'pausa') + '\')" title="' + esc(T(p.pausa ? 'Reprèn' : 'Pausa')) + '">' + svg(p.pausa ? IC.play : IC.pausa) + '</button><button onclick="pantCtl(' + i + ',\'atura\')" title="' + esc(T('Atura')) + '">' + svg(IC.tanca) + '</button>' : '') +
+      '<button onclick="pantCtl(' + i + ',\'apaga\')" title="' + esc(T('Apaga la pantalla')) + '">⏻</button></div>';
+  }
+  if (PANT.l.length > 1) h += '<div style="text-align:right;margin-top:12px"><button onclick="pantCtlTots(\'atura\')">' + T('Atura-ho tot') + '</button> <button onclick="pantCtlTots(\'apaga\')">⏻ ' + T('Apaga-les totes') + '</button></div>';
+  h += '<div style="text-align:right;margin-top:10px"><button onclick="castTanca()">' + T('Tanca') + '</button></div>';
+  $('cast-c').innerHTML = h;
+}
+function pantCtl(i, acc) {
+  var p = PANT.l[i]; if (!p) return;
+  post(api('pantalles/envia', { a: p.id }), JSON.stringify({ tipus: 'ctl', acc: acc, de: DISP.nom || nomDispositiuDefecte() }), function () {
+    if (acc == 'pausa' || acc == 'play') p.pausa = acc == 'pausa';
+    if (acc == 'atura' || acc == 'apaga') p.sona = '';
+    pantControlPinta();
+    avis(acc == 'apaga' ? Tf('{1}: pantalla apagada', p.nom) : acc == 'atura' ? Tf('{1}: aturat', p.nom) : Tf('{1}: fet', p.nom), 2500);
+  }, errXarxa(T('enviar')));
+}
+function pantCtlTots(acc) { for (var i = 0; i < PANT.l.length; i++) pantCtl(i, acc); }
+
 /* Tria de diverses pantalles alhora */
 function castDiverses() {
   PANT.vistaDiv = true;
@@ -2493,11 +2549,11 @@ function nitComprova() {
   var vol = nitHora() && Date.now() > NIT.fins && !(TV.canal && TV.mode == 'gran') && Date.now() - darrerToc > 60000;
   var n = $('nit');
   if (vol) {
-    if (n.style.display != 'block') { if (marcObert()) tancaMarc(); n.style.display = 'block'; }
+    if (n.style.display != 'block') { if (marcObert()) tancaMarc(); n.className = ''; n.style.display = 'block'; }
     nitPinta();
-  } else if (n.style.display == 'block' && !nitHora()) n.style.display = 'none';
+  } else if (n.style.display == 'block' && !nitHora() && n.className != 'negre') n.style.display = 'none';
 }
-function nitDesperta() { $('nit').style.display = 'none'; NIT.fins = Date.now() + 3 * 60000; toc(); }
+function nitDesperta() { $('nit').className = ''; $('nit').style.display = 'none'; NIT.fins = Date.now() + 3 * 60000; toc(); }
 setInterval(nitComprova, 20000);
 
 /* ---------- Mode lleuger ---------- */
