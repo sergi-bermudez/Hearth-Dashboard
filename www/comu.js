@@ -283,7 +283,17 @@ function mandSeg() {
         if (l) l.style.display = 'none';
         mandSeg();
       };
-      im.onerror = function () { MAND.actius--; e.setAttribute('data-estat', 'err'); mandSeg(); };
+      im.onerror = function () {
+        MAND.actius--;
+        /* el servidor pot estar ocupat buscant (o el lloc ens demana calma): es torna a provar un parell de cops */
+        var n = +(e.getAttribute('data-intents') || 0);
+        if (n < 2) {
+          e.setAttribute('data-intents', n + 1);
+          e.setAttribute('data-bg', u.replace(/([?&])r=\d+&?/, '$1').replace(/[?&]$/, '') + (u.indexOf('?') >= 0 ? '&' : '?') + 'r=' + (n + 1));
+          setTimeout(function () { if (e.parentNode) { MAND.cua.push(e); mandSeg(); } }, 5000 + n * 5000);
+        } else e.setAttribute('data-estat', 'err');
+        mandSeg();
+      };
       im.src = u;
     })(MAND.cua.shift());
   }

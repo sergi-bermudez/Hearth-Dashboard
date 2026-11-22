@@ -320,7 +320,7 @@ function opcionsHtml(l, p, id) {
   var h = '';
   for (var i = 0; i < l.length; i++) {
     var o = l[i];
-    h += '<div class="op' + (i == 0 && o.punts >= 0.8 ? ' sug' : '') + '" onclick="triaOpcio(' + js(p) + ',' + js(o.id) + ',' + js(id || '') + ')"><div class="im"' + (o.poster ? ' data-bg="' + esc(api('imgx', { u: o.poster, m: 300 })) + '"' : '') + '><div class="lletra">' + (o.poster ? '' : esc(o.titol)) + '</div>' +
+    h += '<div class="op' + (i == 0 && o.punts >= 0.8 ? ' sug' : '') + '" onclick="triaOpcio(' + js(p) + ',' + js(o.id) + ',' + js(id || '') + ')"><div class="im"' + (o.poster ? ' data-bg="' + esc(api('imgx', { u: o.poster, m: 300 })) + '"' : '') + '><div class="lletra">' + esc(o.titol) + '</div>' +
       (i == 0 && o.punts >= 0.8 ? '<span class="sg">' + T('Suggerida') + '</span>' : '') + '</div><div class="nm">' + esc(o.titol) + '<small>' + esc((o.any || '') + (o.original && o.original != o.titol ? ' · ' + o.original : '') + ' · ' + o.fontNom) + '</small></div></div>';
   }
   return h;
@@ -393,7 +393,8 @@ function carregaOpcions(text, intent) {
 }
 function mandrosTria() {
   var els = $('tr-l').querySelectorAll('[data-bg]');
-  for (var i = 0; i < els.length; i++) { els[i].style.backgroundImage = bg(els[i].getAttribute('data-bg')); els[i].removeAttribute('data-bg'); }
+  for (var i = 0; i < els.length; i++) if (!els[i].getAttribute('data-estat')) { els[i].setAttribute('data-estat', 'cua'); MAND.cua.push(els[i]); }
+  mandSeg();
 }
 function tancaTria() { TR.p = null; $('tria').style.display = 'none'; }
 

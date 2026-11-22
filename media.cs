@@ -18,6 +18,8 @@ public static class Media
     static readonly string[] NomsPortada = { "cover", "folder", "front", "portada", "album", "albumart", "poster", "caratula" };
     static readonly string[] ExtPortada = { ".jpg", ".jpeg", ".png" };
     static readonly SemaphoreSlim xarxa = new SemaphoreSlim(4);
+    // les imatges van per una altra cua: si no, una cerca llarga (que ocupa la xarxa uns segons) deixa les caratules esperant
+    static readonly SemaphoreSlim xarxaImg = new SemaphoreSlim(4);
 
     static string Dir(string sub) { string d = Path.Combine(CasaServidor.DirDades, sub); Directory.CreateDirectory(d); return d; }
 
@@ -39,7 +41,7 @@ public static class Media
     {
         if (host.Contains("itunes.apple.com")) return 3200;      // l'API d'iTunes accepta unes 20 peticions per minut
         if (host.Contains("omdbapi.com")) return 1000;
-        if (host.Contains("upload.wikimedia.org")) return 700;
+        if (host.Contains("upload.wikimedia.org")) return 350;
         if (host.Contains("wikipedia.org") || host.Contains("wikidata.org")) return 250;
         if (host.Contains("themoviedb.org")) return 120;
         return 100;
@@ -125,7 +127,7 @@ public static class Media
         string tmp = Path.Combine(dir, h + ".part" + Thread.CurrentThread.ManagedThreadId);
         string hostImg = new Uri(url).Host;
         try { Torn(hostImg); } catch { return null; }
-        xarxa.Wait();
+        xarxaImg.Wait();
         bool alliberat = false;
         try
         {
@@ -158,11 +160,11 @@ public static class Media
                 try { File.WriteAllText(err, url); } catch { }
                 // una miniatura de la Viquipedia mes gran que l'original falla (passa amb les caratules, que son petites): es baixa l'original
                 string alt = OriginalWikimedia(url);
-                if (alt != null) { xarxa.Release(); alliberat = true; return ImatgeExterna(alt, ms); }
+                if (alt != null) { xarxaImg.Release(); alliberat = true; return ImatgeExterna(alt, ms); }
             }
             return null;
         }
-        finally { if (!alliberat) xarxa.Release(); }
+        finally { if (!alliberat) xarxaImg.Release(); }
     }
 
     // https://upload.wikimedia.org/wikipedia/en/thumb/a/ab/Nom.jpg/500px-Nom.jpg -> .../wikipedia/en/a/ab/Nom.jpg
