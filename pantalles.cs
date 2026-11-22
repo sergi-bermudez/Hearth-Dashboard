@@ -71,7 +71,7 @@ public static class Pantalles
             if (CasaServidor.Q(q, "v") == "2") {
                 int altres = 0;
                 lock (lk) foreach (KeyValuePair<string, P> kv in llista) if (kv.Key != d && (DateTime.Now - kv.Value.Vist).TotalSeconds < 25) altres++;
-                CasaServidor.Json(res, CasaServidor.Dic("o", ordres, "t", (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds, "n", altres));
+                CasaServidor.Json(res, CasaServidor.Dic("o", ordres, "t", (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds, "n", altres, "ver", Actualitza.Local()));
             }
             else CasaServidor.Json(res, ordres);
             return;

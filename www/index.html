@@ -2361,6 +2361,11 @@ function pantHola() {
     /* diferència entre el rellotge del servidor i el d'aquest aparell (per començar alhora) */
     if (r && r.t) { var ara = Date.now(); PANT.dif = r.t - (t0 + ara) / 2; }
     connexio(true);
+    /* el servidor s'ha actualitzat: aquesta pantalla es torna a carregar sola quan no sona res (així tots els aparells tenen la versió nova) */
+    if (r && r.ver) {
+      if (!PANT.ver) PANT.ver = r.ver;
+      else if (r.ver != PANT.ver && !TV.canal && !(R.cua.length && !sonaPausat()) && Date.now() - darrerToc > 60000) location.reload();
+    }
     if (l && l.length) rebOrdre(l[l.length - 1]);
   }, function () { connexio(false); });
 }
