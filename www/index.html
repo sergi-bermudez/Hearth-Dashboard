@@ -179,7 +179,7 @@ html.sa #dash{top:20px}
 .rt .lg{width:78px;height:78px;border-radius:16px;background:#fff center/68% no-repeat;margin-bottom:5px;position:relative;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .rt .lg.color{background-size:cover}
 .rt .lg.poster{background-color:#20252d;background-size:cover}
-.rt .lg .ic{position:absolute;left:21px;top:21px;width:36px;height:36px;fill:#9aa3af}
+.rt .lg .ic{position:absolute;left:50%;top:50%;width:36px;height:36px;margin:-18px 0 0 -18px;fill:#9aa3af}
 .rt .lg.color .ic{fill:rgba(255,255,255,.8)}
 .rt .nm{display:block;max-height:2.4em;overflow:hidden}
 /* Barra d'apps (amb caixa) */
@@ -472,7 +472,11 @@ body.lleu #tv .tv-ctl,body.lleu #tv .tv-canals,body.lleu #tv .tv-vod{-webkit-tra
   #dash{padding:12px 18px 8px}
   #hora{font-size:56px}
   body.e-fosc #hora,body.e-standby #hora{font-size:60px}
-  .t-dies,#agenda,#rapid,#fpeu{display:none !important}
+  .t-dies,#agenda,#fpeu{display:none !important}
+  /* el mòbil de costat: les dreceres (ràdios, Spotify...) es queden, petites i sense nom */
+  #rapid .rt .nm{display:none}
+  #rapid .rt .lg{width:52px;height:52px}
+  #rapid .rt{width:60px}
   .t-ara svg{width:40px;height:40px}
   .t-ara .gr{font-size:34px}
   .s-art{width:80px;height:80px}
