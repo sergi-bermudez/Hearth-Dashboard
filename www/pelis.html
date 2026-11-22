@@ -305,6 +305,8 @@ function confirmaActual(p, idEl) { getJson(api('peli-tria', { p: p, id: 'actual'
 function fet(p, d, idEl) {
   var e = P.tots[p];
   if (e) { e.titol = d.titol; e.any = d.any; e.genere = d.genere; e.nota = d.nota; e.trobada = !!d.fontNom; e.dubte = false; e.ok = !!d.confirmada; e.fons = !!d.fons; e.poster = !!d.poster; e.pv = 'x' + Date.now(); }
+  P.canviat = true;
+  if (P.pest != 'revisa' && $('fitxa').style.display != 'block') pinta();
   barraDesfer(p, Tf('Desada: {1}', d.titol + (d.any ? ' (' + d.any + ')' : '')));
   var el = idEl && $(idEl);
   if (el) { el.style.opacity = '.35'; setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600); }
@@ -326,6 +328,8 @@ function desfes(p) {
     avis(T('Desfet.'));
     if (FX.p == p) { FX.d = d; pintaFitxa(d, (ls('veient') || {})[p]); $('fx-poster').style.backgroundImage = bg(api('caratula', { p: p, m: 460, v: Date.now() })); }
     if (P.pest == 'revisa') $('vista').innerHTML = '';
+    var e = P.tots[p]; if (e) { e.pv = 'd' + Date.now(); e.titol = d.titol; e.any = d.any; }
+    P.canviat = true;
     carregaLlista();
   }, errXarxa(T('desfer')));
 }
@@ -445,7 +449,12 @@ function reprodueix(desDelPrincipi) {
   if (desDelPrincipi) { var st = ls('veient') || {}; delete st[e.p]; ls('veient', st); }
   if (Casa) Casa.video({ id: e.p, nom: FX.d.titol || titol(e), s: FX.d.any || T('Pel·lícula'), u: url, poster: api('caratula', { p: e.p, m: 300 }), subs: subs, k: 'peli', desa: 'veient', desDelPrincipi: !!desDelPrincipi });
 }
-function tancaFitxa() { FX.p = null; $('fitxa').style.display = 'none'; pintaPest(); }
+function tancaFitxa() {
+  FX.p = null; $('fitxa').style.display = 'none'; pintaPest();
+  /* si s'ha canviat la pel·lícula o la caràtula, la galeria es torna a pintar amb la nova */
+  if (P.canviat && P.pest != 'revisa') { var y = $('pag').scrollTop; pinta(); $('pag').scrollTop = y; }
+  P.canviat = false;
+}
 window.casaObre = function (arg) { arg = decodeURIComponent(arg); if (arg.indexOf('v:') === 0) fitxa(arg.substring(2)); };
 window.casaMostra = function () { carregaLlista(); };
 iniciaMandros();
