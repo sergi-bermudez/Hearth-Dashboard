@@ -373,14 +373,20 @@ function obreTria(p, text) {
   carregaOpcions(text || '');
 }
 function busca() { carregaOpcions(retalla($('tr-q').value || '')); }
-function carregaOpcions(text) {
-  var p = TR.p;
-  $('tr-nota').textContent = T('Buscant a TMDB, iTunes, Viquipèdia i Wikidata, en diversos idiomes…');
+/* algunes fonts són lentes (iTunes només accepta unes 20 cerques per minut): el servidor les deixa acabant
+   i aquí es torna a demanar uns quants cops, de manera que surten totes sense haver de buscar dues vegades */
+function carregaOpcions(text, intent) {
+  var p = TR.p, gen = TR.gen = (TR.gen || 0) + (intent ? 0 : 1);
+  intent = intent || 0;
+  if (!intent) $('tr-nota').textContent = T('Buscant a TMDB, iTunes, Viquipèdia i Wikidata, en diversos idiomes…');
   getJson(api('peli-opcions', { p: p, q: text }), function (d) {
-    if (TR.p != p) return;
+    if (TR.p != p || TR.gen != gen) return;
+    var mes = d.pendents > 0 && intent < 4;
+    if (mes) setTimeout(function () { if (TR.p == p && TR.gen == gen) carregaOpcions(text, intent + 1); }, 5000);
     if (!$('tr-q').value && d.cerca && d.cerca.length) $('tr-q').value = d.cerca[0];
     $('tr-nota').innerHTML = esc(Tf('Fitxer: {1}', d.fitxer || '') + ' · ' + T('Toca la correcta.')) +
-      '<div class="petit" style="margin-top:4px;opacity:.75">' + esc(T('He buscat:') + ' ' + (d.variants || d.cerca || []).join(' · ') + (d.fonts ? ' — ' + d.fonts : '') + (d.errors && d.errors.length ? ' — ' + T('Errors:') + ' ' + d.errors.join('; ') : '')) + '</div>';
+      '<div class="petit" style="margin-top:4px;opacity:.75">' + esc(T('He buscat:') + ' ' + (d.variants || d.cerca || []).join(' · ') + (d.fonts ? ' — ' + d.fonts : '') + (d.errors && d.errors.length ? ' — ' + T('Errors:') + ' ' + d.errors.join('; ') : '')) + '</div>' +
+      (mes ? '<div class="petit" style="margin-top:4px;color:#7fb0ff">' + esc(T('Encara buscant en més llocs…')) + '</div>' : '');
     $('tr-l').innerHTML = opcionsHtml(d.opcions || [], p, '') || '<div class="gris">' + T('No he trobat res. Prova amb el títol original o un altre nom.') + '</div>';
     mandrosTria();
   }, function () { $('tr-nota').textContent = T('No s\'ha pogut buscar.'); });

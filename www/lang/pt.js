@@ -993,3 +993,4 @@ TR.pt["Omplir la pantalla (es retallen les vores)"]="Preencher o ecrã (cortam-s
 TR.pt["Omplir, però sencera si és vertical en una pantalla horitzontal (o al revés)"]="Preencher, mas inteira se for vertical num ecrã horizontal (ou ao contrário)";
 TR.pt["Sempre sencera, amb el fons difuminat"]="Sempre inteira, com o fundo desfocado";
 TR.pt["Més"]="Mais";
+TR.pt["Encara buscant en més llocs…"]="Ainda a procurar em mais sítios…";

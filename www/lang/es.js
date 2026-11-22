@@ -993,3 +993,4 @@ TR.es["Omplir la pantalla (es retallen les vores)"]="Llenar la pantalla (se reco
 TR.es["Omplir, però sencera si és vertical en una pantalla horitzontal (o al revés)"]="Llenar, pero entera si es vertical en una pantalla horizontal (o al revés)";
 TR.es["Sempre sencera, amb el fons difuminat"]="Siempre entera, con el fondo difuminado";
 TR.es["Més"]="Más";
+TR.es["Encara buscant en més llocs…"]="Todavía buscando en más sitios…";

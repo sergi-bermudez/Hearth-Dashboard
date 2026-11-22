@@ -982,7 +982,7 @@ public static class Media
     static bool SenseNotes(Dictionary<string, object> m) { foreach (string k in new string[] { "nota", "imdb", "rotten", "wImdb", "wRt", "wMc" }) if (S(m, k) != "") return false; return true; }
 
     // Les pel.licules que s'assemblen a un titol, de moltes fonts i idiomes alhora, per triar-ne una
-    internal static List<Dictionary<string, object>> Opcions(List<string[]> cands, bool complet, List<string> errs)
+    internal static List<Dictionary<string, object>> Opcions(List<string[]> cands, bool complet, List<string> errs, int[] pendents = null)
     {
         List<Dictionary<string, object>> l = new List<Dictionary<string, object>>();
         if (!Internet()) return l;
@@ -1017,6 +1017,8 @@ public static class Media
             ThreadPool.QueueUserWorkItem(delegate { try { a2(); } catch (Exception ex) { if (errs != null) lock (errs) { if (errs.Count < 6 && !errs.Contains(ex.Message)) errs.Add(ex.Message); } } try { fet.Signal(); } catch { } });
         }
         fet.Wait(complet ? 40000 : 20000);
+        // les fonts lentes continuen en segon pla i deixen la resposta a la memoria cau: la pagina torna a demanar
+        if (pendents != null) { try { pendents[0] = fet.CurrentCount; } catch { } }
         List<Dictionary<string, object>> r;
         lock (l)
         {
@@ -1353,14 +1355,15 @@ public static class Media
                         Dictionary<string, object> o = new Dictionary<string, object>();
                         List<object> cs = new List<object>(); foreach (string[] c in cands) cs.Add(c[0] + (c[1] != "" ? " " + c[1] : ""));
                         List<string> errs = new List<string>();
-                        List<Dictionary<string, object>> ops = Opcions(cands, CasaServidor.Q(q, "rapid") != "1", errs);
+                        int[] pend = new int[1];
+                        List<Dictionary<string, object>> ops = Opcions(cands, CasaServidor.Q(q, "rapid") != "1", errs, pend);
                         Dictionary<string, int> per = new Dictionary<string, int>();
                         foreach (string f in new string[] { "TMDB", "iTunes", "Viquip\u00e8dia", "Wikidata" }) per[f] = 0;
                         foreach (Dictionary<string, object> op in ops) { string f = S(op, "fontNom"); if (f.StartsWith("Wikidata")) f = "Wikidata"; if (per.ContainsKey(f)) per[f]++; }
                         List<string> pf = new List<string>(); foreach (KeyValuePair<string, int> kv in per) pf.Add(kv.Key + " " + kv.Value);
                         if (A("tmdb", "") == "") pf[0] = "TMDB (sense clau)";
                         List<object> vs = new List<object>(); foreach (string[] c in cands) foreach (string v in Variants(c[0])) if (!vs.Contains(v)) vs.Add(v);
-                        o["cerca"] = cs; o["opcions"] = ops; o["fonts"] = string.Join(" \u00b7 ", pf.ToArray()); o["errors"] = errs; o["variants"] = vs; o["fitxer"] = Path.GetFileName(full.TrimEnd('\\', '/'));
+                        o["cerca"] = cs; o["opcions"] = ops; o["fonts"] = string.Join(" \u00b7 ", pf.ToArray()); o["errors"] = errs; o["variants"] = vs; o["pendents"] = pend[0]; o["fitxer"] = Path.GetFileName(full.TrimEnd('\\', '/'));
                         CasaServidor.Json(res, o);
                         return;
                     }
