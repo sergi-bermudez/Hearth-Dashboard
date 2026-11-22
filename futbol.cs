@@ -90,6 +90,49 @@ static class Futbol
         return p;
     }
 
+    static bool Es400(Exception e)
+    {
+        WebException we = e as WebException;
+        HttpWebResponse hr = we != null ? we.Response as HttpWebResponse : null;
+        return hr != null && (int)hr.StatusCode == 400;
+    }
+
+    // ESPN ja no sempre accepta un interval de dates per al futbol (respon 400): llavors es demana dia per dia
+    static List<object> Scoreboard(string lg, string d1, string d2)
+    {
+        List<object> r = new List<object>();
+        string b = Base + Uri.EscapeDataString(lg) + "/scoreboard";
+        try
+        {
+            object[] ev = L(Json(b + "?limit=300&dates=" + d1 + "-" + d2, 60), "events");
+            if (ev != null) r.AddRange(ev);
+            return r;
+        }
+        catch (Exception e) { if (!Es400(e)) throw; }
+        DateTime a = DateTime.ParseExact(d1, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+        DateTime z = DateTime.ParseExact(d2, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+        HashSet<string> vist = new HashSet<string>();
+        Exception darrer = null; int bons = 0;
+        for (DateTime d = a; d <= z && d < a.AddDays(20); d = d.AddDays(1))
+        {
+            try
+            {
+                object[] ev = L(Json(b + "?dates=" + d.ToString("yyyyMMdd"), d.Date == DateTime.Today ? 60 : 1800), "events");
+                bons++;
+                if (ev != null) foreach (object e in ev) if (vist.Add(S(e, "id"))) r.Add(e);
+            }
+            catch (Exception e) { darrer = e; }
+        }
+        if (bons == 0)
+        {
+            // ni dia per dia: com a minim, el d'avui (sense data)
+            object[] ev = L(Json(b, 60), "events");
+            if (ev != null) r.AddRange(ev);
+            else if (darrer != null) throw darrer;
+        }
+        return r;
+    }
+
     public static void Api(string nom, Dictionary<string, string> q, HttpListenerContext ctx)
     {
         HttpListenerResponse res = ctx.Response;
@@ -113,9 +156,7 @@ static class Futbol
                             {
                                 try
                                 {
-                                    object o = Json(Base + Uri.EscapeDataString(lg) + "/scoreboard?limit=300&dates=" + d1 + "-" + d2, 60);
-                                    object[] ev = L(o, "events");
-                                    if (ev != null) foreach (object e in ev) { Dictionary<string, object> p = Partit(e, lg); if (p != null) lock (bloc) tots.Add(p); }
+                                    foreach (object e in Scoreboard(lg, d1, d2)) { Dictionary<string, object> p = Partit(e, lg); if (p != null) lock (bloc) tots.Add(p); }
                                 }
                                 catch (Exception ex) { lock (bloc) errors[lg] = ex.Message; }
                                 try { fet.Signal(); } catch { }
