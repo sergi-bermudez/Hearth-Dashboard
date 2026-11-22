@@ -246,6 +246,36 @@ public static class RadioHls
         HttpListenerResponse res = ctx.Response;
         try
         {
+            if (nom == "mp3")
+            {
+                // La radio com un MP3 que no s'acaba mai: ffmpeg llegeix l'emissora (i s'hi torna a connectar si talla
+                // o si diu que "s'ha acabat") i en fa un MP3 continu. Una connexio per reproductor.
+                string u = CasaServidor.Q(q, "u");
+                if (!Regex.IsMatch(u, "^https?://", RegexOptions.IgnoreCase)) { CasaServidor.Error(res, 400, "URL"); return; }
+                string ff = SoPC.RutaFfmpeg();
+                if (ff == null) { CasaServidor.Error(res, 503, "Falta ffmpeg.exe"); return; }
+                string args = "-nostdin -loglevel error -user_agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Hearth\" " +
+                    "-reconnect 1 -reconnect_streamed 1 -reconnect_at_eof 1 -reconnect_delay_max 5 -rw_timeout 15000000 " +
+                    "-i " + Cometes(u) + " -vn -c:a libmp3lame -b:a 128k -ac 2 -ar 44100 -f mp3 pipe:1";
+                ProcessStartInfo si = new ProcessStartInfo(ff, args);
+                si.UseShellExecute = false; si.CreateNoWindow = true; si.RedirectStandardOutput = true; si.RedirectStandardError = true;
+                Process p = Process.Start(si);
+                p.ErrorDataReceived += delegate { };
+                p.BeginErrorReadLine();
+                try
+                {
+                    res.ContentType = "audio/mpeg";
+                    res.AddHeader("Cache-Control", "no-cache, no-store");
+                    res.SendChunked = true;
+                    if (ctx.Request.HttpMethod == "HEAD") return;
+                    Stream o = p.StandardOutput.BaseStream;
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = o.Read(buf, 0, buf.Length)) > 0) res.OutputStream.Write(buf, 0, n);   // si el reproductor marxa, Write falla
+                }
+                finally { try { if (!p.HasExited) p.Kill(); } catch { } try { p.Dispose(); } catch { } }
+                return;
+            }
             if (nom == "hls")
             {
                 string u = CasaServidor.Q(q, "u");
