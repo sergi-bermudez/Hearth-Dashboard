@@ -30,16 +30,75 @@ public static class Media
     static string A(string k, string def) { object v; Dictionary<string, object> a = Ajustos(); return a.TryGetValue(k, out v) && v != null && v.ToString() != "" ? v.ToString() : def; }
     static bool Internet() { return A("internet", "true").ToLowerInvariant() != "false"; }
 
+    // ---------- Respecte pels serveis de fora: poques peticions per lloc, memoria cau i pausa si diuen prou ----------
+    static readonly Dictionary<string, DateTime> properaPerLloc = new Dictionary<string, DateTime>();
+    static readonly Dictionary<string, DateTime> bloquejatFins = new Dictionary<string, DateTime>();
+    static readonly Dictionary<string, KeyValuePair<DateTime, string>> respostes = new Dictionary<string, KeyValuePair<DateTime, string>>();
+
+    static int Interval(string host)
+    {
+        if (host.Contains("itunes.apple.com")) return 3200;      // l'API d'iTunes accepta unes 20 peticions per minut
+        if (host.Contains("omdbapi.com")) return 1000;
+        if (host.Contains("upload.wikimedia.org")) return 700;
+        if (host.Contains("wikipedia.org") || host.Contains("wikidata.org")) return 250;
+        if (host.Contains("themoviedb.org")) return 120;
+        return 100;
+    }
+
+    // Espera el torn per a aquest lloc; si ens ha dit "massa peticions", no hi torna fins d'aqui a una estona
+    static void Torn(string host)
+    {
+        while (true)
+        {
+            int espera;
+            lock (properaPerLloc)
+            {
+                DateTime b;
+                if (bloquejatFins.TryGetValue(host, out b) && b > DateTime.Now) throw new WebException(host + ": massa peticions, ho deixo estar una estona");
+                DateTime p;
+                if (!properaPerLloc.TryGetValue(host, out p) || p <= DateTime.Now) { properaPerLloc[host] = DateTime.Now.AddMilliseconds(Interval(host)); return; }
+                espera = (int)(p - DateTime.Now).TotalMilliseconds + 5;
+            }
+            if (espera > 20000) throw new WebException(host + ": cua massa llarga");
+            Thread.Sleep(Math.Max(10, espera));
+        }
+    }
+
+    static void MassaPeticions(string host, WebException e)
+    {
+        HttpWebResponse hr = e.Response as HttpWebResponse;
+        if (hr != null && ((int)hr.StatusCode == 429 || (int)hr.StatusCode == 403 && host.Contains("itunes")))
+            lock (properaPerLloc) bloquejatFins[host] = DateTime.Now.AddSeconds(host.Contains("itunes") ? 90 : 60);
+    }
+
     static string Baixa(string url, int ms)
     {
+        lock (respostes)
+        {
+            KeyValuePair<DateTime, string> kv;
+            if (respostes.TryGetValue(url, out kv) && kv.Key > DateTime.Now) return kv.Value;
+        }
+        string host = new Uri(url).Host;
+        Torn(host);
         xarxa.Wait();
         try
         {
             HttpWebRequest rq = (HttpWebRequest)WebRequest.Create(url);
-            rq.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CasaServidor/2.4";
+            rq.UserAgent = "Hearth/4 (home media dashboard; https://github.com/sergi-bermudez/Hearth-Dashboard)";
             rq.Timeout = ms; rq.ReadWriteTimeout = ms;
-            using (WebResponse rs = rq.GetResponse())
-            using (StreamReader sr = new StreamReader(rs.GetResponseStream(), Encoding.UTF8)) return sr.ReadToEnd();
+            string txt;
+            try
+            {
+                using (WebResponse rs = rq.GetResponse())
+                using (StreamReader sr = new StreamReader(rs.GetResponseStream(), Encoding.UTF8)) txt = sr.ReadToEnd();
+            }
+            catch (WebException e) { MassaPeticions(host, e); throw; }
+            lock (respostes)
+            {
+                if (respostes.Count > 3000) respostes.Clear();
+                respostes[url] = new KeyValuePair<DateTime, string>(DateTime.Now.AddHours(12), txt);
+            }
+            return txt;
         }
         finally { xarxa.Release(); }
     }
@@ -64,6 +123,8 @@ public static class Media
         string err = Path.Combine(dir, h + ".err");
         if (File.Exists(err) && (DateTime.Now - File.GetLastWriteTime(err)).TotalHours < 12) return null;
         string tmp = Path.Combine(dir, h + ".part" + Thread.CurrentThread.ManagedThreadId);
+        string hostImg = new Uri(url).Host;
+        try { Torn(hostImg); } catch { return null; }
         xarxa.Wait();
         try
         {
@@ -84,10 +145,14 @@ public static class Media
             if (File.Exists(f)) File.Delete(tmp); else File.Move(tmp, f);
             return f;
         }
-        catch
+        catch (Exception ex)
         {
             try { File.Delete(tmp); } catch { }
-            try { File.WriteAllText(err, url); } catch { }
+            WebException we = ex as WebException;
+            HttpWebResponse hr = we != null ? we.Response as HttpWebResponse : null;
+            // "massa peticions" no vol dir que la imatge no existeixi: es torna a provar mes tard
+            if (hr != null && (int)hr.StatusCode == 429) MassaPeticions(hostImg, we);
+            else if (we == null || we.Status != WebExceptionStatus.Timeout) try { File.WriteAllText(err, url); } catch { }
             return null;
         }
         finally { xarxa.Release(); }
@@ -445,8 +510,8 @@ public static class Media
             Dictionary<string, object> d = JsonDe("https://" + ll + ".wikipedia.org/api/rest_v1/page/summary/" + Uri.EscapeDataString(pagina.Replace(' ', '_')), 8000) as Dictionary<string, object>;
             if (d == null || S(d, "type") == "disambiguation") continue;
             if (!m.ContainsKey("sinopsi") && S(d, "extract") != "") m["sinopsi"] = S(d, "extract");
-            Dictionary<string, object> img = d.ContainsKey("originalimage") ? d["originalimage"] as Dictionary<string, object> : (d.ContainsKey("thumbnail") ? d["thumbnail"] as Dictionary<string, object> : null);
-            if (!m.ContainsKey("poster") && S(img, "source") != "") m["poster"] = S(img, "source");
+            string mi = Miniatura500(d);
+            if (!m.ContainsKey("poster") && mi != null) m["poster"] = mi;
             if (!m.ContainsKey("fontNom")) { m["titol"] = Regex.Replace(S(d, "title"), @"\s*\([^)]*\)\s*$", ""); m["fontNom"] = "Viquip\u00e8dia"; }
             if (m.ContainsKey("poster") && m.ContainsKey("sinopsi")) return;
         }
@@ -689,10 +754,26 @@ public static class Media
             o["titol"] = Regex.Replace(t, @"\s*\([^)]*\)\s*$", "");
             Match ma = Regex.Match(t + " " + S(d, "description") + " " + S(d, "extract"), @"(19[2-9]\d|20[0-4]\d)"); if (ma.Success) o["any"] = ma.Value;
             if (S(d, "extract") != "") o["sinopsi"] = S(d, "extract");
-            Dictionary<string, object> img = d.ContainsKey("originalimage") ? d["originalimage"] as Dictionary<string, object> : (d.ContainsKey("thumbnail") ? d["thumbnail"] as Dictionary<string, object> : null);
-            if (S(img, "source") != "") o["poster"] = S(img, "source");
+            string mi = Miniatura500(d);
+            if (mi != null) o["poster"] = mi;
             lock (l) AfegeixOpcio(l, o, titol, any);
         }
+    }
+
+    static Dictionary<string, object> Resum(string wl, string pagina)
+    {
+        try { return JsonDe("https://" + wl + ".wikipedia.org/api/rest_v1/page/summary/" + Uri.EscapeDataString(pagina.Replace(' ', '_')), 8000) as Dictionary<string, object>; }
+        catch { return null; }
+    }
+
+    // La miniatura de la Viquipedia a 500 px d'ample (l'original pot fer molts MB)
+    static string Miniatura500(Dictionary<string, object> d)
+    {
+        if (d == null) return null;
+        Dictionary<string, object> t = d.ContainsKey("thumbnail") ? d["thumbnail"] as Dictionary<string, object> : null;
+        string u = S(t, "source");
+        if (u == "") return null;
+        return Regex.Replace(u, @"/(\d+)px-", "/500px-");
     }
 
     static readonly string[] ClassesFilm = { "Q11424", "Q202866", "Q24869", "Q506240", "Q1257444", "Q29168811", "Q17517379", "Q229390", "Q24862", "Q1261214" };
@@ -715,7 +796,7 @@ public static class Media
         catch { }
         if (ids.Count == 0) return;
         if (ids.Count > 45) ids.RemoveRange(45, ids.Count - 45);
-        Dictionary<string, object> e = JsonDe("https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels|claims&languages=" + ll + "|en|es|ca|pt|fr&ids=" + string.Join("|", ids.ToArray()), 10000) as Dictionary<string, object>;
+        Dictionary<string, object> e = JsonDe("https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=labels|claims|sitelinks&sitefilter=enwiki|eswiki|" + ll + "wiki&languages=" + ll + "|en|es|ca|pt|fr&ids=" + string.Join("|", ids.ToArray()), 10000) as Dictionary<string, object>;
         Dictionary<string, object> ents = e != null && e.ContainsKey("entities") ? e["entities"] as Dictionary<string, object> : null;
         if (ents == null) return;
         int n = 0;
@@ -752,27 +833,19 @@ public static class Media
             o["id"] = "wd:" + id; o["fontNom"] = "Wikidata";
             o["titol"] = local; if (en != "" && en != local) o["original"] = en;
             if (anyW != "") o["any"] = anyW;
-            // la caratula i la sinopsi, d'iTunes amb el titol angles (o el local)
+            // la caratula i la sinopsi, de la Viquipedia (la caratula sol ser a l'anglesa; la sinopsi, en el nostre idioma si n'hi ha)
             if (n++ < 8)
                 try
                 {
-                    string qq = en != "" ? en : local;
-                    object[] ir = ItunesCerca(qq, en != "" ? "us" : A("paisItunes", "es"), 8);
-                    Dictionary<string, object> millor = null; double pm = 0.5;
-                    if (ir != null)
-                        foreach (object x in ir)
-                        {
-                            Dictionary<string, object> p = x as Dictionary<string, object>;
-                            double sc = Semblanca(qq, S(p, "trackName"));
-                            if (anyW != "" && S(p, "releaseDate").StartsWith(anyW)) sc += 0.4;
-                            if (sc > pm) { pm = sc; millor = p; }
-                        }
-                    if (millor != null)
-                    {
-                        Dictionary<string, object> h = ItunesHit(millor);
-                        foreach (string k in new string[] { "poster", "sinopsi", "genere", "edat", "minuts" }) if (S(h, k) != "") o[k] = h[k];
-                        o["fontNom"] = "Wikidata + iTunes";
-                    }
+                    Dictionary<string, object> sl = it.ContainsKey("sitelinks") ? it["sitelinks"] as Dictionary<string, object> : null;
+                    Func<string, string> pag = delegate (string w) { return sl != null && sl.ContainsKey(w) ? S(sl[w] as Dictionary<string, object>, "title") : ""; };
+                    string pl = pag(ll + "wiki"), pe = pag("enwiki");
+                    Dictionary<string, object> dl = pl != "" ? Resum(ll, pl) : null, de = pe != "" ? Resum("en", pe) : null;
+                    string img = Miniatura500(de) ?? Miniatura500(dl);
+                    if (img != null) o["poster"] = img;
+                    string ext = S(dl, "extract"); if (ext == "") ext = S(de, "extract");
+                    if (ext != "") o["sinopsi"] = ext;
+                    if (img != null || ext != "") o["fontNom"] = "Wikidata + Viquip\u00e8dia";
                 }
                 catch { }
             lock (l) AfegeixOpcio(l, o, titol, any);
@@ -800,7 +873,8 @@ public static class Media
                 string q = vs[vi];
                 bool principal = vi == 0;
                 foreach (string lg in llengues) { string lg2 = lg; if (principal || lg2 == ll) feina.Add(delegate { OpTmdb(l, q, titol, any, lg2 + "-" + lg2.ToUpperInvariant()); }); }
-                foreach (string ps in paisos) { string ps2 = ps; if (principal || ps2 == pais) feina.Add(delegate { OpItunes(l, q, titol, any, ps2); }); }
+                // iTunes nomes accepta unes 20 peticions per minut: nomes el titol principal, i dues botigues
+                if (principal) foreach (string ps in paisos) { string ps2 = ps; if (ps2 == pais || ps2 == "us") feina.Add(delegate { OpItunes(l, q, titol, any, ps2); }); }
                 foreach (string lg in (complet ? new string[] { ll, "en" } : new string[] { ll })) { string lg2 = lg; feina.Add(delegate { OpWikidata(l, q, titol, any, lg2); }); }
                 if (principal) foreach (string lg in llengues) { string lg2 = lg; if (lg2 != "pt") feina.Add(delegate { OpWikipedia(l, q, titol, any, lg2); }); }
             }
