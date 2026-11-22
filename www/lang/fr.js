@@ -988,3 +988,7 @@ TR.fr["Mostra la data i el lloc de cada foto"]="Afficher la date et le lieu de c
 TR.fr["Toca per escoltar"]="Touchez pour écouter";
 TR.fr["Registre del so d'aquest aparell (si la música o la ràdio es talla)"]="Journal du son de cet appareil (si la musique ou la radio se coupe)";
 TR.fr["coincideix"]="chevauche";
+TR.fr["Encaix de les fotos"]="Cadrage des photos";
+TR.fr["Omplir la pantalla (es retallen les vores)"]="Remplir l'écran (bords rognés)";
+TR.fr["Omplir, però sencera si és vertical en una pantalla horitzontal (o al revés)"]="Remplir, mais entière si portrait sur écran paysage (ou l'inverse)";
+TR.fr["Sempre sencera, amb el fons difuminat"]="Toujours entière, avec fond flou";

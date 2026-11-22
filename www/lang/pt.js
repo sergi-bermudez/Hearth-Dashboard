@@ -988,3 +988,7 @@ TR.pt["Mostra la data i el lloc de cada foto"]="Mostrar a data e o local de cada
 TR.pt["Toca per escoltar"]="Toque para ouvir";
 TR.pt["Registre del so d'aquest aparell (si la música o la ràdio es talla)"]="Registo do som deste aparelho (se a música ou a rádio falhar)";
 TR.pt["coincideix"]="sobreposto";
+TR.pt["Encaix de les fotos"]="Enquadramento das fotos";
+TR.pt["Omplir la pantalla (es retallen les vores)"]="Preencher o ecrã (cortam-se as margens)";
+TR.pt["Omplir, però sencera si és vertical en una pantalla horitzontal (o al revés)"]="Preencher, mas inteira se for vertical num ecrã horizontal (ou ao contrário)";
+TR.pt["Sempre sencera, amb el fons difuminat"]="Sempre inteira, com o fundo desfocado";

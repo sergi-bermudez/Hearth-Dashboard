@@ -988,3 +988,7 @@ TR.en["Mostra la data i el lloc de cada foto"]="Show each photo's date and place
 TR.en["Toca per escoltar"]="Tap to listen";
 TR.en["Registre del so d'aquest aparell (si la música o la ràdio es talla)"]="This device's sound log (if music or radio cuts out)";
 TR.en["coincideix"]="overlaps";
+TR.en["Encaix de les fotos"]="Photo fit";
+TR.en["Omplir la pantalla (es retallen les vores)"]="Fill the screen (edges cropped)";
+TR.en["Omplir, però sencera si és vertical en una pantalla horitzontal (o al revés)"]="Fill, but whole if it's portrait on a landscape screen (or vice versa)";
+TR.en["Sempre sencera, amb el fons difuminat"]="Always whole, with a blurred background";

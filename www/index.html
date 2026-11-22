@@ -1975,7 +1975,10 @@ function marcFotos() {
 function marcHtml(fs, urls, mides) {
   var e = estilPassi();
   /* Una foto vertical en una pantalla horitzontal (o al revés) no es retalla: es veu sencera, amb el fons difuminat */
-  if (e != 'revista' && mides && mides[0] && mides[0][0] && mides[0][1]) {
+  /* Encaix (Configuració ▸ Passi de fotos): retallar per omplir la pantalla, sencera sempre, o sencera només si l'orientació no quadra */
+  var enc = A.ajustos.passiEncaix || 'retalla';
+  if (e != 'revista' && enc == 'sencera') e = 'marc';
+  if (e != 'revista' && enc == 'auto' && mides && mides[0] && mides[0][0] && mides[0][1]) {
     var vf = mides[0][1] > mides[0][0] * 1.05, vp = window.innerHeight > window.innerWidth;
     if (vf != vp) e = 'marc';
   }
