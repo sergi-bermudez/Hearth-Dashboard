@@ -1111,6 +1111,7 @@ var ESTIL_VELL = { fotos: 'ambient', targetes: 'widgets', vidre: 'widgets', rell
 function estil() { var e = A.ajustos.estil || 'ambient'; return ESTIL_VELL[e] || e; }
 function estatCos() {
   aplicaTele();
+  try { despertSo(); } catch (e) { }
   var f = A.ajustos.foscor;
   $('vel').style.opacity = (f == null ? (estil() == 'widgets' ? 10 : 25) : f) / 100;
   var c = ['e-' + estil()];
@@ -1161,6 +1162,35 @@ function despertEngega() {
   var prova = function () { if (DESPERT.v) { var p = DESPERT.v.play(); if (p && p['catch']) p['catch'](function () { }); } };
   prova(); DESPERT.toc = prova; document.addEventListener('touchend', prova); document.addEventListener('click', prova);
 }
+/* Mentre sona la ràdio o la música, la pantalla no s'apaga (amb la tele ja ho fa el vídeo).
+   Amb wake lock si n'hi ha; si no (iPad 3), un vídeo mut i invisible en bucle. A l'iOS vell només quan el so
+   va per Web Audio (PCM): un segon reproductor de vídeo podria aturar el d'àudio. */
+function despertSo() {
+  if (!window.DESPERT || !window.PCM) return;
+  var sona = !DESPERT.on && R.cua.length > 0 && !TV.canal && (PCM.actiu ? !PCM.pausat : !au.paused);
+  if (sona && !navigator.wakeLock && IOS_VELL && !PCM.actiu) sona = false;
+  if (sona == !!DESPERT.so) return;
+  DESPERT.so = sona;
+  if (sona) {
+    if (navigator.wakeLock && navigator.wakeLock.request) {
+      DESPERT.soDem = function () { if (DESPERT.so && !document.hidden) navigator.wakeLock.request('screen').then(function (w) { DESPERT.soWl = w; }, function () { }); };
+      DESPERT.soDem(); document.addEventListener('visibilitychange', DESPERT.soDem);
+      return;
+    }
+    var v = document.createElement('video');
+    v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.muted = true; v.loop = true; v.src = 'despert.mp4';
+    v.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none';
+    document.body.appendChild(v); DESPERT.sv = v;
+    DESPERT.soToc = function () { if (DESPERT.sv && DESPERT.sv.paused) { try { var p = DESPERT.sv.play(); if (p && p['catch']) p['catch'](function () { }); } catch (e) { } } };
+    DESPERT.soToc(); document.addEventListener('touchend', DESPERT.soToc); document.addEventListener('click', DESPERT.soToc);
+  } else {
+    if (DESPERT.soWl) { try { DESPERT.soWl.release(); } catch (e) { } DESPERT.soWl = null; }
+    if (DESPERT.soDem) { document.removeEventListener('visibilitychange', DESPERT.soDem); DESPERT.soDem = null; }
+    if (DESPERT.sv) { try { DESPERT.sv.pause(); DESPERT.sv.parentNode.removeChild(DESPERT.sv); } catch (e) { } DESPERT.sv = null; }
+    if (DESPERT.soToc) { document.removeEventListener('touchend', DESPERT.soToc); document.removeEventListener('click', DESPERT.soToc); DESPERT.soToc = null; }
+  }
+}
+setInterval(despertSo, 5000);
 function despertAtura() {
   clearInterval(DESPERT.t); DESPERT.t = null;
   if (DESPERT.wl) { try { DESPERT.wl.release(); } catch (e) { } DESPERT.wl = null; }
