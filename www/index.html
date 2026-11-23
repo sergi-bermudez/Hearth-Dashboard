@@ -1101,7 +1101,7 @@ function estatCos() {
   aplicaDespert();
 }
 /* Apaïsat de debò (16:9 o més ample, com un mòbil de costat o una tele): el moll a la dreta. L'iPad (4:3) no. */
-function esLat() { var w = window.innerWidth, h = window.innerHeight; if (window.NAV_TELE_DETECTAT) return w / h >= 1.55 && w >= 560; return A.ajustos.moll == 'baix' ? false : A.ajustos.moll == 'dreta' ? true : w / h >= 1.55 && w >= 560; }
+function esLat() { var w = window.innerWidth, h = window.innerHeight; return A.ajustos.moll == 'baix' ? false : A.ajustos.moll == 'dreta' ? true : w / h >= 1.55 && w >= 560; }
 function esPetit() { return Math.min(window.innerWidth, window.innerHeight) <= 340 || (window.innerWidth <= 480 && window.innerHeight <= 480); }
 var RZ = null;
 window.addEventListener('resize', function () { clearTimeout(RZ); RZ = setTimeout(function () { if (window.A && A.ajustos) estatCos(); }, 200); });
@@ -2010,10 +2010,7 @@ function tocaRadio(i) { repInicia([radioItem(A.radios[i])], 0); }
 var IOS_VELL = /(iPad|iPhone|iPod).* OS [4-9]_/.test(navigator.userAgent);
 if (IOS_VELL) document.documentElement.className += ' ios-vell';
 /* Navegadors de tele (LG webOS, Samsung Tizen, Android TV…). La ràdio hi va millor directa que en HLS (que s'hi entretalla) */
-/* PROVA: de moment les teles reben exactament el mateix que un Android (sense cap adaptació de tele).
-   Per tornar-les a adaptar, NAV_TELE ha de tornar a ser la detecció de la línia següent. */
-var NAV_TELE = false;
-/* i, mentre dura la prova, sense els ajustos d'aquest aparell que el fan diferent (mode tele, lleuger, moll) */
+var NAV_TELE = NAV_TELE_DETECTAT;
 function radioItem(s) {
   /* Vies possibles, per ordre: iOS vell -> HLS fet pel servidor (com la TV, que sí que va bé);
      http -> directe (el més ràpid); https -> via el servidor; m3u8 -> HLS reescrit */
@@ -2854,7 +2851,7 @@ setInterval(nitComprova, 20000);
 /* ---------- Mode lleuger ---------- */
 /* Automàtic: activat a iOS 9 o anterior. Es pot forçar a Configuració ▸ Pantalla d'inici */
 /* Mode tele: tot més gran (com si la pantalla fos un iPad) i navegació amb les fletxes del comandament */
-function modeTele() { if (window.NAV_TELE_DETECTAT) return false; return TELE.perUrl || (A.ajustosCarregats ? A.ajustos.tele === true : TELE.actiu); }
+function modeTele() { return TELE.perUrl || (A.ajustosCarregats ? A.ajustos.tele === true : TELE.actiu); }
 function aplicaTele() {
   var t = modeTele();
   /* el mode tele el decideix l'ajust d'aquest aparell (o ?tele=1 a l'adreça); en canviar es torna a carregar perquè les apps ho agafin */
@@ -2864,7 +2861,7 @@ function aplicaTele() {
   document.documentElement.style.zoom = t && z > 1.05 ? z.toFixed(2) : '';
 }
 window.addEventListener('resize', function () { if (window.A && A.ajustos) aplicaTele(); });
-function lleuger() { if (window.NAV_TELE_DETECTAT) return false; var v = A.ajustos.lleuger; return v === 'si' || v === true ? true : v === 'no' ? false : IOS_VELL || NAV_TELE; }
+function lleuger() { var v = A.ajustos.lleuger; return v === 'si' || v === true ? true : v === 'no' ? false : IOS_VELL || NAV_TELE; }
 
 /* ---------- Connexió a part per al so i el vídeo ----------
    Safari obre com a molt 6 connexions alhora amb un mateix servidor. Si estan ocupades
