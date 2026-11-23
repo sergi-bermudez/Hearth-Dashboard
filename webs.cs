@@ -56,11 +56,18 @@ public static class Webs
     const string NAV_SCRIPT = "(function(){try{window.open=function(u){if(u)location.href=u;return window;};" +
         "document.addEventListener('click',function(e){var a=e.target;while(a&&a.tagName!='A')a=a.parentElement;if(a&&a.target&&a.target!='_self')a.target='_self';},true);}catch(e){}})();";
 
+    // La mida de la pantalla i l'adre\u00e7a de cada aparell: si l'Edge es tanca (o es reinicia), la pagina es torna a obrir igual
+    static readonly Dictionary<string, object[]> navRecord = new Dictionary<string, object[]>();
+    static readonly Dictionary<string, string> navAdreca = new Dictionary<string, string>();
+
     static Captura ObreNav(string id, int w, int h, bool mobil, double dsf)
     {
         Captura c;
         lock (lk)
         {
+            object[] rec;
+            if (w > 0 && h > 0) navRecord[id] = new object[] { w, h, mobil, dsf };
+            else if (navRecord.TryGetValue(id, out rec)) { w = (int)rec[0]; h = (int)rec[1]; mobil = (bool)rec[2]; dsf = (double)rec[3]; }
             obertes.TryGetValue(id, out c);
             if (c == null || c.Pag == null || !c.Pag.Viu)
             {
@@ -75,7 +82,9 @@ public static class Webs
                 c.Dsf = dsf > 0 ? dsf : 1; c.Mobil = mobil;
                 c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", c.W, "height", c.H, "deviceScaleFactor", c.Dsf, "mobile", mobil), 5000);
                 if (mobil) try { c.Pag.Envia("Emulation.setTouchEmulationEnabled", CasaServidor.Dic("enabled", true, "maxTouchPoints", 1), 5000); } catch { }
-                c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", NAV_INICI), 10000);
+                string tornar;
+                if (!navAdreca.TryGetValue(id, out tornar) || !tornar.StartsWith("http")) tornar = NAV_INICI;
+                c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", tornar), 10000);
                 c.Cx = 0; c.Cy = 0; c.Cw = c.W; c.Ch = c.H; c.Retall = false;
                 obertes[id] = c;
                 if (neteja == null) neteja = new Timer(Neteja, null, 60000, 60000);
@@ -380,6 +389,8 @@ public static class Webs
                     {
                         Captura c = Obre(id);
                         object v = Edge.Avalua(c.Pag, NAV_INFO, 5000);
+                        Dictionary<string, object> vi = v as Dictionary<string, object>;
+                        if (vi != null && vi.ContainsKey("url") && vi["url"] != null) lock (lk) navAdreca[id] = vi["url"].ToString();
                         CasaServidor.Text(res, new JavaScriptSerializer().Serialize(v), "application/json");
                         return;
                     }

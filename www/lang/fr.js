@@ -1078,3 +1078,5 @@ TR.fr["Càmeres"]="Caméras";
 TR.fr["Connectant…"]="Connexion…";
 TR.fr["Controls"]="Commandes";
 TR.fr["Següent"]="Suivante";
+TR.fr["Passa a la pantalla d'inici"]="Déplacer vers l'accueil";
+TR.fr["Passa a Casa ▸ Càmeres"]="Déplacer vers Maison ▸ Caméras";

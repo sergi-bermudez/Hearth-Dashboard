@@ -301,7 +301,10 @@ function navCaptura() {
     if (W.carregant && W.seq.length <= 2 && !(W.info && W.info.carregant)) navProg(false);
     W.t = setTimeout(navCaptura, NAVM.video ? 120 : W.seq.length ? W.seq.shift() : 6000);
   };
-  nou.onerror = function () { $('estat').textContent = 'El PC no respon. Torno a provar…'; $('estat').style.display = 'block'; W.t = setTimeout(navCaptura, 4000); };
+  nou.onerror = function () { $('estat').textContent = 'El PC no respon. Torno a provar…'; $('estat').style.display = 'block'; W.t = setTimeout(function () {
+    /* si l'Edge del PC s'ha tancat, es torna a obrir amb la mida d'aquesta pantalla */
+    if (W.obert && W.obert.nav) post(api('web/nav-obre', navParams(W.obert.id)), '', navCaptura, navCaptura); else navCaptura();
+  }, 4000); };
   nou.src = u;
 }
 function navInfo() {
@@ -438,12 +441,19 @@ function wgObre() {
   var p = $('wg-panell');
   if (p.style.display == 'block') { p.style.display = 'none'; return; }
   var h = '<h3>' + esc(T('Widgets a la pantalla d\'inici')) + '</h3>';
-  for (var i = 0; i < WG.l.length; i++) h += '<div class="el"><div class="t">' + esc(WG.l[i].nom || WG.l[i].url) + '<br><small class="gris">' + (WG.l[i].lloc == 'casa' ? esc(T('Casa ▸ Càmeres')) + ' · ' : '') + esc(WG.l[i].mode == 'directe' ? T('En directe') : Tf('Cada {1}', wgCada(WG.l[i].interval))) + '</small></div><button onclick="wgTreu(' + i + ')">' + svg(IC.paperera) + '</button></div>';
+  for (var i = 0; i < WG.l.length; i++) h += '<div class="el"><div class="t">' + esc(WG.l[i].nom || WG.l[i].url) + '<br><small class="gris">' + (WG.l[i].lloc == 'casa' ? esc(T('Casa ▸ Càmeres')) + ' · ' : '') + esc(WG.l[i].mode == 'directe' ? T('En directe') : Tf('Cada {1}', wgCada(WG.l[i].interval))) + '</small></div><button title="' + esc(WG.l[i].lloc == 'casa' ? T('Passa a la pantalla d\'inici') : T('Passa a Casa ▸ Càmeres')) + '" onclick="wgMou(' + i + ')">' + (WG.l[i].lloc == 'casa' ? '→ ' + esc(T('Inici')) : '→ ' + esc(T('Casa'))) + '</button> <button onclick="wgTreu(' + i + ')">' + svg(IC.paperera) + '</button></div>';
   if (!WG.l.length) h += '<div class="gris petit" style="margin-bottom:8px">' + esc(T('Encara no n\'hi ha cap. Obre una web (una webcam, el temps, un gràfic de borsa…) i retalla\'n la part que vulguis veure a l\'inici.')) + '</div>';
   h += '<button class="pri" style="width:100%;margin-top:10px" onclick="wgComenca()">✂ ' + esc(T('Retalla una part d\'aquesta web')) + '</button>';
   p.innerHTML = h; p.style.display = 'block';
 }
 function wgCada(s) { s = s || 60; return s < 60 ? s + ' s' : s < 3600 ? Math.round(s / 60) + ' min' : Math.round(s / 3600) + ' h'; }
+/* una càmera feta com a widget es pot passar a l'app Casa, i al revés */
+function wgMou(i) {
+  var w = WG.l[i];
+  if (w.lloc == 'casa') delete w.lloc; else { w.lloc = 'casa'; w.mode = 'directe'; w.interval = 3; if (w.clica == null) w.clica = ''; }
+  wgDesa(function () { avis(w.lloc == 'casa' ? T('Càmera afegida a Casa') : T('Widget afegit a la pantalla d\'inici'), 3000); });
+  $('wg-panell').style.display = 'none'; wgObre();
+}
 function wgTreu(i) { WG.l.splice(i, 1); wgDesa(); $('wg-panell').style.display = 'none'; wgObre(); }
 function wgComenca() {
   $('wg-panell').style.display = 'none';

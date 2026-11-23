@@ -1078,3 +1078,5 @@ TR.es["Càmeres"]="Cámaras";
 TR.es["Connectant…"]="Conectando…";
 TR.es["Controls"]="Controles";
 TR.es["Següent"]="Siguiente";
+TR.es["Passa a la pantalla d'inici"]="Pasar a la pantalla de inicio";
+TR.es["Passa a Casa ▸ Càmeres"]="Pasar a Casa ▸ Cámaras";

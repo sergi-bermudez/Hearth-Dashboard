@@ -1078,3 +1078,5 @@ TR.en["Càmeres"]="Cameras";
 TR.en["Connectant…"]="Connecting…";
 TR.en["Controls"]="Controls";
 TR.en["Següent"]="Next";
+TR.en["Passa a la pantalla d'inici"]="Move to the home screen";
+TR.en["Passa a Casa ▸ Càmeres"]="Move to Home ▸ Cameras";
