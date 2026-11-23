@@ -2607,7 +2607,43 @@ function casaToca(i) {
 }
 
 /* ---------- API per a les apps ---------- */
+/* ---------- Temporitzador per dormir (Configuració ▸ Temporitzador): atura el so, la tele i els vídeos d'aquest aparell ---------- */
+var SON = { fi: 0, t: null, tf: null };
+function sonPosa(min) {
+  clearTimeout(SON.t); clearInterval(SON.tf); SON.tf = null;
+  if (!min) { SON.fi = 0; return; }
+  SON.fi = Date.now() + min * 60000;
+  SON.t = setTimeout(sonFi, min * 60000);
+}
+function sonFi() {
+  SON.fi = 0;
+  /* també el Cast i les altres pantalles de Hearth (si està marcat a Configuració ▸ Temporitzador) */
+  if (ls('sonTot') !== false) sonAturaFora();
+  if (!R.cua.length && !TV.canal) return;
+  /* el volum baixa a poc a poc durant 30 s (on es pot) i després s'atura */
+  var k = 0, v0 = VOL.v == null ? 100 : VOL.v;
+  SON.tf = setInterval(function () {
+    k++;
+    var v = v0 * Math.max(0, 1 - k / 30) / 100;
+    try { au.volume = v; $('tv-v').volume = v; } catch (e) { }
+    try { if (PCM.gain) PCM.gain.gain.value = v; } catch (e) { }
+    if (k < 30) return;
+    clearInterval(SON.tf); SON.tf = null;
+    if (TV.canal) tvAtura(); else repAtura();
+    try { au.volume = v0 / 100; $('tv-v').volume = v0 / 100; } catch (e) { }
+    try { if (PCM.gain) PCM.gain.gain.value = v0 / 100; } catch (e) { }
+  }, 1000);
+}
+function sonAturaFora() {
+  if (CAST.dev) castAtura();
+  getJson(api('cast/aturatot'), function () { }, function () { });
+  getJson(api('pantalles/llista', { d: DISP.id, _: Date.now() }), function (l) {
+    for (var i = 0; i < (l || []).length; i++) if (l[i].sona)
+      post(api('pantalles/envia', { a: l[i].id }), JSON.stringify({ tipus: 'ctl', acc: 'atura', de: DISP.nom || nomDispositiuDefecte() }), function () { }, function () { });
+  }, function () { });
+}
 window.Casa = {
+  son: sonPosa, sonFi: function () { return SON.fi; },
   R: R, au: au,
   instal: function () { return instalApp(); }, potInstal: function () { return !!INST.ev; }, installada: esInstallada,
   toca: repInicia, play: repPlay, atura: repAtura, seguent: repSeguent, anterior: repAnterior,

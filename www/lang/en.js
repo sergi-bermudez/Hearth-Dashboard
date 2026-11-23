@@ -1120,3 +1120,7 @@ TR.en["Desa el PIN"]="Save PIN";
 TR.en["El PIN ha de tenir 4 xifres"]="The PIN must have 4 digits";
 TR.en["PIN desat"]="PIN saved";
 TR.en["Missatges ja no demana PIN"]="Messages no longer asks for a PIN";
+TR.en["Atura la ràdio, la música, la tele o el vídeo d'aquí a una estona. Abans d'aturar-se, el volum baixa a poc a poc."]="Stops the radio, music, TV or video after a while. Before stopping, the volume goes down slowly.";
+TR.en["Atura-ho tot: també el que s'envia per Cast i el que sona a les altres pantalles de Hearth"]="Stop everything: also what is being cast and what plays on the other Hearth screens";
+TR.en["S'aturarà a les"]="It will stop at";
+TR.en["Temporitzador desactivat"]="Timer off";

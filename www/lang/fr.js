@@ -1120,3 +1120,7 @@ TR.fr["Desa el PIN"]="Enregistrer le code";
 TR.fr["El PIN ha de tenir 4 xifres"]="Le code doit avoir 4 chiffres";
 TR.fr["PIN desat"]="Code enregistré";
 TR.fr["Missatges ja no demana PIN"]="Messages ne demande plus de code";
+TR.fr["Atura la ràdio, la música, la tele o el vídeo d'aquí a una estona. Abans d'aturar-se, el volum baixa a poc a poc."]="Arrête la radio, la musique, la télé ou la vidéo dans un moment. Avant l'arrêt, le volume baisse doucement.";
+TR.fr["Atura-ho tot: també el que s'envia per Cast i el que sona a les altres pantalles de Hearth"]="Tout arrêter : aussi ce qui est envoyé par Cast et ce qui joue sur les autres écrans Hearth";
+TR.fr["S'aturarà a les"]="Arrêt à";
+TR.fr["Temporitzador desactivat"]="Minuterie désactivée";

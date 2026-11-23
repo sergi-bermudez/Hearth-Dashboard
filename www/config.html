@@ -168,6 +168,14 @@ body{background:#000}
     <div class="peu"><button class="pri" onclick="desaLlengua()">Desar</button></div>
   </div>
 
+  <div class="sec" id="s-temporitzador">
+    <h2>Temporitzador</h2>
+    <div class="desc">Atura la ràdio, la música, la tele o el vídeo d'aquí a una estona. Abans d'aturar-se, el volum baixa a poc a poc.</div>
+    <label class="check"><input type="checkbox" id="son-tot" onchange="ls('sonTot', this.checked)"> Atura-ho tot: també el que s'envia per Cast i el que sona a les altres pantalles de Hearth</label>
+    <div class="peu" id="son-b"></div>
+    <div class="gris" id="son-estat" style="margin-top:12px"></div>
+  </div>
+
   <div class="sec" id="s-funcions">
     <h2>Funcions opcionals</h2>
     <div class="desc">Aquestes funcions fan servir les webs de Spotify, WhatsApp, Google Messages i Facebook des de l'Edge del PC, d'una manera que les seves condicions d'ús potser no permeten. Per això estan desactivades: activa-les només si ho acceptes.</div>
@@ -1049,7 +1057,7 @@ var ICM = {
   imatge: 'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z'
 };
 var MENU = [
-  ['General', [['aparell', 'Aquest aparell', 'M18 0H6C4.34 0 3 1.34 3 3v18c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V3c0-1.66-1.34-3-3-3zm-6 22.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 18H5V3h14v15z', '#ff9f0a'], ['llengua', 'Idioma i país', ICM.globus, '#0a84ff'], ['inici', 'Pantalla d\'inici', ICM.pantalla, '#5e5ce6'], ['passi', 'Passi de fotos', ICM.imatge, '#ff375f'], ['agenda', 'Agenda', ICM.agenda, '#ff453a'], ['funcions', 'Funcions opcionals', ICM.interruptor, '#30d158']]],
+  ['General', [['aparell', 'Aquest aparell', 'M18 0H6C4.34 0 3 1.34 3 3v18c0 1.66 1.34 3 3 3h12c1.66 0 3-1.34 3-3V3c0-1.66-1.34-3-3-3zm-6 22.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 18H5V3h14v15z', '#ff9f0a'], ['llengua', 'Idioma i país', ICM.globus, '#0a84ff'], ['inici', 'Pantalla d\'inici', ICM.pantalla, '#5e5ce6'], ['passi', 'Passi de fotos', ICM.imatge, '#ff375f'], ['agenda', 'Agenda', ICM.agenda, '#ff453a'], ['temporitzador', 'Temporitzador', 'M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z', '#5e5ce6'], ['funcions', 'Funcions opcionals', ICM.interruptor, '#30d158']]],
   ['Contingut', [['carpetes', 'Carpetes del PC', IC.carpeta, '#0a84ff'], ['gfotos', 'Google Fotos', ICM.imatge, '#ff9f0a'], ['media', 'Caràtules i fitxes', IC.pelis, '#bf5af2'], ['tv', 'Canals de TV', IC.tv, '#64d2ff'], ['youtube', 'YouTube', IC.video, '#ff3b30']]],
   ['Connexions', [['casa', 'Casa (Tuya / Smart Life)', ICM.casa, '#ff9f0a'], ['spotify', 'Spotify', IC.spotify, '#1db954'], ['whatsapp', 'Missatges', IC.missatges, '#25d366']]],
   ['Compra', [['compra', 'Botigues i preus', 'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42a.25.25 0 01-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0020 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z', '#ff9f0a']]],
@@ -1074,6 +1082,7 @@ function pintaMenu() {
 /* Petit resum a la dreta de cada opció, com als Ajustos */
 function valorsMenu() {
   var v = {};
+  try { var sf = Casa && Casa.sonFi ? Casa.sonFi() : 0; v.temporitzador = sf ? Math.max(1, Math.round((sf - Date.now()) / 60000)) + ' min' : ''; } catch (e) { }
   try { v.spotify = C.aj && C.aj.spotify ? T('Activat') : T('Desactivat'); v.whatsapp = C.aj && (C.aj.whatsapp || C.aj.sms || C.aj.messenger) ? T('Activat') : T('Desactivat'); v.casa = C.aj && C.aj.tuya ? T('Connectat') : ''; } catch (e) { }
   try { var pa = ajV().passi || 'fos'; for (var j = 0; j < PASSIS.length; j++) if (PASSIS[j][0] == pa) v.passi = T(PASSIS[j][1]); } catch (e) { }
   try { var est = ajV().estil || 'ambient'; est = ESTIL_VELL[est] || est; for (var i = 0; i < ESTILS.length; i++) if (ESTILS[i][0] == est) v.inici = T(ESTILS[i][1]); } catch (e) { }
@@ -1082,7 +1091,25 @@ function valorsMenu() {
 }
 var CFG = { sec: ls('cfg.sec') || 'inici' };
 function nomSec(id) { for (var g = 0; g < MENU.length; g++) for (var i = 0; i < MENU[g][1].length; i++) if (MENU[g][1][i][0] == id) return T(MENU[g][1][i][1]); return T('Configuració'); }
+/* ---------- Temporitzador per dormir ---------- */
+function sonPinta() {
+  var m = [15, 30, 45, 60, 90, 120], h = '', fi = Casa && Casa.sonFi ? Casa.sonFi() : 0, i;
+  for (i = 0; i < m.length; i++) h += '<button onclick="sonTria(' + m[i] + ')">' + m[i] + ' min</button> ';
+  if (fi) h += '<button onclick="sonTria(0)">' + esc(T('Cancel·la')) + '</button>';
+  $('son-b').innerHTML = h;
+  if (fi) { var d = new Date(fi), q = Math.max(1, Math.round((fi - Date.now()) / 60000)); $('son-estat').textContent = T('S\'aturarà a les') + ' ' + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ' (' + q + ' min)'; }
+  else $('son-estat').textContent = T('Desactivat');
+}
+function sonTria(m) {
+  if (!Casa || !Casa.son) return;
+  Casa.son(m);
+  sonPinta();
+  avis(m ? T('Temporitzador') + ': ' + m + ' min' : T('Temporitzador desactivat'));
+  try { valorsMenu(); } catch (e) { }
+}
+setInterval(function () { if ($('s-temporitzador') && /\bon\b/.test($('s-temporitzador').className)) sonPinta(); }, 20000);
 function obreSec(id) {
+  if (id == 'temporitzador') setTimeout(function () { $('son-tot').checked = ls('sonTot') !== false; sonPinta(); }, 0);
   if (!$('s-' + id)) id = 'inici';
   if (id == 'compra') btCarrega();
   CFG.sec = id; ls('cfg.sec', id);

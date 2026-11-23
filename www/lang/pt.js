@@ -1120,3 +1120,7 @@ TR.pt["Desa el PIN"]="Guardar o PIN";
 TR.pt["El PIN ha de tenir 4 xifres"]="O PIN tem de ter 4 algarismos";
 TR.pt["PIN desat"]="PIN guardado";
 TR.pt["Missatges ja no demana PIN"]="Mensagens já não pede PIN";
+TR.pt["Atura la ràdio, la música, la tele o el vídeo d'aquí a una estona. Abans d'aturar-se, el volum baixa a poc a poc."]="Para a rádio, a música, a TV ou o vídeo daqui a pouco. Antes de parar, o volume baixa aos poucos.";
+TR.pt["Atura-ho tot: també el que s'envia per Cast i el que sona a les altres pantalles de Hearth"]="Parar tudo: também o que se envia por Cast e o que toca nos outros ecrãs do Hearth";
+TR.pt["S'aturarà a les"]="Vai parar às";
+TR.pt["Temporitzador desactivat"]="Temporizador desativado";

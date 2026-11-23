@@ -538,6 +538,16 @@ public static class Cast
                 CasaServidor.Json(res, l);
                 return;
             }
+            // Temporitzador per dormir: atura tot el que s'esta enviant per Cast (a qualsevol aparell)
+            if (nom == "cast/aturatot")
+            {
+                List<Disp> actius = new List<Disp>();
+                lock (lk) foreach (KeyValuePair<string, Sessio> kv in sessions) { Disp x; if (kv.Value != null && kv.Value.Viu && disps.TryGetValue(kv.Key, out x)) actius.Add(x); }
+                int n = 0;
+                foreach (Disp x in actius) { try { CastOrdre(x, "atura", 0); n++; } catch { } }
+                CasaServidor.Json(res, CasaServidor.Dic("ok", true, "aturats", n));
+                return;
+            }
             Disp d;
             lock (lk) disps.TryGetValue(CasaServidor.Q(q, "id"), out d);
             if (d == null) { CasaServidor.Error(res, 404, "No trobo l'aparell; torna a buscar-lo"); return; }
