@@ -351,19 +351,39 @@ function obrePeli(i) {
   var e = X.pelis[i];
   atura();
   /* primer el fitxer tal com és (si és un MP4 que aquest navegador entén, es pot avançar i tirar enrere);
-     si no el sap fer sonar, el servidor el converteix al vol a un MP4 que sí que entén */
-  var directe = /^(mp4|m4v)$/i.test(e.ext || ''), conv = api('radio/video', { p: e.p });
+     si no el sap fer sonar, el servidor el converteix a trossos de 5 minuts que es van reproduint un darrere l'altre */
+  var directe = /^(mp4|m4v)$/i.test(e.ext || '');
   var g = $('gran');
-  g.innerHTML = '<video id="vid" controls autoplay></video><button class="tanca" onclick="tancaGran()">✕ ' + T('Tanca') + '</button>';
+  g.innerHTML = '<video id="vid" controls autoplay></video><div class="hora" id="vid-est" style="font-size:28px;top:40px;bottom:auto"></div><button class="tanca" onclick="tancaGran()">✕ ' + T('Tanca') + '</button>';
   g.style.display = 'block';
-  var v = $('vid'), convertint = !directe;
+  var v = $('vid');
+  VC.p = e.p; VC.tros = -1; VC.v = v;
   v.addEventListener('error', function () {
-    if (!convertint) { convertint = true; avis(T('Convertint la pel·lícula per a aquest navegador…'), 5000); v.src = conv; try { v.play(); } catch (x) { } return; }
+    if (VC.tros < 0) { trossos(0); return; }
     avis(T('No s\'ha pogut reproduir aquest vídeo') + (v.error ? ' (codi ' + v.error.code + ')' : ''), 6000);
   }, false);
-  if (convertint) avis(T('Convertint la pel·lícula per a aquest navegador…'), 5000);
-  v.src = directe ? fUrl('pelis', e.p) : conv;
-  try { v.play(); } catch (x) { }
+  v.addEventListener('ended', function () { if (VC.tros >= 0) trossos(VC.tros + 1); }, false);
+  v.addEventListener('playing', function () { if ($('vid-est')) $('vid-est').innerHTML = ''; }, false);
+  if (directe) { v.src = fUrl('pelis', e.p); try { v.play(); } catch (x) { } }
+  else trossos(0);
+}
+var VC = { p: null, tros: -1, v: null, t: null };
+function trossos(n) {
+  clearTimeout(VC.t);
+  if (!VC.v || !$('vid')) return;
+  var p = VC.p;
+  getJson(api('radio/video', { p: p }), function (d) {
+    if (VC.p != p || !$('vid')) return;
+    if (d.trossos > n) {
+      VC.tros = n;
+      VC.v.src = api('radio/video', { p: p, i: n });
+      try { VC.v.play(); } catch (x) { }
+      return;
+    }
+    if (d.acabat) { if (n == 0) avis(T('No s\'ha pogut convertir la pel·lícula') + (d.error ? ': ' + d.error : ''), 8000); else tancaGran(); return; }
+    var est = $('vid-est'); if (est) est.innerHTML = esc(n == 0 ? T('Preparant la pel·lícula per a aquest navegador…') : T('Preparant el tros següent…'));
+    VC.t = setTimeout(function () { trossos(n); }, 3000);
+  }, function () { VC.t = setTimeout(function () { trossos(n); }, 5000); });
 }
 
 /* ---------- Passi de fotos ---------- */
@@ -392,7 +412,7 @@ function seguentFoto() {
   im.onerror = function () { PS.t = setTimeout(seguentFoto, 1000); };
   im.src = u;
 }
-function tancaGran() { clearTimeout(PS.t); var v = $('vid'); if (v) { try { v.pause(); } catch (e) { } } $('gran').innerHTML = ''; $('gran').style.display = 'none'; }
+function tancaGran() { clearTimeout(PS.t); clearTimeout(VC.t); VC.p = null; VC.v = null; var v = $('vid'); if (v) { try { v.pause(); } catch (e) { } } $('gran').innerHTML = ''; $('gran').style.display = 'none'; }
 
 /* ---------- Pantalles: aquest aparell apareix a les altres i rep el que li envien (com la pantalla normal) ---------- */
 var DISP = (function () {

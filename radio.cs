@@ -241,6 +241,63 @@ public static class RadioHls
         }
     }
 
+    class Conversio { public Process P; public string Dir, Error; public DateTime Vist = DateTime.Now; }
+    static readonly Dictionary<string, Conversio> conversions = new Dictionary<string, Conversio>();
+
+    static Conversio Converteix(string full)
+    {
+        string id = CasaServidor.Hash(full + "|" + File.GetLastWriteTimeUtc(full).Ticks).Substring(0, 16);
+        lock (conversions)
+        {
+            Conversio c;
+            if (conversions.TryGetValue(id, out c)) { c.Vist = DateTime.Now; return c; }
+            string arrel = Path.Combine(CasaServidor.DirDades, "conv-vells");
+            Directory.CreateDirectory(arrel);
+            // nomes es guarden les ultimes conversions (ocupen molt)
+            try
+            {
+                DirectoryInfo[] ds = new DirectoryInfo(arrel).GetDirectories();
+                Array.Sort(ds, delegate (DirectoryInfo a, DirectoryInfo b) { return b.LastWriteTimeUtc.CompareTo(a.LastWriteTimeUtc); });
+                for (int i = 2; i < ds.Length; i++) if (ds[i].Name != id) try { ds[i].Delete(true); } catch { }
+            }
+            catch { }
+            c = new Conversio { Dir = Path.Combine(arrel, id) };
+            bool fet = File.Exists(Path.Combine(c.Dir, "fet.txt"));
+            Directory.CreateDirectory(c.Dir);
+            if (!fet)
+            {
+                foreach (string f in Directory.GetFiles(c.Dir)) try { File.Delete(f); } catch { }
+                string ff = SoPC.RutaFfmpeg();
+                if (ff == null) throw new Exception("Falta ffmpeg.exe");
+                string args = "-nostdin -loglevel error -y -i " + Cometes(full) +
+                    " -map 0:v:0 -map 0:a:0? -c:v libx264 -preset veryfast -profile:v main -level 3.1 -pix_fmt yuv420p -vf \"scale=-2:'min(720,ih)'\" -b:v 2500k -maxrate 3000k -bufsize 6000k -force_key_frames \"expr:gte(t,n_forced*300)\"" +
+                    " -c:a aac -b:a 160k -ac 2 -ar 44100 -f segment -segment_time 300 -reset_timestamps 1 -segment_format mp4 -segment_format_options movflags=+faststart " + Cometes(Path.Combine(c.Dir, "t%03d.mp4"));
+                ProcessStartInfo si = new ProcessStartInfo(ff, args);
+                si.UseShellExecute = false; si.CreateNoWindow = true; si.RedirectStandardError = true;
+                Process p = Process.Start(si);
+                Conversio cc = c;
+                p.ErrorDataReceived += delegate (object o, DataReceivedEventArgs e) { if (!string.IsNullOrEmpty(e.Data)) cc.Error = e.Data; };
+                p.BeginErrorReadLine();
+                p.EnableRaisingEvents = true;
+                p.Exited += delegate { try { if (p.ExitCode == 0) File.WriteAllText(Path.Combine(cc.Dir, "fet.txt"), "1"); } catch { } };
+                c.P = p;
+                // si ningu la mira, s'atura
+                Timer t = null;
+                t = new Timer(delegate { try { if ((DateTime.Now - cc.Vist).TotalMinutes > 10 && cc.P != null && !cc.P.HasExited) { cc.P.Kill(); lock (conversions) conversions.Remove(id); t.Dispose(); } else if (cc.P == null || cc.P.HasExited) t.Dispose(); } catch { } }, null, 60000, 60000);
+            }
+            conversions[id] = c;
+            return c;
+        }
+    }
+
+    // un tros es pot enviar quan ja n'hi ha un altre de despres, o quan la conversio ha acabat
+    static bool TrosAcabat(Conversio c, int n)
+    {
+        if (!File.Exists(Path.Combine(c.Dir, "t" + n.ToString("000") + ".mp4"))) return false;
+        if (File.Exists(Path.Combine(c.Dir, "t" + (n + 1).ToString("000") + ".mp4"))) return true;
+        return c.P == null || c.P.HasExited;
+    }
+
     public static void Api(string nom, Dictionary<string, string> q, HttpListenerContext ctx)
     {
         HttpListenerResponse res = ctx.Response;
@@ -248,33 +305,25 @@ public static class RadioHls
         {
             if (nom == "video")
             {
-                // Una pel.licula convertida al vol per a navegadors vells (Xbox 360): H.264 720p i AAC estereo, en MP4
-                // fragmentat (es pot enviar mentre es fa), amb una mida molt gran perque el navegador l'accepti.
-                string full = CasaServidor.Ruta("pelis", CasaServidor.Q(q, "p"));
+                // Una pel.licula per a navegadors vells (Xbox 360): no entenen el MP4 fet al vol (error 3), nomes fitxers
+                // MP4 acabats. ffmpeg la converteix a trossos de 5 minuts (H.264 720p, AAC estereo, cada tros un MP4
+                // complet) i el navegador els va reproduint un darrere l'altre mentre es fan els seguents.
+                string rel = CasaServidor.Q(q, "p"), full = CasaServidor.Ruta("pelis", rel);
                 if (full == null || !File.Exists(full)) { CasaServidor.Error(res, 404, "No"); return; }
-                string ff = SoPC.RutaFfmpeg();
-                if (ff == null) { CasaServidor.Error(res, 503, "Falta ffmpeg.exe"); return; }
-                double ss; double.TryParse(CasaServidor.Q(q, "ss"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out ss);
-                string args = "-nostdin -loglevel error " + (ss > 0 ? "-ss " + ((int)ss) + " " : "") + "-i " + Cometes(full) +
-                    " -map 0:v:0 -map 0:a:0? -c:v libx264 -preset veryfast -profile:v main -level 3.1 -pix_fmt yuv420p -vf \"scale=-2:'min(720,ih)'\" -b:v 2500k -maxrate 3000k -bufsize 6000k" +
-                    " -c:a aac -b:a 160k -ac 2 -ar 44100 -movflags frag_keyframe+empty_moov+default_base_moof -f mp4 pipe:1";
-                ProcessStartInfo si = new ProcessStartInfo(ff, args);
-                si.UseShellExecute = false; si.CreateNoWindow = true; si.RedirectStandardOutput = true; si.RedirectStandardError = true;
-                Process p = Process.Start(si);
-                p.ErrorDataReceived += delegate { };
-                p.BeginErrorReadLine();
-                try
+                Conversio c = Converteix(full);
+                string tros = CasaServidor.Q(q, "i");
+                if (tros != "")
                 {
-                    res.ContentType = "video/mp4";
-                    res.AddHeader("Cache-Control", "no-cache, no-store");
-                    res.SendChunked = false; res.ContentLength64 = 20000000000L; res.KeepAlive = false;
-                    if (ctx.Request.HttpMethod == "HEAD") return;
-                    Stream o = p.StandardOutput.BaseStream;
-                    byte[] buf = new byte[65536];
-                    int n;
-                    while ((n = o.Read(buf, 0, buf.Length)) > 0) res.OutputStream.Write(buf, 0, n);
+                    int n; int.TryParse(tros, out n);
+                    string f = Path.Combine(c.Dir, "t" + n.ToString("000") + ".mp4");
+                    if (!File.Exists(f) || !TrosAcabat(c, n)) { CasaServidor.Error(res, 404, "Encara no"); return; }
+                    c.Vist = DateTime.Now;
+                    CasaServidor.EnviarFitxer(ctx, f);
+                    return;
                 }
-                finally { try { if (!p.HasExited) p.Kill(); } catch { } try { p.Dispose(); } catch { } }
+                int fets = 0;
+                while (TrosAcabat(c, fets)) fets++;
+                CasaServidor.Json(res, CasaServidor.Dic("trossos", fets, "acabat", c.P == null || c.P.HasExited, "error", c.Error ?? ""));
                 return;
             }
             if (nom == "mp3")
