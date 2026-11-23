@@ -147,7 +147,9 @@ html.sa #dash{top:20px}
 .t-dies svg{width:30px;height:30px;display:block;margin:2px auto}
 .d-mig{-webkit-flex:1;flex:1;min-height:20px;position:relative}
 #fpeu{position:absolute;right:0;bottom:6px;font-size:13px;opacity:.85;text-align:right;max-width:50%}
-#fweb{position:absolute;right:0;top:12px;bottom:12px;width:44%;background:rgba(0,0,0,.25) center/contain no-repeat;border-radius:14px;display:none}
+#fweb{position:absolute;right:0;top:12px;bottom:12px;width:44%;display:none;text-align:right}
+#fweb .wg{position:absolute;border-radius:16px;background:#111 center/cover no-repeat;box-shadow:0 6px 20px rgba(0,0,0,.35);position:relative;overflow:hidden;cursor:pointer;vertical-align:top}
+#fweb .wg span{position:absolute;left:8px;bottom:6px;font-size:12px;background:rgba(0,0,0,.5);padding:2px 8px;border-radius:8px;color:#fff}
 
 /* Ara sona (pla) */
 #sona{-webkit-flex:none;flex:none;margin-bottom:14px}
@@ -934,29 +936,48 @@ function fonsEstil() {
   return e == 'kenburns' ? ' kb' : e == 'marc' ? ' sencera' : '';
 }
 function clicMig(e) {
-  if (e.target.id == 'fweb') { var w = targetaWeb(); if (w) obre('webs', w.id); return; }
   obreMarc();
 }
 
 /* ---------- Web al dashboard (opcional) ---------- */
-var WB = { defs: [], t: null };
-function targetaWeb() {
-  var id = A.ajustos.targeta;
-  if (!id || id == 'fotos') return null;
-  for (var i = 0; i < WB.defs.length; i++) if (WB.defs[i].id == id) return WB.defs[i];
-  return null;
-}
+var WB = { defs: [], t: null, ts: {} };
+/* ---------- Widgets: parts de webs retallades des del navegador (una webcam, el temps, un gràfic de borsa...) ---------- */
 function pintaWebDash() {
-  /* les webs desades ja no existeixen (ara hi ha el navegador): no es mostren a la pantalla d'inici */
-  WB.defs = []; if ($('fweb')) $('fweb').style.display = 'none'; return;
-  var w = targetaWeb(), d = $('fweb');
-  clearTimeout(WB.t);
-  if (!w || A.vista != 'dash') { d.style.display = 'none'; return; }
+  var d = $('fweb'), l = WB.defs || [], h = '', i;
+  for (var k in WB.ts) if (WB.ts.hasOwnProperty(k)) clearTimeout(WB.ts[k]);
+  WB.ts = {};
+  if (!l.length || A.vista != 'dash' || $('mig').clientHeight < 120) { d.style.display = 'none'; return; }
   d.style.display = 'block';
-  var u = api('web/imatge', { id: w.id, min: 3000, t: Date.now() }), im = new Image();
-  im.onload = function () { d.style.backgroundImage = bg(u); };
+  /* amb widgets, el «tal dia com avui» deixa el lloc */
+  $('fpeu').style.display = 'none';
+  /* una graella de caselles quadrades, com els widgets de l'Android (1×1, 2×1, 2×2...): cada widget ocupa les caselles
+     de la seva mida i el tros retallat s'hi escala */
+  var Wd = d.clientWidth || 300, Hd = d.clientHeight || 300, gap = 10;
+  var cols = Wd > 520 ? 4 : 3, c = Math.floor((Wd - (cols - 1) * gap) / cols), files = Math.max(1, Math.floor((Hd + gap) / (c + gap)));
+  if (files < 2 && Hd > 140) { c = Math.floor((Hd - gap) / 2); files = 2; }
+  var ple = [], posats = [];
+  for (var f = 0; f < files; f++) { ple.push([]); for (var q = 0; q < cols; q++) ple[f].push(false); }
+  function cap(f, q, w, hh) { if (f + hh > files || q + w > cols) return false; for (var a = f; a < f + hh; a++) for (var b = q; b < q + w; b++) if (ple[a][b]) return false; return true; }
+  for (i = 0; i < l.length; i++) {
+    var m = /^(\d)x(\d)$/.exec(l[i].mida || '') || [0, 1, 1], w = Math.min(cols, +m[1]), hh = Math.min(files, +m[2]), lloc = null;
+    for (var f2 = 0; f2 < files && !lloc; f2++) for (var q2 = 0; q2 < cols && !lloc; q2++) if (cap(f2, q2, w, hh)) lloc = [f2, q2];
+    if (!lloc) continue;
+    for (var a2 = lloc[0]; a2 < lloc[0] + hh; a2++) for (var b2 = lloc[1]; b2 < lloc[1] + w; b2++) ple[a2][b2] = true;
+    posats.push(l[i]);
+    /* la graella s'alinea a la dreta (on hi ha l'espai lliure de la pantalla d'inici) */
+    var x = Wd - (cols - lloc[1]) * (c + gap) + gap, y = lloc[0] * (c + gap);
+    h += '<div class="wg" id="wg-' + esc(l[i].id) + '" onclick="event.stopPropagation();obre(\'webs\',' + js(l[i].url) + ')" style="left:' + x + 'px;top:' + y + 'px;width:' + (w * c + (w - 1) * gap) + 'px;height:' + (hh * c + (hh - 1) * gap) + 'px"><span>' + esc(l[i].nom || '') + '</span></div>';
+  }
+  d.innerHTML = h;
+  for (i = 0; i < posats.length; i++) refrescaWidget(posats[i]);
+}
+function refrescaWidget(w) {
+  var el = $('wg-' + w.id); if (!el || A.vista != 'dash') return;
+  var cada = w.mode == 'directe' ? 3 : Math.max(5, w.interval || 60);
+  var u = api('web/imatge', { id: w.id, min: cada * 1000 - 500, t: Date.now() }), im = new Image();
+  im.onload = function () { if ($('wg-' + w.id)) $('wg-' + w.id).style.backgroundImage = bg(u); WB.ts[w.id] = setTimeout(function () { refrescaWidget(w); }, cada * 1000); };
+  im.onerror = function () { WB.ts[w.id] = setTimeout(function () { refrescaWidget(w); }, 15000); };
   im.src = u;
-  WB.t = setTimeout(pintaWebDash, Math.max(w.mode == 'directe' ? 3 : (w.interval || 10), 3) * 1000);
 }
 
 /* ---------- Barra d'apps i navegació ---------- */

@@ -18,7 +18,7 @@ public static class Webs
         public byte[] Darrera;
         public DateTime Quan = DateTime.MinValue, Vist = DateTime.Now;
         public readonly object Lk = new object();
-        public int W, H; public double Dsf = 1, Zoom = 1; public bool Mobil;
+        public int W, H; public double Dsf = 1, Zoom = 1, Sx, Sy; public bool Mobil;
         public double Cx, Cy, Cw, Ch;
         public bool Retall;
     }
@@ -116,7 +116,7 @@ public static class Webs
         "if(e){t=(e.tagName||'').toLowerCase();var ty=(e.type||'').toLowerCase();" +
         "ed=(t=='textarea')||(t=='input'&&!/^(button|submit|checkbox|radio|range|color|file|image|reset|hidden)$/.test(ty))||e.isContentEditable===true;" +
         "if(ed)v=e.isContentEditable?(e.innerText||''):(e.value||'');}" +
-        "return {url:location.href,titol:document.title,carregant:document.readyState!='complete',edita:ed,valor:v.substring(0,2000),contrasenya:!!(e&&e.type=='password'),cercador:!!(e&&(e.type=='search'||e.getAttribute&&e.getAttribute('role')=='combobox'))};})()";
+        "return {url:location.href,titol:document.title,carregant:document.readyState!='complete',sx:window.scrollX,sy:window.scrollY,zoom:parseFloat(document.documentElement.style.zoom)||1,edita:ed,valor:v.substring(0,2000),contrasenya:!!(e&&e.type=='password'),cercador:!!(e&&(e.type=='search'||e.getAttribute&&e.getAttribute('role')=='combobox'))};})()";
 
     static Captura Obre(string id)
     {
@@ -149,6 +149,8 @@ public static class Webs
 
     static void Clip(Captura c, Dictionary<string, object> def)
     {
+        // un widget retallat des del navegador: la pagina desplacada i ampliada com estava quan es va retallar
+        c.Sx = Num(def, "sx", 0); c.Sy = Num(def, "sy", 0); c.Zoom = Num(def, "zoom", 1);
         Dictionary<string, object> cl = def.ContainsKey("clip") ? def["clip"] as Dictionary<string, object> : null;
         c.Retall = cl != null && Num(cl, "w", 0) > 10 && Num(cl, "h", 0) > 10;
         if (c.Retall) { c.Cx = Num(cl, "x", 0); c.Cy = Num(cl, "y", 0); c.Cw = Num(cl, "w", c.W); c.Ch = Num(cl, "h", c.H); }
@@ -173,6 +175,9 @@ public static class Webs
         // el zoom del pessic es mant\u00e9 en canviar de pagina
         if (id.StartsWith("nav-") && Math.Abs(c.Zoom - 1) > 0.01)
             try { Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{var d=document.documentElement;if(d&&d.style.zoom!='{0}')d.style.zoom='{0}';return 1;}})()", c.Zoom), 3000); } catch { }
+        // un widget: cada cop, la pagina a la posicio i l'ampliacio de quan es va retallar (si s'ha recarregat, tornaria a dalt)
+        if (!id.StartsWith("nav-") && (c.Sx > 0 || c.Sy > 0 || Math.Abs(c.Zoom - 1) > 0.01))
+            try { Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{var d=document.documentElement;if(d&&{2}!=1&&d.style.zoom!='{2}')d.style.zoom='{2}';if(Math.abs(window.scrollX-{0})>2||Math.abs(window.scrollY-{1})>2)window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy, c.Zoom), 3000); } catch { }
         lock (c.Lk)
         {
             c.Vist = DateTime.Now;

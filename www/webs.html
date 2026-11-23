@@ -52,6 +52,15 @@
 #n-prog{position:absolute;left:0;right:0;bottom:-1px;height:2px;overflow:hidden}
 #n-prog div{height:2px;width:0;background:#4f8ff7;-webkit-transition:width .4s,opacity .4s;transition:width .4s,opacity .4s}
 #marc{overflow:hidden}
+/* widgets */
+#wg-panell{position:absolute;right:10px;top:58px;width:360px;max-width:92%;background:#2b2e34;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);z-index:6;display:none;padding:12px}
+#wg-panell h3{margin:2px 0 10px;font-size:17px}
+#wg-panell .el{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+#wg-panell .el .t{-webkit-flex:1;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#wg-panell input,#wg-panell select{width:100%;font-size:16px;padding:8px 10px;margin:4px 0 8px;border-radius:8px;border:0;background:#3a3e46;color:#fff}
+#wg-sel{position:absolute;left:0;top:0;right:0;bottom:0;z-index:4;display:none;cursor:crosshair;background:rgba(0,0,0,.25)}
+#wg-sel .r{position:absolute;border:3px solid #ffcc00;background:rgba(255,204,0,.12);box-shadow:0 0 0 9999px rgba(0,0,0,.35)}
+#wg-sel .ajuda{position:absolute;left:50%;top:14px;margin-left:-180px;width:360px;text-align:center;background:rgba(0,0,0,.7);border-radius:10px;padding:8px;font-size:15px}
 #tecl{position:absolute;left:0;right:0;bottom:0;padding:8px 10px;background:#1b1f25;display:none;z-index:3}
 #tecl form{display:-webkit-flex;display:flex}
 #tecl input{-webkit-flex:1;flex:1;min-width:0;font-size:17px;padding:10px 12px}
@@ -73,11 +82,13 @@
     <button class="nb" onclick="navAcc('nav-enrere')" title="Enrere"><svg class="ic" viewBox="0 0 24 24"><path d="M15.4 7.4L14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg></button>
     <button class="nb" onclick="navAcc('nav-endavant')" title="Endavant"><svg class="ic" viewBox="0 0 24 24"><path d="M8.6 16.6L10 18l6-6-6-6-1.4 1.4 4.6 4.6z"/></svg></button>
     <form id="n-form" onsubmit="navVes($('n-adr').value);return false"><span id="n-cad"></span><input id="n-adr" type="text" inputmode="url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Busca o escriu una adreça" onfocus="navAdrFocus(true)" onblur="navAdrFocus(false)" oninput="navSuggereix(true)" onkeydown="if(event.keyCode==8||event.keyCode==46)NAVS.esborra=1"><button type="button" id="n-fav" onclick="navFavorit()" title="Afegeix als favorits">☆</button><button type="button" id="n-rec" onclick="navAcc('nav-recarrega')" title="Recarrega"><svg class="ic" viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button></form>
+    <button class="nb" onclick="wgObre()" title="Widgets: retalla una part de la web per a la pantalla d'inici"><svg class="ic" viewBox="0 0 24 24"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z"/></svg></button>
     <button class="nb" onclick="navTeclat()" title="Escriu a la web"><svg class="ic" viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg></button>
     <div id="n-prog"><div></div></div>
     <div id="n-sug"></div>
   </div>
-  <div id="marc"><div id="estat">Carregant…</div><img id="img" alt=""><div id="punt"></div>
+  <div id="wg-panell"></div>
+  <div id="marc"><div id="wg-sel"></div><div id="estat">Carregant…</div><img id="img" alt=""><div id="punt"></div>
     <div id="tecl"><form onsubmit="navEscriu(true);return false"><input id="tecl-t" type="text" autocapitalize="off" autocorrect="off"><button type="button" onclick="navEscriu(false)">Posa</button><button class="pri" type="submit">Envia ↵</button><button type="button" onclick="$('tecl').style.display='none'">✕</button></form></div></div>
 </div>
 <script src="comu.js"></script>
@@ -417,6 +428,75 @@ function navPessic(cx, cy, s) {
   navProg(true);
   post(api('web/nav-pessic', { id: W.obert.id, x: ((cx - r.left) / r.width).toFixed(4), y: ((cy - r.top) / r.height).toFixed(4), s: s.toFixed(3) }), '', navRefresca, errXarxa('ampliar'));
 }
+/* ---------- Widgets: retallar una part de la web per a la pantalla d'inici ---------- */
+var WG = { l: [], sel: null };
+dades('webs', function (d) { WG.l = d || []; });
+function wgDesa(fet) {
+  post(api('dades', { n: 'webs' }), JSON.stringify(WG.l), function () { try { if (Casa && Casa.websCanviades) Casa.websCanviades(WG.l); } catch (e) { } if (fet) fet(); }, errXarxa('desar els widgets'));
+}
+function wgObre() {
+  var p = $('wg-panell');
+  if (p.style.display == 'block') { p.style.display = 'none'; return; }
+  var h = '<h3>' + esc(T('Widgets a la pantalla d\'inici')) + '</h3>';
+  for (var i = 0; i < WG.l.length; i++) h += '<div class="el"><div class="t">' + esc(WG.l[i].nom || WG.l[i].url) + '<br><small class="gris">' + esc(WG.l[i].mode == 'directe' ? T('En directe') : Tf('Cada {1}', wgCada(WG.l[i].interval))) + '</small></div><button onclick="wgTreu(' + i + ')">' + svg(IC.paperera) + '</button></div>';
+  if (!WG.l.length) h += '<div class="gris petit" style="margin-bottom:8px">' + esc(T('Encara no n\'hi ha cap. Obre una web (una webcam, el temps, un gràfic de borsa…) i retalla\'n la part que vulguis veure a l\'inici.')) + '</div>';
+  h += '<button class="pri" style="width:100%;margin-top:10px" onclick="wgComenca()">✂ ' + esc(T('Retalla una part d\'aquesta web')) + '</button>';
+  p.innerHTML = h; p.style.display = 'block';
+}
+function wgCada(s) { s = s || 60; return s < 60 ? s + ' s' : s < 3600 ? Math.round(s / 60) + ' min' : Math.round(s / 3600) + ' h'; }
+function wgTreu(i) { WG.l.splice(i, 1); wgDesa(); $('wg-panell').style.display = 'none'; wgObre(); }
+function wgComenca() {
+  $('wg-panell').style.display = 'none';
+  var s = $('wg-sel');
+  s.innerHTML = '<div class="ajuda">' + esc(T('Arrossega per marcar la part que vols al widget')) + '</div><div class="r" style="display:none"></div>';
+  s.style.display = 'block';
+  WG.sel = null;
+}
+(function () {
+  var s = $('wg-sel'), o = null;
+  function pt(e) { var t = e.touches && e.touches.length ? e.touches[0] : e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e, r = $('img').getBoundingClientRect(); return { x: Math.max(0, Math.min(r.width, t.clientX - r.left)), y: Math.max(0, Math.min(r.height, t.clientY - r.top)), r: r }; }
+  function mou(e) {
+    if (!o) return; e.preventDefault();
+    var p = pt(e), x = Math.min(o.x, p.x), y = Math.min(o.y, p.y), w = Math.abs(p.x - o.x), h = Math.abs(p.y - o.y), rr = s.querySelector('.r'), mr = $('marc').getBoundingClientRect();
+    rr.style.display = 'block'; rr.style.left = (p.r.left - mr.left + x) + 'px'; rr.style.top = (p.r.top - mr.top + y) + 'px'; rr.style.width = w + 'px'; rr.style.height = h + 'px';
+    WG.sel = { x: x, y: y, w: w, h: h, iw: p.r.width, ih: p.r.height };
+  }
+  function ini(e) { e.preventDefault(); o = pt(e); }
+  function fi(e) { if (!o) return; o = null; e.preventDefault(); if (WG.sel && WG.sel.w > 30 && WG.sel.h > 30) wgForm(); }
+  s.addEventListener('touchstart', ini, false); s.addEventListener('mousedown', ini, false);
+  s.addEventListener('touchmove', mou, false); s.addEventListener('mousemove', mou, false);
+  s.addEventListener('touchend', fi, false); s.addEventListener('mouseup', fi, false);
+})();
+function wgForm() {
+  var p = $('wg-panell'), t = (W.info && W.info.titol) || '';
+  p.innerHTML = '<h3>' + esc(T('Nou widget')) + '</h3>' + esc(T('Nom')) + '<input id="wg-nom" type="text" value="' + esc(t.substring(0, 40)) + '">' +
+    esc(T('S\'actualitza')) + '<select id="wg-cada"><option value="directe">' + esc(T('En directe (webcams, vídeo)')) + '</option><option value="30">' + esc(Tf('Cada {1}', '30 s')) + '</option><option value="60" selected>' + esc(Tf('Cada {1}', '1 min')) + '</option><option value="600">' + esc(Tf('Cada {1}', '10 min')) + '</option><option value="3600">' + esc(Tf('Cada {1}', '1 h')) + '</option></select>' +
+    esc(T('Mida a l\'inici')) + '<select id="wg-mida">' + wgOpcionsMida() + '</select>' +
+    '<button onclick="wgCancel()">' + esc(T('Cancel·la')) + '</button> <button class="pri" onclick="wgCrea()">' + esc(T('Afegeix a l\'inici')) + '</button>';
+  p.style.display = 'block';
+}
+/* mides com els widgets de l'Android: caselles de la graella de la pantalla d'inici (columnes x files) */
+var WG_MIDES = [['1x1', 'Petit (1×1)'], ['2x1', 'Ample (2×1)'], ['1x2', 'Alt (1×2)'], ['2x2', 'Gran (2×2)'], ['3x1', 'Molt ample (3×1)'], ['3x2', 'Molt gran (3×2)']];
+function wgOpcionsMida() {
+  var s = WG.sel, a = s ? s.w / s.h : 1, def = a > 2.2 ? '3x1' : a > 1.4 ? '2x1' : a < 0.7 ? '1x2' : '1x1', h = '';
+  for (var i = 0; i < WG_MIDES.length; i++) h += '<option value="' + WG_MIDES[i][0] + '"' + (WG_MIDES[i][0] == def ? ' selected' : '') + '>' + esc(T(WG_MIDES[i][1])) + '</option>';
+  return h;
+}
+function wgCancel() { $('wg-panell').style.display = 'none'; $('wg-sel').style.display = 'none'; }
+function wgCrea() {
+  var s = WG.sel, mi = W.mida || navMida(), i = W.info || {};
+  if (!s || !i.url) return;
+  /* el tros, en píxels de la web (la imatge es veu a la mida de la pàgina) */
+  var kx = mi.w / s.iw, ky = mi.h / s.ih, c = $('wg-cada').value;
+  var w = { id: 'w' + Math.random().toString(36).substring(2, 10), nom: $('wg-nom').value || i.titol || '', url: i.url, w: mi.w, h: mi.h,
+    sx: Math.round(i.sx || 0), sy: Math.round(i.sy || 0), zoom: i.zoom || 1,
+    clip: { x: Math.round(s.x * kx), y: Math.round(s.y * ky), w: Math.round(s.w * kx), h: Math.round(s.h * ky) },
+    mode: c == 'directe' ? 'directe' : 'imatge', interval: c == 'directe' ? 3 : +c, mida: $('wg-mida').value };
+  WG.l.unshift(w);
+  wgDesa(function () { avis(T('Widget afegit a la pantalla d\'inici'), 3000); });
+  wgCancel();
+}
+
 /* si la pantalla gira o canvia de mida, la web del PC també */
 window.addEventListener('resize', function () {
   if (!W.obert || !W.obert.nav) return;
@@ -429,6 +509,8 @@ window.casaAmaga = function () { W.actiu = false; clearTimeout(W.t); };
 window.casaTanca = window.casaAmaga;
 window.casaObre = function (a) {
   a = decodeURIComponent(a);
+  /* des d'un widget de la pantalla d'inici: s'obre aquella web al navegador */
+  if (/^https?:/i.test(a)) { obreNav(a); return; }
   for (var i = 0; i < W.defs.length; i++) if (W.defs[i].id == a) obre(i);
   W.pendent = a;
 };
@@ -436,6 +518,7 @@ dades('webs', function (d) {
   W.defs = d || [];
   pinta();
   var h = W.pendent || (location.hash.length > 1 ? decodeURIComponent(location.hash.substring(1)) : ''), ja = false;
+  if (/^https?:/i.test(h)) { obreNav(h); ja = true; h = ''; }
   if (h) for (var i = 0; i < W.defs.length; i++) if (W.defs[i].id == h) { obre(i); ja = true; }
   /* l'app s'obre directament al navegador (les webs desades, amb el botó de la graella) */
   if (!ja) obreNav('');
