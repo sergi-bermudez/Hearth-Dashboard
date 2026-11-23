@@ -29,6 +29,28 @@ h2.g{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8d95a1;ma
 .ap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:12px;background:#ff9f1c;margin-top:-9px}
 .ap .bts{position:absolute;left:10px;right:10px;bottom:10px;display:-webkit-flex;display:flex}
 .ap .bts button{-webkit-flex:1;flex:1;margin:0 3px;padding:8px 0;font-size:13px}
+.ap .inf{position:absolute;right:40px;top:8px;background:none;padding:4px 8px;font:700 15px Georgia,serif;color:#5d6673}
+.ap .gran{font-size:30px;font-weight:300;margin-top:6px;line-height:1}
+.ap .gran small{font-size:16px;color:#8d95a1;margin-left:6px}
+#det{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:50;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#det .cx{max-width:560px;margin:30px auto;background:#1f242b;border-radius:22px;padding:20px;position:relative}
+#det h3{margin:0 40px 4px 0;font-size:22px}
+#det .tanca{position:absolute;right:14px;top:12px;background:none;font-size:26px;padding:4px 10px;color:#8d95a1}
+#det .grans{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:14px -6px 6px}
+#det .gv{-webkit-flex:1;flex:1;min-width:120px;margin:6px;background:rgba(255,255,255,.06);border-radius:16px;padding:12px 14px;cursor:pointer}
+#det .gv.sel{background:rgba(255,171,61,.18)}
+#det .gv b{display:block;font-size:30px;font-weight:300}
+#det .gv span{font-size:13px;color:#8d95a1}
+#det canvas{width:100%;height:150px;display:block;margin:6px 0 4px}
+#det .fl{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-flex-wrap:wrap;flex-wrap:wrap;padding:10px 0;border-top:1px solid rgba(255,255,255,.07);font-size:15px}
+#det .fl .k{-webkit-flex:1;flex:1;color:#aeb5bf}
+#det .fl .v{text-align:right;max-width:60%;word-break:break-all;margin-left:8px}
+#det .fl button{margin-left:6px;padding:7px 12px;font-size:13px}
+#det .fl button.si{background:#ffab3d;color:#111}
+#det .fl input[type=range]{width:150px;margin-left:8px;-webkit-appearance:none;height:28px;background:transparent}
+#det input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:rgba(128,128,128,.35)}
+#det input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:12px;background:#ff9f1c;margin-top:-9px}
+#det .gris{font-size:13px}
 @media (orientation:portrait){ .ap{width:33.33%} }
 </style>
 </head>
@@ -38,6 +60,7 @@ h2.g{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8d95a1;ma
   <div class="esc" id="esc"></div>
   <div id="cont"><div class="gris">Carregant…</div></div>
 </div>
+<div id="det" onclick="if(event.target==this)tancaDet()"><div class="cx" id="detc"></div></div>
 <script src="comu.js"></script>
 <script>
 dinsCasa('casa');
@@ -52,7 +75,7 @@ var ICA = {
 };
 var GRUPS_CAT = [['llum', 'Llums', ['dj', 'dd', 'fwd', 'tgq', 'xdd', 'dc', 'tyndj', 'gyd']], ['endoll', 'Endolls i interruptors', ['cz', 'pc', 'kg', 'tdq', 'dlq', 'qjdcz']], ['persiana', 'Persianes i cortines', ['cl', 'clkg', 'mc']], ['clima', 'Clima', ['wk', 'kt', 'qn', 'rs', 'fs', 'kj', 'cs', 'wkf']], ['sensor', 'Sensors', ['wsdcg', 'mcs', 'pir', 'ywbj', 'rqbj', 'sj', 'co2bj', 'pm2.5', 'hjjcy', 'ldcg']]];
 var INTERRUPTORS = ['switch_led', 'switch', 'switch_1', 'switch_2', 'switch_3', 'switch_4', 'switch_usb1', 'led_switch'];
-var CA = { l: [], fav: [], t: null, ocupat: 0 };
+var CA = { l: [], fav: [], t: null, ocupat: 0, sp: {}, det: null, graf: null, punts: null };
 
 function tipus(d) {
   for (var i = 0; i < GRUPS_CAT.length; i++) if (GRUPS_CAT[i][2].indexOf(d.cat) >= 0) return GRUPS_CAT[i][0];
@@ -64,20 +87,111 @@ function brillantor(d) {
   if (typeof d.estat.bright_value == 'number') return { codi: 'bright_value', min: 25, max: 255 };
   return null;
 }
+var NOMS = {
+  va_temperature: 'Temperatura', temp_current: 'Temperatura', temp_indoor: 'Temperatura', temp_set: 'Temperatura desitjada',
+  va_humidity: 'Humitat', humidity_value: 'Humitat', humidity_current: 'Humitat', humidity_set: 'Humitat desitjada',
+  battery_percentage: 'Bateria', va_battery: 'Bateria', battery_state: 'Bateria', battery_value: 'Bateria',
+  temp_unit_convert: 'Unitat', maxtemp_set: 'Alarma temp. màxima', minitemp_set: 'Alarma temp. mínima', maxhum_set: 'Alarma humitat màxima', minihum_set: 'Alarma humitat mínima',
+  temp_alarm: 'Alarma temperatura', hum_alarm: 'Alarma humitat', temp_sensitivity: 'Sensibilitat temperatura', hum_sensitivity: 'Sensibilitat humitat',
+  bright_value: 'Brillantor', bright_value_v2: 'Brillantor', temp_value: 'Temperatura de color', temp_value_v2: 'Temperatura de color', colour_data: 'Color', colour_data_v2: 'Color',
+  work_mode: 'Mode', mode: 'Mode', countdown: 'Temporitzador', countdown_1: 'Temporitzador', cur_power: 'Potència', cur_voltage: 'Voltatge', cur_current: 'Corrent', add_ele: 'Consum',
+  doorcontact_state: 'Porta', pir: 'Moviment', percent_control: 'Posició', percent_state: 'Posició', control: 'Control', co2_value: 'CO₂', pm25_value: 'PM2.5', voc_value: 'COV',
+  bright_state: 'Llum ambient', relay_status: 'En tornar el corrent', light_mode: 'Indicador', child_lock: 'Bloqueig infantil', fan_speed: 'Ventilador', fan_speed_enum: 'Ventilador',
+  switch: 'Encès', switch_led: 'Encès', switch_1: 'Interruptor 1', switch_2: 'Interruptor 2', switch_3: 'Interruptor 3', switch_4: 'Interruptor 4', switch_usb1: 'USB', led_switch: 'Llum', start: 'Encès',
+  smoke_sensor_status: 'Fum', gas_sensor_status: 'Gas', watersensor_state: 'Aigua', tamper_alarm: 'Manipulació'
+};
+var TEMPS = ['va_temperature', 'temp_current', 'temp_indoor'], HUMS = ['va_humidity', 'humidity_value', 'humidity_current'], BATS = ['battery_percentage', 'va_battery', 'battery_value'];
+function specDe(d, codi) {
+  var sp = CA.sp[d.id], l, i;
+  if (!sp) return null;
+  l = (sp.status || []).concat(sp.functions || []);
+  for (i = 0; i < l.length; i++) if (l[i].code == codi) {
+    if (!l[i]._v) { try { l[i]._v = typeof l[i].values == 'string' ? JSON.parse(l[i].values) : (l[i].values || {}); } catch (e) { l[i]._v = {}; } }
+    return l[i];
+  }
+  return null;
+}
+function escriptura(d, codi) {
+  var sp = CA.sp[d.id], l = (sp && sp.functions) || [];
+  for (var i = 0; i < l.length; i++) if (l[i].code == codi) { specDe(d, codi); if (!l[i]._v) { try { l[i]._v = typeof l[i].values == 'string' ? JSON.parse(l[i].values) : (l[i].values || {}); } catch (e) { l[i]._v = {}; } } return l[i]; }
+  return null;
+}
+// numeric value with the right scale and unit (from the device specification when known)
+function valorNum(d, codi) {
+  var v = d.estat[codi], s = specDe(d, codi), sc, u = '';
+  if (typeof v != 'number') return null;
+  if (s && s._v && typeof s._v.scale == 'number') sc = s._v.scale;
+  else if (codi == 'va_temperature' || codi == 'temp_indoor' || (codi == 'temp_current' && Math.abs(v) > 60)) sc = 1;
+  else if (codi == 'cur_power' || codi == 'cur_voltage') sc = 1;
+  else if (codi == 'add_ele') sc = 3;
+  else sc = 0;
+  if (s && s._v && s._v.unit) u = s._v.unit;
+  else if (TEMPS.indexOf(codi) >= 0 || /^(temp_set|maxtemp|minitemp)/.test(codi)) u = '°';
+  else if (HUMS.indexOf(codi) >= 0 || BATS.indexOf(codi) >= 0 || /percent|humidity_set|hum_set/.test(codi)) u = '%';
+  else if (codi == 'cur_power') u = 'W'; else if (codi == 'cur_voltage') u = 'V'; else if (codi == 'cur_current') u = 'mA'; else if (codi == 'add_ele') u = 'kWh';
+  if (u == '℃' || u == 'C' || u == '°C') u = '°';
+  var n = v / Math.pow(10, sc);
+  return { n: n, t: n.toFixed(sc ? 1 : 0) + (u == '°' || u == '%' || !u ? '' : ' ') + u };
+}
+function primer(d, l) { for (var i = 0; i < l.length; i++) if (typeof d.estat[l[i]] == 'number') return l[i]; return null; }
+function textValor(d, codi) {
+  var v = d.estat[codi], n, br = brillantor(d);
+  if (br && br.codi == codi && typeof v == 'number') return Math.round(100 * (v - br.min) / (br.max - br.min)) + '%';
+  n = valorNum(d, codi);
+  if (n) return n.t;
+  if (typeof v == 'boolean') {
+    if (codi == 'doorcontact_state') return v ? T('Obert') : T('Tancat');
+    if (/alarm|sensor_status|state$|lock/.test(codi)) return v ? T('Sí') : T('No');
+    return v ? T('Encès') : T('Apagat');
+  }
+  if (codi == 'battery_state') return { low: T('Baixa'), middle: T('Mitjana'), high: T('Alta') }[v] || v;
+  if (codi == 'pir') return v == 'pir' ? T('Sí') : T('No');
+  if (codi == 'temp_unit_convert') return v == 'f' ? '°F' : '°C';
+  if (typeof v == 'string') return textEnum(codi, v);
+  if (v && typeof v == 'object') return JSON.stringify(v);
+  return v == null ? '' : String(v);
+}
+function textEnum(c, v) {
+  if (c == 'temp_unit_convert') return v == 'f' ? '°F' : '°C';
+  var m = { white: T('Blanc'), colour: T('Color'), scene: T('Escena'), music: T('Música'), on: T('Encès'), off: T('Apagat'), memory: T('Recorda'), relay: T('Estat'), pos: T('Posició'), none: T('Cap'), open: '▲', stop: '■', close: '▼', auto: T('Automàtic'), manual: T('Manual'), low: T('Baix'), middle: T('Mitjà'), high: T('Alt') };
+  return m[v] || v;
+}
+function nomCodi(c) { return NOMS[c] ? T(NOMS[c]) : c.replace(/_/g, ' ').replace(/^./, function (x) { return x.toUpperCase(); }); }
+function textBat(d) {
+  var c = primer(d, BATS);
+  if (c) return '🔋 ' + textValor(d, c);
+  if (d.estat.battery_state) return '🔋 ' + textValor(d, 'battery_state');
+  return '';
+}
 function textEstat(d) {
-  var e = d.estat, s = [];
+  var e = d.estat, s = [], b;
   if (!d.online) return T('Desconnectat');
-  if (typeof e.va_temperature == 'number') s.push((e.va_temperature / 10).toFixed(1) + '°');
-  if (typeof e.temp_current == 'number') s.push((e.temp_current > 100 ? e.temp_current / 10 : e.temp_current) + '°');
-  if (typeof e.va_humidity == 'number') s.push(e.va_humidity + '%');
+  if (primer(d, TEMPS) || primer(d, HUMS)) return textBat(d);
   if (typeof e.percent_state == 'number') s.push(e.percent_state + '%');
-  if (typeof e.doorcontact_state == 'boolean') s.push(e.doorcontact_state ? T('Obert') : T('Tancat'));
-  if (typeof e.battery_percentage == 'number') s.push('🔋 ' + e.battery_percentage + '%');
+  if (typeof e.doorcontact_state == 'boolean') s.push(textValor(d, 'doorcontact_state'));
+  if (e.pir != null) s.push(T('Moviment') + ': ' + textValor(d, 'pir'));
+  if (typeof e.cur_power == 'number' && e.cur_power > 0) s.push(textValor(d, 'cur_power'));
+  b = textBat(d); if (b) s.push(b);
   var sw = interruptor(d);
   if (sw && !s.length) s.push(e[sw] ? T('Encès') : T('Apagat'));
-  var b = brillantor(d);
+  b = brillantor(d);
   if (b && sw && e[sw]) s.push(Math.round(100 * (e[b.codi] - b.min) / (b.max - b.min)) + '%');
   return s.join(' · ');
+}
+// big reading on the tile (thermometers and the like)
+function lecturaGran(d) {
+  if (!d.online) return '';
+  var t = primer(d, TEMPS), h = primer(d, HUMS);
+  if (!t && !h) return '';
+  return '<div class="gran">' + (t ? esc(textValor(d, t)) : '') + (h ? (t ? '<small>' : '') + esc(textValor(d, h)) + (t ? '</small>' : '') : '') + '</div>';
+}
+// load the specifications (scale, units, writable functions) once per device
+function carregaSpecs() {
+  for (var i = 0; i < CA.l.length; i++) (function (d) {
+    if (CA.sp[d.id] || CA.sp['_' + d.id]) return;
+    CA.sp['_' + d.id] = 1;
+    getJson(api('tuya/especificacions', { id: d.id }), function (r) { CA.sp[d.id] = r || {}; pinta(); if (CA.det == d.id) pintaDet(); }, function () { });
+  })(CA.l[i]);
 }
 function carrega(fresc) {
   clearTimeout(CA.t);
@@ -85,6 +199,8 @@ function carrega(fresc) {
   getJson(api('tuya/dispositius', fresc ? { fresc: 1 } : {}), function (l) {
     CA.l = l || [];
     pinta();
+    carregaSpecs();
+    if (CA.det) pintaDet();
     CA.t = setTimeout(carrega, 6000);
   }, function (st, txt) {
     var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
@@ -115,12 +231,13 @@ function rajola(i) {
   if (b && sw) extra = '<input type="range" min="' + b.min + '" max="' + b.max + '" value="' + d.estat[b.codi] + '" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation();CA.ocupat=Date.now()" onchange="brillo(' + i + ',this.value)">';
   else if (d.cat == 'cl' || d.estat.control != null) extra = '<div class="bts"><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'open\')">▲</button><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'stop\')">■</button><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'close\')">▼</button></div>';
   return '<div class="ap' + (on ? ' on' : '') + (d.online ? '' : ' off-line') + '"><div class="c" onclick="toca(' + i + ')">' +
-    svg(ICA[t] || ICA.altre) + '<button class="fav' + (fav ? ' si' : '') + '" onclick="event.stopPropagation();canviaFav(' + i + ')">' + svg(ICA.estrella) + '</button>' +
-    '<div class="nm">' + esc(d.nom) + '</div><div class="es">' + esc(textEstat(d)) + '</div>' + extra + '</div></div>';
+    svg(ICA[t] || ICA.altre) + (sw ? '<button class="inf" onclick="event.stopPropagation();obreDet(' + i + ')">i</button>' : '') + '<button class="fav' + (fav ? ' si' : '') + '" onclick="event.stopPropagation();canviaFav(' + i + ')">' + svg(ICA.estrella) + '</button>' +
+    '<div class="nm">' + esc(d.nom) + '</div>' + lecturaGran(d) + '<div class="es">' + esc(textEstat(d)) + '</div>' + extra + '</div></div>';
 }
 function toca(i) {
   var d = CA.l[i], sw = interruptor(d);
-  if (!sw || !d.online) return;
+  if (!sw) { obreDet(i); return; }
+  if (!d.online) return;
   ordre(i, sw, !d.estat[sw]);
 }
 function brillo(i, v) { ordre(i, brillantor(CA.l[i]).codi, parseInt(v, 10)); }
@@ -131,6 +248,98 @@ function ordre(i, codi, valor) {
   peticio('POST', api('tuya/ordre'), JSON.stringify({ id: d.id, codi: codi, valor: valor }), function () {
     CA.ocupat = 0; setTimeout(function () { carrega(true); }, 800);
   }, function (st, txt) { var m = ''; try { m = JSON.parse(txt).error; } catch (e) { } avis(m || T('No s\'ha pogut'), 5000); CA.ocupat = 0; carrega(true); });
+}
+function trobaDisp(id) { for (var i = 0; i < CA.l.length; i++) if (CA.l[i].id == id) return i; return -1; }
+function obreDet(i) {
+  var d = CA.l[i];
+  CA.det = d.id;
+  CA.graf = primer(d, TEMPS) || primer(d, HUMS) || null;
+  CA.punts = null;
+  $('detc').innerHTML = '';
+  $('det').style.display = 'block';
+  pintaDet();
+  if (CA.graf) carregaGraf();
+}
+function tancaDet() { CA.det = null; $('det').style.display = 'none'; }
+function pintaDet() {
+  var i = trobaDisp(CA.det);
+  if (i < 0) return tancaDet();
+  if (Date.now() - CA.ocupat < 3000 && $('detc').innerHTML) return;
+  var d = CA.l[i], e = d.estat, h = '', k, grans = [], l = [];
+  h += '<button class="tanca" onclick="tancaDet()">✕</button><h3>' + esc(d.nom) + '</h3><div class="gris">' + (d.online ? T('Connectat') : T('Desconnectat')) + '</div>';
+  for (k in e) if (e.hasOwnProperty(k)) {
+    if (TEMPS.indexOf(k) >= 0 || HUMS.indexOf(k) >= 0 || k == 'co2_value' || k == 'pm25_value' || k == 'cur_power') grans.push(k); else l.push(k);
+  }
+  if (grans.length) {
+    h += '<div class="grans">';
+    for (k = 0; k < grans.length; k++) h += '<div class="gv' + (grans[k] == CA.graf ? ' sel' : '') + '" onclick="triaGraf(' + k + ')"><b>' + esc(textValor(d, grans[k])) + '</b><span>' + esc(nomCodi(grans[k])) + '</span></div>';
+    h += '</div>';
+    if (CA.graf) h += '<canvas id="graf"></canvas><div class="gris" id="grafi">' + T('Carregant…') + '</div>';
+  }
+  CA.grans = grans; CA.files = l;
+  for (k = 0; k < l.length; k++) h += filaDet(d, i, k);
+  $('detc').innerHTML = h;
+  if (CA.graf && CA.punts && CA.punts.codi == CA.graf) dibuixaGraf();
+}
+function filaDet(d, i, k) {
+  var c = CA.files[k], v = d.estat[c], f = d.online ? escriptura(d, c) : null, ctl = '', j;
+  if (f && typeof v == 'boolean') ctl = '<button class="' + (v ? 'si' : '') + '" onclick="canviDet(' + k + ',' + (!v) + ')">' + (v ? T('Encès') : T('Apagat')) + '</button>';
+  else if (f && f.type == 'Enum' && f._v.range && f._v.range.length <= 6) {
+    for (j = 0; j < f._v.range.length; j++) ctl += '<button class="' + (f._v.range[j] == v ? 'si' : '') + '" onclick="canviDet(' + k + ',null,' + j + ')">' + esc(textEnum(c, f._v.range[j])) + '</button>';
+  } else if (f && f.type == 'Integer' && typeof v == 'number' && typeof f._v.max == 'number') {
+    ctl = '<span class="v" id="dv' + k + '">' + esc(textValor(d, c)) + '</span><input type="range" min="' + f._v.min + '" max="' + f._v.max + '" step="' + (f._v.step || 1) + '" value="' + v + '" ontouchstart="CA.ocupat=Date.now()" onchange="canviDet(' + k + ',parseInt(this.value,10))">';
+  }
+  return '<div class="fl"><span class="k">' + esc(nomCodi(c)) + '</span>' + (ctl ? '' : '<span class="v">' + esc(textValor(d, c)) + '</span>') + ctl + '</div>';
+}
+function canviDet(k, v, j) {
+  var i = trobaDisp(CA.det), c = CA.files[k];
+  if (i < 0) return;
+  if (j != null) { v = escriptura(CA.l[i], c)._v.range[j]; CA.l[i].estat[c] = v; }
+  ordre(i, c, v);
+  CA.ocupat = 0; pintaDet();
+}
+function triaGraf(k) { CA.graf = CA.grans[k]; CA.punts = null; pintaDet(); carregaGraf(); }
+function carregaGraf() {
+  var id = CA.det, c = CA.graf;
+  getJson(api('tuya/historial', { id: id, codi: c }), function (r) {
+    if (CA.det != id || CA.graf != c) return;
+    CA.punts = { codi: c, l: (r && r.punts) || [] };
+    dibuixaGraf();
+  }, function (st, txt) {
+    var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
+    if ($('grafi')) $('grafi').innerHTML = esc(T('No hi ha historial disponible') + (m ? ' (' + m + ')' : ''));
+    var g = $('graf'); if (g) g.style.display = 'none';
+  });
+}
+function dibuixaGraf() {
+  var g = $('graf'), i = trobaDisp(CA.det);
+  if (!g || i < 0) return;
+  var d = CA.l[i], c = CA.punts.codi, p = [], k, n, o, mn = 1e9, mx = -1e9, ara = Date.now(), t0 = ara - 864e5;
+  for (k = 0; k < CA.punts.l.length; k++) {
+    var x = +CA.punts.l[k][0], y = parseFloat(CA.punts.l[k][1]);
+    if (isNaN(x) || isNaN(y)) continue;
+    o = {}; o[c] = y;
+    n = valorNum({ id: d.id, estat: o }, c);
+    if (n) p.push([x, n.n]);
+  }
+  if (p.length < 2) { $('grafi').innerHTML = T('Encara no hi ha prou dades de les últimes 24 hores.'); g.style.display = 'none'; return; }
+  p.sort(function (a, b) { return a[0] - b[0]; });
+  for (k = 0; k < p.length; k++) { if (p[k][1] < mn) mn = p[k][1]; if (p[k][1] > mx) mx = p[k][1]; }
+  var rmn = mn, rmx = mx;
+  if (mx - mn < 1) { mx += .5; mn -= .5; }
+  var r = window.devicePixelRatio || 1, W = g.offsetWidth, H = g.offsetHeight;
+  g.width = W * r; g.height = H * r;
+  var cx = g.getContext('2d'); cx.scale(r, r);
+  var L = 34, B = 18;
+  function fx(t) { return L + (W - L - 4) * (t - t0) / (ara - t0); }
+  function fy(v) { return 6 + (H - B - 12) * (1 - (v - mn) / (mx - mn)); }
+  cx.font = '11px sans-serif'; cx.fillStyle = '#8d95a1'; cx.strokeStyle = 'rgba(255,255,255,.08)'; cx.lineWidth = 1;
+  for (k = 0; k <= 2; k++) { var v = mn + (mx - mn) * k / 2, yy = fy(v); cx.beginPath(); cx.moveTo(L, yy); cx.lineTo(W, yy); cx.stroke(); cx.fillText(v.toFixed(mx - mn < 5 ? 1 : 0), 2, yy + 4); }
+  for (k = 0; k <= 4; k++) { var tt = t0 + 864e5 * k / 4, dt = new Date(tt); cx.fillText((dt.getHours() < 10 ? '0' : '') + dt.getHours() + 'h', Math.max(L, Math.min(fx(tt) - 8, W - 24)), H - 3); }
+  cx.strokeStyle = '#ffab3d'; cx.lineWidth = 2; cx.beginPath();
+  for (k = 0; k < p.length; k++) { if (k) cx.lineTo(fx(p[k][0]), fy(p[k][1])); else cx.moveTo(fx(p[k][0]), fy(p[k][1])); }
+  cx.stroke();
+  $('grafi').innerHTML = esc(T('Últimes 24 hores') + ' · ' + T('mín.') + ' ' + rmn.toFixed(1) + ' · ' + T('màx.') + ' ' + rmx.toFixed(1));
 }
 function canviaFav(i) {
   var id = CA.l[i].id, p = CA.fav.indexOf(id);
@@ -152,7 +361,7 @@ function escena(i) {
   post(api('tuya/escena', { casa: e.casa, id: e.id }), '', function () { avis(Tf('«{1}» activada', e.nom)); setTimeout(function () { carrega(true); }, 1500); }, errXarxa(T('activar l\'escena')));
 }
 window.casaMostra = function () { carrega(true); };
-window.casaAmaga = function () { clearTimeout(CA.t); };
+window.casaAmaga = function () { clearTimeout(CA.t); tancaDet(); };
 dades('casa_fav', function (f) { CA.fav = f || []; carrega(); escenes(); });
 </script>
 </body>

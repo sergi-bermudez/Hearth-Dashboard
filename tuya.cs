@@ -169,6 +169,8 @@ public static class Tuya
 
     static readonly string[] Interruptors = { "switch_led", "switch", "switch_1", "switch_2", "switch_3", "switch_4", "switch_usb1", "led_switch", "start" };
 
+    static Dictionary<string, object> specs = new Dictionary<string, object>();
+
     static string Compacta(List<object> l)
     {
         List<object> r = new List<object>();
@@ -283,6 +285,45 @@ public static class Tuya
                     {
                         string id = CasaServidor.Q(q, "id");
                         CasaServidor.Json(res, Resultat(Crida("GET", "/v1.0/devices/" + Uri.EscapeDataString(id) + "/functions", null, true)));
+                        return;
+                    }
+                case "especificacions":
+                    {
+                        string id = CasaServidor.Q(q, "id");
+                        object sp;
+                        lock (specs) specs.TryGetValue(id, out sp);
+                        if (sp == null)
+                        {
+                            sp = Resultat(Crida("GET", "/v1.0/devices/" + Uri.EscapeDataString(id) + "/specifications", null, true));
+                            lock (specs) specs[id] = sp;
+                        }
+                        CasaServidor.Json(res, sp);
+                        return;
+                    }
+                case "historial":
+                    {
+                        string id = CasaServidor.Q(q, "id"), codi = CasaServidor.Q(q, "codi");
+                        long ara = (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds, des = ara - 24L * 3600 * 1000;
+                        List<object> punts = new List<object>();
+                        string fila = "";
+                        for (int pag = 0; pag < 6; pag++)
+                        {
+                            Dictionary<string, object> r = Resultat(Crida("GET", "/v1.0/devices/" + Uri.EscapeDataString(id) + "/logs?type=7&size=100&codes=" + Uri.EscapeDataString(codi) + "&start_time=" + des + "&end_time=" + ara + (fila != "" ? "&start_row_key=" + Uri.EscapeDataString(fila) : ""), null, true)) as Dictionary<string, object>;
+                            if (r == null) break;
+                            object[] logs = r.ContainsKey("logs") ? r["logs"] as object[] : null;
+                            if (logs != null) foreach (object o in logs)
+                                {
+                                    Dictionary<string, object> e = o as Dictionary<string, object>;
+                                    if (e == null || !e.ContainsKey("value") || !e.ContainsKey("event_time")) continue;
+                                    punts.Add(new object[] { e["event_time"], e["value"] });
+                                }
+                            bool mes = r.ContainsKey("has_next") && r["has_next"] is bool && (bool)r["has_next"];
+                            fila = r.ContainsKey("next_row_key") && r["next_row_key"] != null ? r["next_row_key"].ToString() : "";
+                            if (!mes || fila == "") break;
+                        }
+                        Dictionary<string, object> h = new Dictionary<string, object>();
+                        h["punts"] = punts;
+                        CasaServidor.Json(res, h);
                         return;
                     }
                 case "escenes": CasaServidor.Json(res, Escenes()); return;
