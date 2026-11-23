@@ -70,6 +70,10 @@ h2.g{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8d95a1;ma
 .ap .mes span{color:#8d95a1;margin-right:6px}
 .ap.on .mes span{color:#6b6458}
 .ap.m-p .mes{display:none}
+.ap.m-m .mes{position:absolute;left:50%;right:14px;top:16px;margin:0;display:block}
+.ap.m-m .mes div{width:auto;padding:3px 0}
+.ap.m-m .nm,.ap.m-m .es{max-width:48%}
+.ap canvas.gc.dr{left:50%;top:auto;bottom:14px;height:116px;width:calc(50% - 14px)}
 .ap canvas.gc{position:absolute;left:14px;right:14px;bottom:12px;height:110px;width:calc(100% - 28px)}
 #det .mides button{margin-left:6px}
 @media (orientation:portrait){ .ap{width:33.33%} .ap.m-m,.ap.m-g{width:66.66%} }
@@ -257,8 +261,9 @@ function rajola(i) {
   if (b && sw) extra = '<input type="range" min="' + b.min + '" max="' + b.max + '" value="' + d.estat[b.codi] + '" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation();CA.ocupat=Date.now()" onchange="brillo(' + i + ',this.value)">';
   else if (d.cat == 'cl' || d.estat.control != null) extra = '<div class="bts"><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'open\')">▲</button><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'stop\')">■</button><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'close\')">▼</button></div>';
   var m = mida(d), mes = '', gc = primer(d, TEMPS) || primer(d, HUMS);
-  if (m != 'p' && d.online) mes = mesDades(d, m == 'g' ? 10 : 4);
-  if (m == 'g' && gc && !extra && d.online) mes += '<canvas class="gc" data-id="' + esc(d.id) + '" data-c="' + gc + '"></canvas>';
+  /* mitjana: a la meitat dreta, la gràfica (sensors) o unes quantes lectures; gran: lectures i gràfica a sota */
+  if (m == 'm' && d.online) mes = gc && !extra ? '<canvas class="gc dr" data-id="' + esc(d.id) + '" data-c="' + gc + '"></canvas>' : mesDades(d, 5);
+  if (m == 'g' && d.online) { mes = mesDades(d, 10); if (gc && !extra) mes += '<canvas class="gc" data-id="' + esc(d.id) + '" data-c="' + gc + '"></canvas>'; }
   return '<div class="ap m-' + m + (on ? ' on' : '') + (d.online ? '' : ' off-line') + '"><div class="c" onclick="toca(' + i + ')">' +
     svg(ICA[t] || ICA.altre) + (sw ? '<button class="inf" onclick="event.stopPropagation();obreDet(' + i + ')">i</button>' : '') + '<button class="fav' + (fav ? ' si' : '') + '" onclick="event.stopPropagation();canviaFav(' + i + ')">' + svg(ICA.estrella) + '</button>' +
     '<div class="nm">' + esc(d.nom) + '</div>' + lecturaGran(d) + '<div class="es">' + esc(textEstat(d)) + '</div>' + mes + extra + '</div></div>';
@@ -356,6 +361,8 @@ function tracaGraf(g, d, c, punts, compacte) {
   }
   if (p.length < 2) return null;
   p.sort(function (a, b) { return a[0] - b[0]; });
+  /* a les caixes, l'eix comença on comencen les dades (si n'hi ha menys de 24 h) */
+  if (compacte && p[0][0] > t0 && ara - p[0][0] > 36e5) t0 = p[0][0];
   for (k = 0; k < p.length; k++) { if (p[k][1] < mn) mn = p[k][1]; if (p[k][1] > mx) mx = p[k][1]; }
   var rmn = mn, rmx = mx;
   if (mx - mn < 1) { mx += .5; mn -= .5; }
@@ -363,7 +370,7 @@ function tracaGraf(g, d, c, punts, compacte) {
   if (!W || !H) return null;
   g.width = W * r; g.height = H * r;
   var cx = g.getContext('2d'); cx.scale(r, r);
-  var L = compacte ? 2 : 34, B = compacte ? 4 : 18, Tp = compacte ? 4 : 6;
+  var L = compacte ? 2 : 34, B = compacte ? 4 : 18, Tp = compacte ? 18 : 6;
   function fx(t) { return L + (W - L - 4) * (t - t0) / (ara - t0); }
   function fy(v) { return Tp + (H - B - Tp - (compacte ? 0 : 6)) * (1 - (v - mn) / (mx - mn)); }
   if (!compacte) {
@@ -375,6 +382,9 @@ function tracaGraf(g, d, c, punts, compacte) {
     for (k = 0; k < p.length; k++) cx.lineTo(fx(p[k][0]), fy(p[k][1]));
     cx.lineTo(fx(p[p.length - 1][0]), H); cx.closePath();
     cx.fillStyle = 'rgba(255,171,61,.14)'; cx.fill();
+    var hr = Math.round((ara - t0) / 36e5);
+    cx.font = '11px sans-serif'; cx.fillStyle = '#8d95a1';
+    cx.fillText(hr + ' h · ' + T('mín.') + ' ' + rmn.toFixed(1) + ' · ' + T('màx.') + ' ' + rmx.toFixed(1), 2, 11);
   }
   cx.strokeStyle = '#ffab3d'; cx.lineWidth = 2; cx.beginPath();
   for (k = 0; k < p.length; k++) { if (k) cx.lineTo(fx(p[k][0]), fy(p[k][1])); else cx.moveTo(fx(p[k][0]), fy(p[k][1])); }
@@ -398,7 +408,7 @@ function canviaMida(m) {
 }
 /* les lectures que no surten en gran: a la caixa mitjana unes quantes, a la gran totes */
 function mesDades(d, max) {
-  var e = d.estat, k, h = '', n = 0, fora = [primer(d, TEMPS), primer(d, HUMS), interruptor(d), 'battery_state'].concat(BATS);
+  var e = d.estat, k, h = '', n = 0, fora = [primer(d, TEMPS), primer(d, HUMS), interruptor(d), 'battery_state', 'temp_unit_convert'].concat(BATS);
   var b = brillantor(d); if (b) fora.push(b.codi);
   for (k in e) if (e.hasOwnProperty(k)) {
     if (fora.indexOf(k) >= 0 || e[k] == null || typeof e[k] == 'object' || /^colour_data|countdown/.test(k)) continue;
