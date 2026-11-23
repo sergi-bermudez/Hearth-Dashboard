@@ -246,7 +246,7 @@ public static class RadioHls
 
     static Conversio Converteix(string full)
     {
-        string id = CasaServidor.Hash(full + "|" + File.GetLastWriteTimeUtc(full).Ticks).Substring(0, 16);
+        string id = CasaServidor.Hash("v2|" + full + "|" + File.GetLastWriteTimeUtc(full).Ticks).Substring(0, 16);
         lock (conversions)
         {
             Conversio c;
@@ -269,9 +269,15 @@ public static class RadioHls
                 foreach (string f in Directory.GetFiles(c.Dir)) try { File.Delete(f); } catch { }
                 string ff = SoPC.RutaFfmpeg();
                 if (ff == null) throw new Exception("Falta ffmpeg.exe");
+                // el primer tros, de 2 minuts (per comen\u00e7ar aviat); la resta, de 20 (menys talls)
+                List<string> talls = new List<string>();
+                for (int k = 0; k < 30; k++) talls.Add((120 + k * 1200).ToString());
+                string llista = string.Join(",", talls.ToArray());
+                // aresample async: el so no es va endarrerint respecte la imatge a cada tros
                 string args = "-nostdin -loglevel error -y -i " + Cometes(full) +
-                    " -map 0:v:0 -map 0:a:0? -c:v libx264 -preset veryfast -profile:v main -level 3.1 -pix_fmt yuv420p -vf \"scale=-2:'min(720,ih)'\" -b:v 2500k -maxrate 3000k -bufsize 6000k -force_key_frames \"expr:gte(t,n_forced*300)\"" +
-                    " -c:a aac -b:a 160k -ac 2 -ar 44100 -f segment -segment_time 300 -reset_timestamps 1 -segment_format mp4 -segment_format_options movflags=+faststart " + Cometes(Path.Combine(c.Dir, "t%03d.mp4"));
+                    " -map 0:v:0 -map 0:a:0? -c:v libx264 -preset veryfast -profile:v main -level 3.1 -pix_fmt yuv420p -vf \"scale=-2:'min(720,ih)'\" -b:v 2500k -maxrate 3000k -bufsize 6000k -force_key_frames " + llista +
+                    " -c:a aac -b:a 160k -ac 2 -ar 44100 -af aresample=async=1:first_pts=0 -avoid_negative_ts make_zero" +
+                    " -f segment -segment_times " + llista + " -reset_timestamps 1 -segment_format mp4 -segment_format_options movflags=+faststart " + Cometes(Path.Combine(c.Dir, "t%03d.mp4"));
                 ProcessStartInfo si = new ProcessStartInfo(ff, args);
                 si.UseShellExecute = false; si.CreateNoWindow = true; si.RedirectStandardError = true;
                 Process p = Process.Start(si);

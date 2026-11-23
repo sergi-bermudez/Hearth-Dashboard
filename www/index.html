@@ -274,6 +274,11 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 #tv .tv-ctl button{margin-left:8px;background:rgba(255,255,255,.18)}
 #tv .tv-canals{position:absolute;left:0;right:0;bottom:0;padding:14px 18px 18px;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;background:-webkit-linear-gradient(transparent,rgba(0,0,0,.8));background:linear-gradient(transparent,rgba(0,0,0,.8));z-index:3;-webkit-transition:opacity .4s;transition:opacity .4s}
 #tv.amaga .tv-ctl,#tv.amaga .tv-canals{opacity:0}
+/* el vídeo és en pausa: un botó de play al mig, com a YouTube */
+#tv-gp{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:42px;background:rgba(0,0,0,.6);z-index:4;display:none;cursor:pointer}
+#tv-gp svg{width:46px;height:46px;margin:19px 0 0 22px;fill:#fff}
+#tv.mini #tv-gp,#tv.dash #tv-gp,#tv.marc #tv-gp{width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:28px}
+#tv.mini #tv-gp svg,#tv.dash #tv-gp svg,#tv.marc #tv-gp svg{width:30px;height:30px;margin:13px 0 0 15px}
 #tv .tv-estat{position:absolute;left:0;right:0;top:50%;margin-top:-14px;text-align:center;z-index:2;font-size:16px;padding:0 16px;text-shadow:0 1px 6px #000}
 #tv.mini,#tv.marc{border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.6)}
 #tv.marc{z-index:95}
@@ -675,6 +680,7 @@ body.offline .app.cal-servidor,body.offline #nav div.cal-servidor{opacity:.3}
   <video id="tv-v" webkit-playsinline playsinline></video>
   <div class="tv-capa" id="tv-capa" onclick="if (+new Date() - (TV.touchT || 0) > 700) tvToc()"></div>
   <div class="tv-estat" id="tv-estat"></div>
+  <div id="tv-gp" onclick="TV.pausaUsuari = false; var v = $('tv-v'); var p = v.play(); if (p && p['catch']) p['catch'](function () { });"></div>
   <div class="tv-ctl"><span class="directe" id="tv-directe" data-t>DIRECTE</span><div class="nm una" id="tv-nom"></div>
     <span id="tv-vol"></span><button onclick="castObre()" id="tv-b-cast"></button><button onclick="tvNatiu()" id="tv-b-natiu"></button><button onclick="tvMode('normal')" id="tv-b-petit"></button><button onclick="tvAtura()" id="tv-b-x"></button></div>
   <div class="tv-vod"><button onclick="vodSalta(-15)" id="tv-b-enr"></button><button class="gp" onclick="repPlay()" id="tv-b-play"></button><button onclick="vodSalta(30)" id="tv-b-end"></button>
@@ -1569,7 +1575,9 @@ function tvEscoltes(v) {
   });
   v.addEventListener('ended', function () { if (TV.canal && TV.canal.vod) { vodDesa(true); tvAtura(); } });
   v.addEventListener('play', function () { iconesPlay(); notifica(); });
-  v.addEventListener('pause', function () { iconesPlay(); if (TV.canal && TV.canal.vod) vodDesa(); notifica(); });
+  v.addEventListener('pause', function () { iconesPlay(); if (TV.canal && TV.canal.vod) vodDesa(); notifica(); tvBotoPlay(); });
+  v.addEventListener('play', tvBotoPlay);
+  v.addEventListener('playing', tvBotoPlay);
 }
 tvEscoltes($('tv-v'));
 /* iOS 9: en tancar la TV es fa un <video> nou; així desapareix qualsevol capa nativa
@@ -1662,6 +1670,7 @@ function tvMode(m) {
 /* Un toc: en petit, maximitza; en gran, mostra els controls.
    Dos tocs seguits: maximitza i omple d'amplada; un altre doble toc omple d'alçada (retalla els costats); el següent el torna a fer petit */
 function tvToc() {
+  if (NAV_TELE) { if (TV.mode == 'gran') tvMostraCtl(); else tvMode('gran'); return; }
   var ara = +new Date(), doble = ara - (TV.tocT || 0) < 380;
   TV.tocT = doble ? 0 : ara;
   if (doble) {
@@ -1678,10 +1687,16 @@ function tvToc() {
 function tvAjusta() {
   var v = $('tv-v'), t = $('tv'), st = v.style;
   var vw = v.videoWidth, vh = v.videoHeight, W = t.clientWidth, H = t.clientHeight;
-  if (TV.mode != 'gran' || !vw || !vh || !W || !H) { st.left = st.top = st.width = st.height = ''; return; }
+  /* al navegador d'una tele, el vídeo es deixa com sempre (la LG el mostrava negre si se li canviava la mida a mà) */
+  if (TV.mode != 'gran' || !vw || !vh || !W || !H || NAV_TELE) { st.left = st.top = st.width = st.height = ''; return; }
   var a = vw / vh, w, h;
   if (TV.ajust == 'v') { h = H; w = Math.round(H * a); } else { w = W; h = Math.round(W / a); }
   st.width = w + 'px'; st.height = h + 'px'; st.left = Math.round((W - w) / 2) + 'px'; st.top = Math.round((H - h) / 2) + 'px';
+}
+function tvBotoPlay() {
+  var v = $('tv-v'), b = $('tv-gp');
+  if (!b.innerHTML) b.innerHTML = svg(IC.play);
+  b.style.display = TV.canal && v.paused && v.getAttribute('src') && v.readyState >= 1 ? 'block' : 'none';
 }
 function tvMostraCtl() {
   var t = $('tv');
@@ -1749,10 +1764,13 @@ function tvMiniMida() {
 /* Mida del reproductor de so a la pantalla d'inici: S / M / L */
 var AUD = { mida: ls('auMida') || 'g' };
 function audMidaCanvia() {
+  var sonava = R.cua.length && !sonaPausat();
   AUD.mida = AUD.mida == 'p' ? 'm' : AUD.mida == 'm' ? 'g' : 'p';
   ls('auMida', AUD.mida);
   estatCos();
   pintaSona();
+  /* algunes teles (LG) aturen el so quan la pàgina canvia molt: si sonava, continua */
+  if (sonava) setTimeout(function () { if (R.cua.length && sonaPausat()) repPlay(); }, 800);
 }
 function tvMidaCanvia() {
   TV.mida = TV.mida == 'p' ? 'm' : TV.mida == 'm' ? 'g' : 'p';

@@ -381,7 +381,7 @@ function trossos(n) {
       return;
     }
     if (d.acabat) { if (n == 0) avis(T('No s\'ha pogut convertir la pel·lícula') + (d.error ? ': ' + d.error : ''), 8000); else tancaGran(); return; }
-    var est = $('vid-est'); if (est) est.innerHTML = esc(n == 0 ? T('Preparant la pel·lícula per a aquest navegador…') : T('Preparant el tros següent…'));
+    var est = $('vid-est'); if (est) est.innerHTML = esc(n == 0 ? T('Preparant la pel·lícula per a aquest navegador…') : T('Preparant la part següent…'));
     VC.t = setTimeout(function () { trossos(n); }, 3000);
   }, function () { VC.t = setTimeout(function () { trossos(n); }, 5000); });
 }
