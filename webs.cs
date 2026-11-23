@@ -79,6 +79,7 @@ public static class Webs
                 c.Pag.Connecta(Edge.WsPagina(c.Target));
                 c.Pag.Envia("Page.enable", null, 5000);
                 c.Pag.Envia("Page.addScriptToEvaluateOnNewDocument", CasaServidor.Dic("source", NAV_SCRIPT), 5000);
+                Edge.FesVisible(c.Pag);
                 c.Dsf = dsf > 0 ? dsf : 1; c.Mobil = mobil;
                 c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", c.W, "height", c.H, "deviceScaleFactor", c.Dsf, "mobile", mobil), 5000);
                 if (mobil) try { c.Pag.Envia("Emulation.setTouchEmulationEnabled", CasaServidor.Dic("enabled", true, "maxTouchPoints", 1), 5000); } catch { }
@@ -144,12 +145,15 @@ public static class Webs
             if (c != null) { try { c.Pag.Tanca(); } catch { } try { Edge.TancaPagina(c.Target); } catch { } }
             c = new Captura();
             c.Id = id; c.Url = url; c.W = w; c.H = h;
-            c.Target = Edge.NovaPagina(url);
+            // s'obre en blanc per preparar-la abans que carregui la web
+            c.Target = Edge.NovaPagina("about:blank");
             c.Pag = new Cdp();
             c.Pag.Connecta(Edge.WsPagina(c.Target));
             c.Pag.Envia("Page.enable", null, 5000);
+            Edge.FesVisible(c.Pag);
             c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", w, "height", h, "deviceScaleFactor", 1, "mobile", false), 5000);
             Clip(c, def);
+            c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", url), 10000);
             obertes[id] = c;
             if (neteja == null) neteja = new Timer(Neteja, null, 60000, 60000);
         }

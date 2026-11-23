@@ -133,6 +133,25 @@ public static class Edge
         return js.DeserializeObject(Http(url, metode));
     }
 
+    // canvia-ho quan canvien les opcions d'engegada, perque l'Edge que ja corre es reinici\u00ef
+    const string ARGS_VERSIO = "2";
+
+    // Les pagines del servidor van en finestres amagades: algunes webs (cameres, videos) s'aturen si creuen que no es veuen.
+    // Se'ls fa creure que la finestra es visible i te el focus.
+    public const string VISIBLE_SCRIPT = "(function(){try{Object.defineProperty(document,'visibilityState',{get:function(){return 'visible';},configurable:true});" +
+        "Object.defineProperty(document,'hidden',{get:function(){return false;},configurable:true});" +
+        "Object.defineProperty(document,'webkitVisibilityState',{get:function(){return 'visible';},configurable:true});" +
+        "document.hasFocus=function(){return true;};" +
+        "var st=function(e){e.stopImmediatePropagation();};document.addEventListener('visibilitychange',st,true);document.addEventListener('webkitvisibilitychange',st,true);" +
+        "window.addEventListener('blur',st,true);window.addEventListener('pagehide',st,true);}catch(e){}})();";
+
+    public static void FesVisible(Cdp p)
+    {
+        try { p.Envia("Page.addScriptToEvaluateOnNewDocument", CasaServidor.Dic("source", VISIBLE_SCRIPT), 5000); } catch { }
+        try { p.Envia("Emulation.setFocusEmulationEnabled", CasaServidor.Dic("enabled", true), 5000); } catch { }
+        try { p.Envia("Page.setWebLifecycleState", CasaServidor.Dic("state", "active"), 5000); } catch { }
+    }
+
     public static bool Viu()
     {
         try { Http("http://127.0.0.1:" + PORT + "/json/version", "GET"); return true; } catch { return false; }
@@ -143,7 +162,17 @@ public static class Edge
     {
         lock (lk)
         {
-            if (Viu()) return;
+            string perfil0 = Path.Combine(CasaServidor.DirDades, "edge-perfil");
+            string marca = Path.Combine(perfil0, "hearth-args.txt");
+            if (Viu())
+            {
+                // un Edge engegat per una versio anterior (amb altres opcions): es reinicia un cop
+                string ant = ""; try { ant = File.ReadAllText(marca); } catch { }
+                if (ant == ARGS_VERSIO) return;
+                try { Cdp b0 = new Cdp(); Dictionary<string, object> v0 = Json("http://127.0.0.1:" + PORT + "/json/version", "GET") as Dictionary<string, object>; b0.Connecta((string)v0["webSocketDebuggerUrl"]); try { b0.Envia("Browser.close", null, 3000); } catch { } b0.Tanca(); } catch { }
+                for (int i = 0; i < 40 && Viu(); i++) Thread.Sleep(250);
+                if (Viu()) return;
+            }
             string exe = Ruta();
             if (exe == null) throw new Exception("No trobo el Microsoft Edge en aquest PC");
             string perfil = Path.Combine(CasaServidor.DirDades, "edge-perfil");
@@ -151,12 +180,14 @@ public static class Edge
             string args = "--remote-debugging-port=" + PORT + " --remote-allow-origins=* --user-data-dir=\"" + perfil + "\" " +
                 "--no-first-run --no-default-browser-check --hide-crash-restore-bubble --autoplay-policy=no-user-gesture-required " +
                 "--disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows " +
+                "--disable-features=CalculateNativeWinOcclusion,IntensiveWakeUpThrottling --disable-background-media-suspend " +
                 "--window-size=1150,820 --window-position=-12000,-12000 about:blank";
             ProcessStartInfo psi = new ProcessStartInfo(exe, args);
             psi.UseShellExecute = false;
             proc = Process.Start(psi);
             for (int i = 0; i < 60 && !Viu(); i++) Thread.Sleep(250);
             if (!Viu()) throw new Exception("L'Edge no respon");
+            try { File.WriteAllText(marca, ARGS_VERSIO); } catch { }
         }
     }
 
