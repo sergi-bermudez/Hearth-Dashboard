@@ -406,6 +406,7 @@ function camObre(i) {
   $('camg').innerHTML = '<img id="camg-i"' + (CM[w.id] ? ' src="' + esc(CM[w.id]) + '"' : '') + '><div class="tn">' + esc(w.nom || '') + '</div>' +
     '<button class="bt" style="right:12px" onclick="camTanca()">✕</button>' +
     '<button class="bt" style="right:70px" onclick="camWeb()">' + esc(T('Controls')) + '</button>' +
+    '<button class="bt" style="right:180px" onclick="camEdita()">✎</button>' +
     (CM.l.length > 1 ? '<button class="bt" style="left:12px" onclick="camObre(' + ((i + 1) % CM.l.length) + ')">' + esc(T('Següent')) + ' ›</button>' : '');
   $('camg').style.display = 'block';
   clearTimeout(CM.tg);
@@ -416,6 +417,22 @@ function camObre(i) {
     im.onerror = function () { CM.tg = setTimeout(va, 3000); };
     im.src = u;
   })();
+}
+/* el nom i el text que el servidor toca per engegar el directe (p. ex. «Jardí» a CloudEdge) */
+function camEdita() {
+  var w = CM.gran; if (!w) return;
+  var nom = prompt(T('Nom de la càmera'), w.nom || ''); if (nom == null) return;
+  var cl = prompt(T('Text que s\'ha de tocar a la web per veure aquesta càmera (el nom que hi surt, p. ex. Jardí)'), w.clica || nom); if (cl == null) return;
+  dades('webs', function (l) {
+    l = l || [];
+    for (var i = 0; i < l.length; i++) if (l[i].id == w.id) { l[i].nom = nom; l[i].clica = cl.replace(/^\s+|\s+$/g, ''); }
+    post(api('dades', { n: 'webs' }), JSON.stringify(l), function () {
+      w.nom = nom; w.clica = cl;
+      try { if (Casa && Casa.websCanviades) Casa.websCanviades(l); } catch (e) { }
+      var t = document.querySelector('#camg .tn'); if (t) t.textContent = nom;
+      avis(T('Desat'), 2000);
+    }, errXarxa(T('desar')));
+  });
 }
 function camTanca() { CM.gran = null; clearTimeout(CM.tg); $('camg').style.display = 'none'; camRefresca(); }
 /* per moure la càmera, parlar o veure gravacions: la web sencera al navegador */

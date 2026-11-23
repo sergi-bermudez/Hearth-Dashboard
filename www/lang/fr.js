@@ -1080,3 +1080,6 @@ TR.fr["Controls"]="Commandes";
 TR.fr["Següent"]="Suivante";
 TR.fr["Passa a la pantalla d'inici"]="Déplacer vers l'accueil";
 TR.fr["Passa a Casa ▸ Càmeres"]="Déplacer vers Maison ▸ Caméras";
+TR.fr["Nom de la càmera"]="Nom de la caméra";
+TR.fr["Text que s'ha de tocar a la web per veure aquesta càmera (el nom que hi surt, p. ex. Jardí)"]="Texte à toucher sur le site pour voir cette caméra (le nom affiché, p. ex. Jardin)";
+TR.fr["Desat"]="Enregistré";

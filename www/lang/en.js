@@ -1080,3 +1080,6 @@ TR.en["Controls"]="Controls";
 TR.en["Següent"]="Next";
 TR.en["Passa a la pantalla d'inici"]="Move to the home screen";
 TR.en["Passa a Casa ▸ Càmeres"]="Move to Home ▸ Cameras";
+TR.en["Nom de la càmera"]="Camera name";
+TR.en["Text que s'ha de tocar a la web per veure aquesta càmera (el nom que hi surt, p. ex. Jardí)"]="Text to tap on the site to see this camera (the name shown there, e.g. Garden)";
+TR.en["Desat"]="Saved";

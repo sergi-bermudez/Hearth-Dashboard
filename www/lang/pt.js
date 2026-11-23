@@ -1080,3 +1080,6 @@ TR.pt["Controls"]="Controlos";
 TR.pt["Següent"]="Seguinte";
 TR.pt["Passa a la pantalla d'inici"]="Passar para o ecrã inicial";
 TR.pt["Passa a Casa ▸ Càmeres"]="Passar para Casa ▸ Câmaras";
+TR.pt["Nom de la càmera"]="Nome da câmara";
+TR.pt["Text que s'ha de tocar a la web per veure aquesta càmera (el nom que hi surt, p. ex. Jardí)"]="Texto a tocar no site para ver esta câmara (o nome que aparece, p. ex. Jardim)";
+TR.pt["Desat"]="Guardado";

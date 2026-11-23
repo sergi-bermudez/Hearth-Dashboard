@@ -22,7 +22,7 @@ public static class Webs
         public double Cx, Cy, Cw, Ch;
         public bool Retall;
         public string Clica = ""; public DateTime Clicat = DateTime.MinValue;
-        public bool Camera, VideoTrobat; public DateTime Buscat = DateTime.MinValue;
+        public bool Camera, VideoTrobat; public DateTime Buscat = DateTime.MinValue, Entrat = DateTime.MinValue;
     }
     static readonly Dictionary<string, Captura> obertes = new Dictionary<string, Captura>();
     static readonly object lk = new object();
@@ -292,18 +292,37 @@ public static class Webs
         c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseReleased", "x", x, "y", y, "button", "left", "buttons", 0, "clickCount", 1), 5000);
     }
 
+    // Que ha fet el servidor amb les cameres (dades/cameres-diagnostic.txt, les darreres linies)
+    static void Registre(Captura c, string txt)
+    {
+        try
+        {
+            string f = Path.Combine(CasaServidor.DirDades, "cameres-diagnostic.txt");
+            string l = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " " + c.Id + " " + txt + Environment.NewLine;
+            if (File.Exists(f) && new FileInfo(f).Length > 60000) File.WriteAllText(f, "");
+            File.AppendAllText(f, l);
+            Console.WriteLine("  Cameres: " + c.Id + " " + txt);
+        }
+        catch { }
+    }
+
     static bool EntraSol(Captura c)
     {
         string r = Convert.ToString(Edge.Avalua(c.Pag, LOGIN_JS, 4000));
         if (string.IsNullOrEmpty(r) || r.IndexOf('|') < 0) return false;
         string[] pb = r.Split('|');
+        // com a molt un intent cada 30 s, per no bloquejar el compte
+        if ((DateTime.Now - c.Entrat).TotalSeconds < 30) return true;
+        c.Entrat = DateTime.Now;
+        // l'Edge nomes deixa fer servir la contrasenya emplenada despres d'un gest de debo: primer un clic al camp
         ClicReal(c, pb[0]);
-        Thread.Sleep(600);
-        // l'Edge nomes deixa veure la contrasenya emplenada despres d'un gest de debo; si el camp es buit no hi ha res desat
-        object ple = Edge.Avalua(c.Pag, "(function(){var p=document.activeElement;return !!(p&&p.type=='password'&&p.value);})()", 3000);
-        if (!(ple is bool && (bool)ple)) return true;
+        Thread.Sleep(700);
+        // un clic a fora tanca el desplegable de contrasenyes desades que pot tapar el boto
+        try { NavTecla(c.Pag, "Escape"); } catch { }
+        Thread.Sleep(200);
         if (pb[1] != "") ClicReal(c, pb[1]);
-        else NavTecla(c.Pag, "Enter");
+        else { ClicReal(c, pb[0]); NavTecla(c.Pag, "Enter"); }
+        Registre(c, "inici de sessio: camp " + pb[0] + ", boto " + (pb[1] != "" ? pb[1] : "(Enter)"));
         Thread.Sleep(4000);
         if (c.Sx > 0 || c.Sy > 0) Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy), 3000);
         return true;
