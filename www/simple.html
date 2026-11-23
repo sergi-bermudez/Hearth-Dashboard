@@ -286,6 +286,51 @@ function seguentFoto() {
 }
 function tancaGran() { clearTimeout(PS.t); var v = $('vid'); if (v) { try { v.pause(); } catch (e) { } } $('gran').innerHTML = ''; $('gran').style.display = 'none'; }
 
+/* ---------- Pantalles: aquest aparell apareix a les altres i rep el que li envien (com la pantalla normal) ---------- */
+var DISP = (function () {
+  var id = '';
+  try { id = JSON.parse(localStorage.getItem('casa.disp') || 'null') || ''; } catch (e) { }
+  if (!id) { var m = /(?:^|; )hdisp=([^;]*)/.exec(document.cookie); if (m) id = decodeURIComponent(m[1]); }
+  if (!/^[a-z0-9]{6,16}$/.test(id)) { id = ''; for (var i = 0; i < 10; i++) id += 'abcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 36)); }
+  try { localStorage.setItem('casa.disp', JSON.stringify(id)); } catch (e) { }
+  try { document.cookie = 'hdisp=' + encodeURIComponent(id) + '; expires=Fri, 31 Dec 2037 23:59:59 GMT; path=/'; } catch (e) { }
+  return { id: id, nom: /Xbox/i.test(navigator.userAgent) ? 'Xbox' : /MSIE |Trident\//.test(navigator.userAgent) ? 'Internet Explorer' : 'Navegador antic' };
+})();
+var PANT = { dif: 0 };
+function hola() {
+  var it = R.cua[R.pos], t0 = new Date().getTime();
+  getJson(api('pantalles/hola', { d: DISP.id, v: 2, sona: it ? it.t + (it.s ? ' · ' + it.s : '') : '', pausa: it && au.paused ? 1 : '', nom: X.ajustos.nomDisp || DISP.nom, _: t0 }), function (r) {
+    var l = r && r.o ? r.o : r;
+    if (r && r.t) PANT.dif = r.t - (t0 + new Date().getTime()) / 2;
+    if (l && l.length) rebOrdre(l[l.length - 1]);
+  });
+}
+setInterval(hola, 4000);
+setTimeout(hola, 1000);
+/* el que arriba d'una altra pantalla: ràdio i música sonen aquí; la TV en directe no (aquest navegador no fa HLS) */
+function rebOrdre(o) {
+  if (!o || !o.tipus) return;
+  if (o.tipus == 'ctl') {
+    if (o.acc == 'pausa' && !au.paused) au.pause();
+    else if (o.acc == 'play' && au.paused && R.cua.length) au.play();
+    else if (o.acc == 'atura' || o.acc == 'apaga') { atura(); tancaGran(); }
+    return;
+  }
+  if (o.tipus == 'tv') { avis(T('Aquest navegador no pot mostrar la TV en directe') + (o.t ? ': ' + o.t : ''), 6000); return; }
+  if (o.tipus != 'cua' || !o.cua || !o.cua.length) return;
+  var cua = [];
+  for (var i = 0; i < o.cua.length; i++) {
+    var it = o.cua[i];
+    if (it.k == 'radio' && it.id) cua.push({ t: it.t, s: it.s || T('Ràdio'), art: it.art, vies: [api('radio/mp3', { u: it.id }), api('x', { u: it.id, directe: 1 })].concat(/^http:/i.test(it.id) ? [it.id] : []) });
+    else if (it.u && it.k != 'spotify') cua.push({ t: it.t, s: it.s, art: it.art, u: it.u });
+  }
+  if (!cua.length) { avis(T('Això no es pot reproduir en aquest navegador') + (o.t ? ': ' + o.t : ''), 6000); return; }
+  avis(T('Des de') + ' ' + (o.de || '') + ': ' + (o.t || ''), 4000);
+  /* si diverses pantalles comencen alhora, s'espera l'hora acordada */
+  var espera = o.t0 ? Math.max(0, o.t0 - (new Date().getTime() + PANT.dif)) : 0;
+  setTimeout(function () { R.cua = cua; R.pos = Math.min(o.pos || 0, cua.length - 1); toca(); }, espera);
+}
+
 /* ---------- Arrencada ---------- */
 dades('ajustos', function (a) {
   X.ajustos = a || {};
