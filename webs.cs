@@ -193,7 +193,7 @@ public static class Webs
         // un widget: cada cop, la pagina a la posicio i l'ampliacio de quan es va retallar (si s'ha recarregat, tornaria a dalt)
         if (!id.StartsWith("nav-") && (c.Sx > 0 || c.Sy > 0 || Math.Abs(c.Zoom - 1) > 0.01))
             try { Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{var d=document.documentElement;if(d&&{2}!=1&&d.style.zoom!='{2}')d.style.zoom='{2}';if(Math.abs(window.scrollX-{0})>2||Math.abs(window.scrollY-{1})>2)window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy, c.Zoom), 3000); } catch { }
-        if (!id.StartsWith("nav-") && c.Clica != "" && (DateTime.Now - c.Clicat).TotalSeconds > 10) EngegaDirecte(c);
+        if (!id.StartsWith("nav-") && (DateTime.Now - c.Clicat).TotalSeconds > 10) EngegaDirecte(c);
         lock (c.Lk)
         {
             c.Vist = DateTime.Now;
@@ -213,6 +213,9 @@ public static class Webs
     static void EngegaDirecte(Captura c)
     {
         c.Clicat = DateTime.Now;
+        // si la web demana iniciar sessio i l'Edge ja hi ha posat l'usuari i la contrasenya desats, s'entra sol
+        try { if (EntraSol(c)) return; } catch { }
+        if (c.Clica == "") return;
         try
         {
             string js = "(function(t){var v=document.querySelectorAll('video,canvas'),i,r;" +
@@ -232,6 +235,43 @@ public static class Webs
             if (c.Sx > 0 || c.Sy > 0) Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy), 3000);
         }
         catch { }
+    }
+
+    // Formulari d'inici de sessio emplenat per l'Edge (contrasenyes desades): un clic de debo al camp (perque l'Edge
+    // deixi llegir el que ha emplenat) i un altre al boto d'entrar
+    const string LOGIN_JS = "(function(){function vis(e){var r=e.getBoundingClientRect();return r.width>20&&r.height>8&&getComputedStyle(e).visibility!='hidden';}" +
+        "function mig(e){e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();return Math.round(r.left+r.width/2)+','+Math.round(r.top+r.height/2);}" +
+        "var ps=document.querySelectorAll('input[type=password]'),p=null,i;for(i=0;i<ps.length;i++)if(vis(ps[i])){p=ps[i];break;}if(!p)return '';" +
+        "var f=p.form||p.closest('form')||p.parentElement;for(i=0;i<6&&f&&f.parentElement&&!f.querySelector('button,input[type=submit],[role=button],a');i++)f=f.parentElement;" +
+        "var re=/^(log ?in|sign ?in|entrar|iniciar|acceder|login|connexi|connecter|se connecter|anmelden|aceder|inicio)/i,bs=(f||document).querySelectorAll('button,input[type=submit],[role=button],a,div,span'),b=null;" +
+        "for(i=0;i<bs.length;i++){var t=(bs[i].innerText||bs[i].value||'').replace(/\\s+/g,' ').replace(/^ | $/g,'');if(t.length<30&&re.test(t)&&vis(bs[i])&&(!b||b.contains(bs[i])))b=bs[i];}" +
+        "if(!b){b=(f||document).querySelector('button[type=submit],input[type=submit]')||(f||document).querySelector('button');}" +
+        "return mig(p)+'|'+(b&&vis(b)?mig(b):'');})()";
+
+    static void ClicReal(Captura c, string xy)
+    {
+        string[] a = xy.Split(',');
+        double x = double.Parse(a[0], System.Globalization.CultureInfo.InvariantCulture), y = double.Parse(a[1], System.Globalization.CultureInfo.InvariantCulture);
+        c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseMoved", "x", x, "y", y), 5000);
+        c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mousePressed", "x", x, "y", y, "button", "left", "buttons", 1, "clickCount", 1), 5000);
+        c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseReleased", "x", x, "y", y, "button", "left", "buttons", 0, "clickCount", 1), 5000);
+    }
+
+    static bool EntraSol(Captura c)
+    {
+        string r = Convert.ToString(Edge.Avalua(c.Pag, LOGIN_JS, 4000));
+        if (string.IsNullOrEmpty(r) || r.IndexOf('|') < 0) return false;
+        string[] pb = r.Split('|');
+        ClicReal(c, pb[0]);
+        Thread.Sleep(600);
+        // l'Edge nomes deixa veure la contrasenya emplenada despres d'un gest de debo; si el camp es buit no hi ha res desat
+        object ple = Edge.Avalua(c.Pag, "(function(){var p=document.activeElement;return !!(p&&p.type=='password'&&p.value);})()", 3000);
+        if (!(ple is bool && (bool)ple)) return true;
+        if (pb[1] != "") ClicReal(c, pb[1]);
+        else NavTecla(c.Pag, "Enter");
+        Thread.Sleep(4000);
+        if (c.Sx > 0 || c.Sy > 0) Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy), 3000);
+        return true;
     }
 
     static void Clic(string id, double fx, double fy)
