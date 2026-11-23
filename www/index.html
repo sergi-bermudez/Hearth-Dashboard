@@ -295,6 +295,7 @@ html.sa #tv.gran .tv-ctl{padding-top:36px}
 .xip i{display:inline-block;width:10px;height:10px;border-radius:5px;margin-right:8px;font-style:normal}
 
 /* Botons de la TV: tots iguals */
+#tv .tv-ctl button.encaix{font-size:24px;line-height:50px;text-align:center}
 #tv .tv-ctl button{width:50px;height:50px;padding:0;margin-left:10px;border-radius:25px;background:rgba(255,255,255,.18);-webkit-flex:none;flex:none}
 #tv .tv-ctl button .ic{width:28px;height:28px}
 #tv .tv-ctl .vol{margin-left:10px}
@@ -691,7 +692,7 @@ body.offline .app.cal-servidor,body.offline #nav div.cal-servidor{opacity:.3}
   <div class="tv-estat" id="tv-estat"></div>
   <div id="tv-gp" onclick="TV.pausaUsuari = false; var v = $('tv-v'); var p = v.play(); if (p && p['catch']) p['catch'](function () { });"></div>
   <div class="tv-ctl"><span class="directe" id="tv-directe" data-t>DIRECTE</span><div class="nm una" id="tv-nom"></div>
-    <span id="tv-vol"></span><button onclick="castObre()" id="tv-b-cast"></button><button onclick="tvNatiu()" id="tv-b-natiu"></button><button onclick="tvMode('normal')" id="tv-b-petit"></button><button onclick="tvAtura()" id="tv-b-x"></button></div>
+    <span id="tv-vol"></span><button onclick="castObre()" id="tv-b-cast"></button><button onclick="tvEncaix()" id="tv-b-encaix" class="encaix"></button><button onclick="tvNatiu()" id="tv-b-natiu"></button><button onclick="tvMode('normal')" id="tv-b-petit"></button><button onclick="tvAtura()" id="tv-b-x"></button></div>
   <div class="tv-vod"><button onclick="vodSalta(-15)" id="tv-b-enr"></button><button class="gp" onclick="repPlay()" id="tv-b-play"></button><button onclick="vodSalta(30)" id="tv-b-end"></button>
     <span class="tm" id="tv-t1"></span><div class="barra-v" onclick="vodCerca(event,this)"><div><div id="tv-prog"></div></div></div><span class="tm" id="tv-t2"></span></div>
   <div class="tv-canals" id="tv-canals"></div>
@@ -1678,16 +1679,29 @@ function tvMode(m) {
 }
 /* Un toc: en petit, maximitza; en gran, mostra els controls.
    Dos tocs seguits: maximitza i omple d'amplada; un altre doble toc omple d'alçada (retalla els costats); el següent el torna a fer petit */
+/* Botó de la pantalla completa: com s'encaixa la imatge (sencera → omplint l'amplada → omplint l'alçada) */
+function tvEncaix() {
+  TV.ajust = !TV.ajust || TV.ajust == 'c' ? 'h' : TV.ajust == 'h' ? 'v' : 'c';
+  tvAjusta(); pintaEncaix(); tvMostraCtl();
+}
+function pintaEncaix() {
+  var b = $('tv-b-encaix'); if (!b) return;
+  b.textContent = TV.ajust == 'h' ? '↔' : TV.ajust == 'v' ? '↕' : '▢';
+  b.title = T(TV.ajust == 'h' ? 'Omple l\'amplada' : TV.ajust == 'v' ? 'Omple l\'alçada' : 'Sencera');
+}
 function tvToc() {
-  var ara = +new Date(), doble = ara - (TV.tocT || 0) < 380;
+  /* el doble clic amb el comandament d'una tele és més lent que amb el dit */
+  var ara = +new Date(), doble = ara - (TV.tocT || 0) < 650;
   TV.tocT = doble ? 0 : ara;
   /* en gran, cada doble toc: sencera (com ve) → omplint l'amplada → omplint l'alçada → petita */
   if (doble) {
+    TV.dobleT = ara;
     if (TV.modeAbans != 'gran') { TV.ajust = 'c'; tvAjusta(); }
     else if (!TV.ajust || TV.ajust == 'c') { TV.ajust = 'h'; tvAjusta(); }
     else if (TV.ajust == 'h') { TV.ajust = 'v'; tvAjusta(); }
     else { TV.ajust = 'c'; tvMode('normal'); }
     TV.modeAbans = TV.mode;
+    pintaEncaix();
     return;
   }
   TV.modeAbans = TV.mode;
@@ -1695,6 +1709,7 @@ function tvToc() {
 }
 /* Com omple el vídeo la pantalla gran: 'h' tota l'amplada, 'v' tota l'alçada (calculat a mà: l'iOS 9 no fa object-fit als vídeos) */
 function tvAjusta() {
+  pintaEncaix();
   var v = $('tv-v'), t = $('tv'), st = v.style;
   var vw = v.videoWidth, vh = v.videoHeight, W = t.clientWidth, H = t.clientHeight;
   var of = 'objectFit' in st;
@@ -2494,6 +2509,7 @@ window.Casa = {
   provaVolum();
   $('mini-x').innerHTML = svg(IC.tanca);
   $('tv-b-natiu').innerHTML = svg(IC.gran); $('tv-b-natiu').title = T('Pantalla completa');
+  pintaEncaix();
   $('tv-b-petit').innerHTML = svg(IC.petit); $('tv-b-gran').innerHTML = svg(IC.gran);
   $('tv-vol').innerHTML = htmlVolumTv(); pintaVolum();
   $('tv-b-cast').innerHTML = svg(IC_CAST); $('mini-cast').innerHTML = svg(IC_CAST);
