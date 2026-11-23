@@ -29,6 +29,7 @@ h2.g{font-size:15px;color:#8d95a1;text-transform:uppercase;letter-spacing:.06em;
 #form .fila{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin:8px 0;-webkit-flex-wrap:wrap;flex-wrap:wrap}
 #form .fila>label{width:150px;color:#aeb5bf}
 #form input,#form select{font-size:17px}
+select{background:#2c3036;color:#fff;border:0;border-radius:12px;padding:10px 14px;font-size:16px;-webkit-appearance:none;appearance:none;margin:5px;max-width:100%}
 .dies span{display:inline-block;width:40px;height:40px;line-height:40px;text-align:center;border-radius:20px;background:#2c3036;margin:3px;cursor:pointer;font-weight:600}
 .dies span.on{background:#ffab3d;color:#111}
 </style>
@@ -37,6 +38,7 @@ h2.g{font-size:15px;color:#8d95a1;text-transform:uppercase;letter-spacing:.06em;
 <div id="pag">
   <h1>Alarmes</h1>
   <h2 class="g">Temporitzadors</h2>
+  <div class="nou"><span class="gris" style="margin:5px">Sona a</span><select id="t-disp" class="sel"></select></div>
   <div class="rap" id="rap"></div>
   <div class="nou"><input type="number" class="mn" id="t-min" placeholder="min" min="1" max="600" inputmode="numeric"><input type="text" class="nm" id="t-nom" placeholder="Nom (p. ex. Pasta)"><button class="pri" onclick="tempNou()">Engega</button></div>
   <div id="temps"></div>
@@ -55,7 +57,7 @@ h2.g{font-size:15px;color:#8d95a1;text-transform:uppercase;letter-spacing:.06em;
 <script src="comu.js"></script>
 <script>
 dinsCasa('alarmes');
-var AL = { l: [], ed: -1, dies: [], pant: [], t: null };
+var AL = { l: [], ed: -1, dies: [], pant: [], casts: [], t: null };
 var DIESC = [T('dg'), T('dl'), T('dt'), T('dc'), T('dj'), T('dv'), T('ds')];
 function id() { return 'a' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36); }
 function carrega(ok) { dades('alarmes', function (d) { AL.l = d || []; pinta(); if (ok) ok(); }); }
@@ -70,7 +72,9 @@ function canvia(f, ok) { dades('alarmes', function (d) { var l = d || []; f(l); 
 /* ---------- Temporitzadors de cuina ---------- */
 function tempPosa(min, nom) {
   if (!(min > 0)) return;
-  var a = { id: id(), tipus: 'cuina', nom: nom || (min + ' min'), min: min, fi: Date.now() + min * 60000, disp: DISP.id };
+  var dsp = $('t-disp').value || DISP.id;
+  try { ls('alTdisp', dsp); } catch (e) { }
+  var a = { id: id(), tipus: 'cuina', nom: nom || (min + ' min'), min: min, fi: Date.now() + min * 60000, disp: dsp, dispNom: nomPant(dsp) };
   canvia(function (l) { l.push(a); }, function () { avis(T('Temporitzador') + ': ' + a.nom); });
 }
 function tempNou() {
@@ -81,7 +85,7 @@ function tempNou() {
 }
 function tempTreu(i) { var x = AL.l[i]; canvia(function (l) { for (var k = l.length - 1; k >= 0; k--) if (l[k].id == x.id) l.splice(k, 1); }); }
 function falta(ms) { ms = Math.max(0, ms); var s = Math.ceil(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); s = s % 60; return (h ? h + ':' + dos(m) : m) + ':' + dos(s); }
-function nomPant(d) { if (!d || d == 'tots') return T('Totes les pantalles'); if (d == DISP.id) return T('Aquesta pantalla'); for (var i = 0; i < AL.pant.length; i++) if (AL.pant[i].id == d) return AL.pant[i].nom; return T('Una altra pantalla'); }
+function nomPant(d) { if (!d || d == 'tots') return T('Totes les pantalles'); if (d == DISP.id) return T('Aquesta pantalla'); if (d == 'pc') return '🖥 ' + T('El PC'); if (d.indexOf('cast:') === 0) { for (var j = 0; j < AL.casts.length; j++) if ('cast:' + AL.casts[j].id == d) return '🔊 ' + AL.casts[j].nom; return '🔊 ' + T('Altaveu'); } for (var i = 0; i < AL.pant.length; i++) if (AL.pant[i].id == d) return AL.pant[i].nom; return T('Una altra pantalla'); }
 
 /* ---------- Despertadors ---------- */
 function radiosPare() { try { return window.parent.A.radios || []; } catch (e) { return []; } }
@@ -141,17 +145,34 @@ function formObre(i) {
   r = radiosPare();
   for (var k = 0; k < r.length; k++) h += '<option value="radio:' + k + '">📻 ' + esc(r[k].t) + '</option>';
   $('d-so').innerHTML = h; $('d-so').value = x.so || 'bip';
-  var p = '<option value="' + esc(DISP.id) + '">' + esc(T('Aquesta pantalla')) + '</option><option value="tots">' + esc(T('Totes les pantalles')) + '</option>';
-  for (k = 0; k < AL.pant.length; k++) p += '<option value="' + esc(AL.pant[k].id) + '">' + esc(AL.pant[k].nom) + '</option>';
+  var p = opcionsDisp();
   if (x.disp && x.disp != 'tots' && x.disp != DISP.id && p.indexOf('value="' + x.disp + '"') < 0) p += '<option value="' + esc(x.disp) + '">' + esc(T('Una altra pantalla')) + '</option>';
   $('d-disp').innerHTML = p; $('d-disp').value = x.disp || DISP.id;
   $('form').style.display = 'block';
   $('form').querySelector('.fila:last-child').innerHTML = '<button onclick="formTanca()">' + esc(T('Cancel·la')) + '</button> ' + (i >= 0 ? '<button onclick="despTreu(' + i + ')">' + esc(T('Esborra')) + '</button> ' : '') + '<button onclick="formProva()">' + esc(T('Prova')) + '</button> <button class="pri" onclick="formDesa()">' + esc(T('Desa')) + '</button>';
   try { $('form').scrollIntoView(); } catch (e) { }
 }
+/* a on pot sonar: pantalles de Hearth (si estan enceses), altaveus i teles Cast/DLNA i el PC (sonen sempre: ho fa el servidor) */
+function opcionsDisp() {
+  var p = '<option value="' + esc(DISP.id) + '">' + esc(T('Aquesta pantalla')) + '</option><option value="tots">' + esc(T('Totes les pantalles')) + '</option>', k;
+  for (k = 0; k < AL.pant.length; k++) p += '<option value="' + esc(AL.pant[k].id) + '">' + esc(AL.pant[k].nom) + '</option>';
+  for (k = 0; k < AL.casts.length; k++) p += '<option value="cast:' + esc(AL.casts[k].id) + '">🔊 ' + esc(AL.casts[k].nom) + '</option>';
+  p += '<option value="pc">🖥 ' + esc(T('El PC')) + '</option>';
+  return p;
+}
+function pintaTdisp() { var v = $('t-disp').value || ls('alTdisp') || DISP.id; $('t-disp').innerHTML = opcionsDisp(); $('t-disp').value = v; if ($('t-disp').value != v) $('t-disp').value = DISP.id; }
 function formTanca() { $('form').style.display = 'none'; AL.ed = -1; }
-function formDades() { return { hora: $('d-hora').value || '07:30', nom: retalla($('d-nom').value), dies: AL.dies.slice(), so: $('d-so').value, disp: $('d-disp').value }; }
-function formProva() { var a = formDades(); a.id = 'prova'; a.tipus = 'desp'; if (Casa && Casa.alarmaProva) Casa.alarmaProva(a); }
+function formDades() { return { hora: $('d-hora').value || '07:30', nom: retalla($('d-nom').value), dies: AL.dies.slice(), so: $('d-so').value, disp: $('d-disp').value, dispNom: nomPant($('d-disp').value) }; }
+function formProva() {
+  var a = formDades(); a.id = 'prova'; a.tipus = 'desp';
+  /* a un altaveu o al PC: un temporitzador de prova que sona d'aquí a uns segons (el servidor el mira cada 10 s) */
+  if (/^(cast:|pc$)/.test(a.disp)) { tempProva(a); return; }
+  if (Casa && Casa.alarmaProva) Casa.alarmaProva(a);
+}
+function tempProva(a) {
+  var t = { id: id(), tipus: 'cuina', nom: T('Prova'), min: 0, fi: Date.now() + 3000, disp: a.disp, dispNom: a.dispNom, so: a.so };
+  canvia(function (l) { l.push(t); }, function () { avis(T('Sonarà d\'aquí a uns segons a') + ' ' + a.dispNom, 4000); });
+}
 function formDesa() {
   var d = formDades(), ed = AL.ed >= 0 ? AL.l[AL.ed] : null;
   if (!/^\d{1,2}:\d\d$/.test(d.hora)) { avis(T('Hora no vàlida'), 2500); return; }
@@ -160,11 +181,15 @@ function formDesa() {
     else { d.id = id(); d.tipus = 'desp'; d.on = true; l.push(d); }
   }, function () { formTanca(); avis(T('Desat')); });
 }
-function pantalles() { getJson(api('pantalles/llista', { d: DISP.id, _: Date.now() }), function (l) { AL.pant = l || []; pinta(); }, function () { }); }
+function pantalles() {
+  getJson(api('pantalles/llista', { d: DISP.id, _: Date.now() }), function (l) { AL.pant = l || []; pinta(); pintaTdisp(); }, function () { });
+  getJson(api('cast/dispositius'), function (l) { AL.casts = l || []; pinta(); pintaTdisp(); }, function () { });
+}
 
 window.casaMostra = function () { carrega(); pantalles(); clearInterval(AL.t); AL.t = setInterval(carrega, 15000); };
 window.casaAmaga = function () { clearInterval(AL.t); };
 pintaRapids();
+pintaTdisp();
 window.casaMostra();
 </script>
 </body>

@@ -517,6 +517,40 @@ public static class Cast
         return k == "musica" || k == "podcast" ? "audio/mpeg" : "video/mp4";
     }
 
+    // Envia un contingut a un aparell (tamb\u00e9 per a les alarmes del servidor)
+    static void Carrega(Disp d, string u, string k, string titol, string img, int port)
+    {
+        string b = Base(d, port);
+        bool directe = k == "radio" || k == "tv";
+        if (d.Tipus == "dlna" && (u.StartsWith("http://") || u.StartsWith("https://")) && !u.ToLowerInvariant().Contains(".m3u8")) u = "/api/x?directe=1&u=" + Uri.EscapeDataString(u);
+        if (u.StartsWith("http") && u.ToLowerInvariant().Contains(".m3u8")) u = "/api/hls?u=" + Uri.EscapeDataString(u);
+        if (u.StartsWith("/")) u = b + u;
+        if (img.StartsWith("/")) img = b + img;
+        string ct = Tipus(u, k);
+        if (d.Tipus == "cast") CastCarrega(d, u, ct, directe, titol, img);
+        else DlnaCarrega(d, u, ct, titol, ct.StartsWith("video") || ct.Contains("mpegURL"));
+    }
+
+    public static string NomAparell(string id) { Disp d; lock (lk) disps.TryGetValue(id, out d); return d != null ? d.Nom : null; }
+
+    public static bool EnviaA(string id, string u, string k, string titol)
+    {
+        Disp d;
+        lock (lk) disps.TryGetValue(id, out d);
+        if (d == null) { try { Cerca(); } catch { } lock (lk) disps.TryGetValue(id, out d); }
+        if (d == null) return false;
+        Carrega(d, u, k, titol ?? "", "", CasaServidor.PortHttp);
+        return true;
+    }
+
+    public static void AturaA(string id)
+    {
+        Disp d;
+        lock (lk) disps.TryGetValue(id, out d);
+        if (d == null) return;
+        try { if (d.Tipus == "cast") CastOrdre(d, "atura", 0); else DlnaOrdre(d, "atura", 0); } catch { }
+    }
+
     public static void Api(string nom, Dictionary<string, string> q, HttpListenerContext ctx, int port)
     {
         HttpListenerResponse res = ctx.Response;
@@ -555,16 +589,7 @@ public static class Cast
             {
                 string u = CasaServidor.Q(q, "u"), k = CasaServidor.Q(q, "k"), titol = CasaServidor.Q(q, "t"), img = CasaServidor.Q(q, "img");
                 if (u == "") { CasaServidor.Error(res, 400, "Res a enviar"); return; }
-                string b = Base(d, port);
-                bool directe = k == "radio" || k == "tv";
-                // Les teles DLNA no saben https ni cap\u00e7aleres especials: tot el que ve de fora passa pel PC
-                if (d.Tipus == "dlna" && (u.StartsWith("http://") || u.StartsWith("https://")) && !u.ToLowerInvariant().Contains(".m3u8")) u = "/api/x?directe=1&u=" + Uri.EscapeDataString(u);
-                if (u.StartsWith("http") && u.ToLowerInvariant().Contains(".m3u8")) u = "/api/hls?u=" + Uri.EscapeDataString(u);
-                if (u.StartsWith("/")) u = b + u;
-                if (img.StartsWith("/")) img = b + img;
-                string ct = Tipus(u, k);
-                if (d.Tipus == "cast") CastCarrega(d, u, ct, directe, titol, img);
-                else DlnaCarrega(d, u, ct, titol, ct.StartsWith("video") || ct.Contains("mpegURL"));
+                Carrega(d, u, k, titol, img, port);
                 Dictionary<string, object> o = new Dictionary<string, object>();
                 o["ok"] = true; o["nom"] = d.Nom;
                 CasaServidor.Json(res, o);

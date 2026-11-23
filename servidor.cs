@@ -66,7 +66,8 @@ public static class CasaServidor
     static readonly string[] Categories = { "pelis", "musica", "fotos", "documents" };
     static readonly SemaphoreSlim Sem = new SemaphoreSlim(2);
     static readonly object FotoLock = new object();
-    static readonly object DadesLock = new object();
+    internal static readonly object DadesLock = new object();
+    internal static int PortHttp { get { return Port; } }
     static Dictionary<string, string> FotoCache;
     static List<object[]> FotoLlista;
     static DateTime FotoEscaneig = DateTime.MinValue;
@@ -164,6 +165,7 @@ public static class CasaServidor
         GFotos.AlArrencar();
         Actualitza.Inicia();
         Botigues.Inicia();
+        Alarmes.Inicia();
         Webs.Inicia();
         while (true)
         {
@@ -358,6 +360,7 @@ public static class CasaServidor
         if (nom == "ip") { Text(res, "{\"ip\":\"" + ((IPEndPoint)ctx.Request.LocalEndPoint).Address + "\"}", "application/json; charset=utf-8"); return; }
         if (nom == "radios") { Radios.Api(q, ctx); return; }
         if (nom.StartsWith("pcm/")) { Pcm.Api(nom.Substring(4), q, ctx); return; }
+        if (nom == "alarma/bip.wav") { Alarmes.Bip(ctx); return; }
         if (nom.StartsWith("cast/")) { Cast.Api(nom, q, ctx, Port); return; }
         if (nom.StartsWith("compra/")) { Botigues.Api(nom.Substring(7), q, ctx, false); return; }
         if (nom.StartsWith("pantalles/")) { Pantalles.Api(nom.Substring(10), q, ctx); return; }

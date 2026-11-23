@@ -2632,6 +2632,11 @@ function alMira() {
   }
   for (i = 0; i < AL.l.length; i++) {
     a = AL.l[i]; clau = null;
+    /* alarmes que fa sonar el servidor en un altaveu o al PC: aquí només l'avís per poder-la aturar */
+    if (a.sonant && a.sonant != a.aturat && /^(cast:|pc$)/.test(a.disp || '')) {
+      if (!AL.fets[a.sonant] && !(AL.sona && AL.sona.clau == a.sonant)) { AL.fets[a.sonant] = n; ls('alFets', AL.fets); alSona(a, a.sonant, true); return; }
+      continue;
+    }
     if (!alPerMi(a)) continue;
     if (a.tipus == 'cuina') { if (a.fi && n >= a.fi && n - a.fi < 3600000) clau = a.id + '|' + a.fi; }
     else if (a.on !== false) {
@@ -2660,12 +2665,14 @@ function alBip() {
   AL.bip = 'data:audio/wav;base64,' + btoa(b);
   return AL.bip;
 }
-function alSona(a, clau) {
+function alSona(a, clau, mut) {
   if (AL.sona) alPara(false);
-  AL.sona = { a: a, clau: clau, radio: false };
-  if (TV.canal) tvAtura(true);
+  AL.sona = { a: a, clau: clau, radio: false, mut: !!mut };
   var desp = a.tipus != 'cuina', r = desp && a.so && a.so.indexOf('radio:') === 0 ? (A.radios || [])[+a.so.substring(6)] : null;
-  if (r) {
+  if (mut) r = null;
+  else if (TV.canal) tvAtura(true);
+  if (mut) { }
+  else if (r) {
     AL.sona.radio = true;
     repInicia([radioItem(r)], 0);
     /* el volum puja a poc a poc durant un minut (on es pot) */
@@ -2677,7 +2684,7 @@ function alSona(a, clau) {
   }
   var e = $('alarma'), h = new Date();
   e.innerHTML = '<div class="al-c"><div class="al-ic">' + svg(desp ? IC_ALARMA : IC_CRONO) + '</div><div class="al-h">' + h.getHours() + ':' + dos(h.getMinutes()) + '</div>' +
-    '<div class="al-n">' + esc(a.nom || (desp ? T('Despertador') : T('Temporitzador'))) + '</div>' +
+    '<div class="al-n">' + esc(a.nom || (desp ? T('Despertador') : T('Temporitzador'))) + (mut ? '<small style="display:block;font-size:17px;color:#8d95a1;margin-top:6px">' + esc(T('Sona a') + ': ' + (a.dispNom || (a.disp == 'pc' ? T('el PC') : T('un altaveu')))) + '</small>' : '') + '</div>' +
     '<div class="al-b">' + (desp ? '<button onclick="alPosposa()">' + esc(T('Posposa 10 min')) + '</button>' : '') +
     (r ? '<button onclick="alPara(true, true)">' + esc(T('Continua escoltant')) + '</button>' : '') +
     '<button class="pri" onclick="alPara(true)">' + esc(T('Atura')) + '</button></div></div>';
@@ -2692,7 +2699,8 @@ function alPara(avisa, segueix) {
   AL.sona = null;
   clearTimeout(AL.tmax); clearInterval(AL.tv);
   $('alarma').style.display = 'none';
-  if (!s.radio) { au.loop = false; if (au.src.indexOf('data:audio/wav') === 0) { au.pause(); au.removeAttribute('src'); } }
+  if (s.mut) { }
+  else if (!s.radio) { au.loop = false; if (au.src.indexOf('data:audio/wav') === 0) { au.pause(); au.removeAttribute('src'); } }
   else if (!segueix) repAtura();
   if (!avisa) return;
   dades('alarmes', function (l) {
