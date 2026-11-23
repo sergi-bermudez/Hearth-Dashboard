@@ -633,8 +633,8 @@ body.petit #temps .t-ds.una{display:none}
 body.petit #temps .t-ds{font-size:12px;margin-top:2px;white-space:nowrap}
 body.petit #hora{text-align:left}
 /* sense flexbox (iOS 6): el dock com una taula d'una fila, enganxat a baix, i el que sona a sota */
-html.sense-flex body.petit .d-dock{display:table;table-layout:fixed;white-space:nowrap;position:absolute;left:10px;bottom:10px;width:-webkit-calc(100% - 20px);width:calc(100% - 20px);margin:0;box-sizing:border-box}
-html.sense-flex body.petit .d-dock .app{display:table-cell;width:auto;margin:0;vertical-align:middle}
+html.sense-flex body.petit .d-dock{display:block;position:absolute;left:10px;right:10px;bottom:10px;width:auto;margin:0;white-space:nowrap;text-align:center;font-size:0;box-sizing:border-box}
+html.sense-flex body.petit .d-dock .app{display:inline-block;margin:0;vertical-align:middle;font-size:11px}
 html.sense-flex body.petit .d-dock .app .bx{padding-top:8px}
 html.sense-flex body.petit.sona:not(.en-app) .d-dock{bottom:68px}
 html.sense-flex body.petit #dash{padding-bottom:72px}
@@ -1034,6 +1034,8 @@ function pintaDock() {
   $('cfg').innerHTML = svg(INF.actiu ? 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z' : IC.config);
   $('b-tele').innerHTML = svg(IC_CAST); $('b-tele').style.display = INF.actiu ? 'none' : '';
   $('dock').innerHTML = h;
+  /* sense flexbox: cada app ocupa la mateixa part de la fila */
+  if (/sense-flex/.test(document.documentElement.className)) { var ds = $('dock').querySelectorAll('.app'); for (var di = 0; di < ds.length; di++) ds[di].style.width = (100 / ds.length) + '%'; }
   $('nav').innerHTML = n;
   if (window.NF) puntMissatges();
 }
