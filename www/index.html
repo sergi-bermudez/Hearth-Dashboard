@@ -646,7 +646,7 @@ html.sense-flex body.sona #apps,html.sense-flex body.en-app.sona #apps{bottom:66
 /* ---- Sense connexió amb el servidor ---- */
 #fora{display:none;position:fixed;left:50%;top:10px;width:460px;margin-left:-230px;z-index:90;background:#3a2a10;color:#ffd79a;border-radius:12px;padding:10px 14px;font-size:14px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 body.offline #fora{display:block}
-body.offline .app.cal-servidor,body.offline #nav div.cal-servidor{opacity:.3}
+body.offline .app.cal-servidor,body.offline #nav div.cal-servidor,body.offline .rt.cal-servidor,body.offline .gb.cal-servidor,body.offline .wg,body.offline #b-tele,body.offline #mini-cast,body.offline #tv-b-cast{opacity:.3}
 @media (max-width:500px){#fora{left:8px;right:8px;width:auto;margin-left:0}}
 </style>
 </head>
@@ -1201,6 +1201,19 @@ function despertAtura() {
 
 /* ---------- Sense connexió amb el servidor: es veu, i el que no pot funcionar queda apagat ---------- */
 var FORA = { actiu: false, errs: 0 };
+/* Sense servidor, el que en depèn queda en gris i no s'obre (els botons marcats amb .cal-servidor, els widgets, enviar a una altra pantalla) */
+function calServidor(e) {
+  if (!FORA.actiu) return;
+  for (var el = e.target; el && el != document; el = el.parentNode) {
+    var c = ' ' + (el.className && el.className.baseVal == null ? el.className : '') + ' ';
+    if (c.indexOf(' cal-servidor ') >= 0 || c.indexOf(' wg ') >= 0 || el.id == 'b-tele' || el.id == 'mini-cast' || el.id == 'tv-b-cast') {
+      e.preventDefault(); e.stopPropagation();
+      avis(T('Això necessita el servidor, que ara no respon.'));
+      return;
+    }
+  }
+}
+document.addEventListener('click', calServidor, true);
 function connexio(ok) {
   FORA.errs = ok ? 0 : FORA.errs + 1;
   var fora = FORA.errs >= 2;
@@ -1209,6 +1222,12 @@ function connexio(ok) {
   $('fora').innerHTML = fora ? esc(T('Sense connexió amb el servidor de Hearth. Continua funcionant el que ja tens obert; la resta tornarà sola.')) : '';
   estatCos();
   if (!fora) { avis(T('Connectat de nou')); carregaAjustos(); }
+  /* el que sonava a través del servidor, es torna a engegar directament des d'internet */
+  if (fora) {
+    var it = R.cua[R.pos];
+    if (it && it.k == 'radio' && radioDirecta(it.id) && (PCM.actiu || /\/api\//.test(au.src || ''))) repInicia([radioItem({ u: it.id, t: it.t, s: it.s, img: '' })], 0);
+    else if (TV.canal && !TV.canal.vod && TV.canal.urls && /\/api\//.test($('tv-v').currentSrc || $('tv-v').src || '')) tvObre(TV.canal, TV.mode == 'gran');
+  }
 }
 function notifica() {
   for (var k in FR) if (FR.hasOwnProperty(k)) {
@@ -1563,7 +1582,7 @@ function tvObre(canal, gran) {
   if (canal.vod) TV.cands.push(canal.u);
   else for (i = 0; i < canal.urls.length; i++) {
     TV.cands.push(canal.urls[i]);
-    TV.cands.push(api('hls', { u: canal.urls[i] }));
+    if (!FORA.actiu) TV.cands.push(api('hls', { u: canal.urls[i] }));
   }
   if (!canal.vod) {
     var ok = ls('tvok.' + canal.id), p = TV.cands.indexOf(ok);
@@ -2045,7 +2064,7 @@ function pintaSona(intern) {
   var grans = [['radio', 'Ràdio', IC.radio, '#ffab3d', '#e05d12'], ['tv', 'TV', IC.tv, '#5aa0ff', '#2a5fd0'], ['youtube', 'YouTube', IC.video, '#ff5a5a', '#c4161c'], ['musica', 'Música', IC.musica, '#ff5fa2', '#b0217a'], ['spotify', 'Spotify', IC.spotify, '#2fd36b', '#128a3e']];
   h = '<div class="s-buit"><h2>' + T('Què et ve de gust?') + '</h2><div class="grans">';
   for (i = 0; i < grans.length; i++) if (permesa(grans[i][0]))
-    h += '<div class="gb" onclick="obre(\'' + grans[i][0] + '\')" style="background:' + grans[i][4] + ';background:-webkit-linear-gradient(135deg,' + grans[i][3] + ',' + grans[i][4] + ');background:linear-gradient(135deg,' + grans[i][3] + ',' + grans[i][4] + ')">' + svg(grans[i][2]) + esc(T(grans[i][1])) + '</div>';
+    h += '<div class="gb cal-servidor" onclick="obre(\'' + grans[i][0] + '\')" style="background:' + grans[i][4] + ';background:-webkit-linear-gradient(135deg,' + grans[i][3] + ',' + grans[i][4] + ');background:linear-gradient(135deg,' + grans[i][3] + ',' + grans[i][4] + ')">' + svg(grans[i][2]) + esc(T(grans[i][1])) + '</div>';
   s.innerHTML = h + '</div></div>';
   if (espaiSona() < 110) {
     if (COMPACTE < 3) { COMPACTE++; $('dash').className = 'c' + COMPACTE; pintaSona(true); return; }
@@ -2075,14 +2094,14 @@ function pintaRapid() {
   var h = '', i, ap = permesa('casa') ? CF.l : [];
   for (i = 0; i < ap.length; i++) {
     var on = ap[i].on;
-    h += '<div class="rt" onclick="casaToca(' + i + ')"><div class="lg color" style="background-color:' + (on ? '#f5c25a' : 'rgba(255,255,255,.14)') + '">' + svg(appDef('casa').ic) + '</div><span class="nm">' + esc(ap[i].nom) + '</span></div>';
+    h += '<div class="rt cal-servidor" onclick="casaToca(' + i + ')"><div class="lg color" style="background-color:' + (on ? '#f5c25a' : 'rgba(255,255,255,.14)') + '">' + svg(appDef('casa').ic) + '</div><span class="nm">' + esc(ap[i].nom) + '</span></div>';
   }
   var parts0 = h ? [h] : [];
   h = '';
   var fav = permesa('radio') ? A.radios || [] : [], cs = permesa('tv') ? A.canals || [] : [], v = permesa('pelis') ? veientLlista() : [], parts = [];
   if (fav.length) {
     for (i = 0; i < fav.length; i++)
-      h += '<div class="rt" onclick="tocaRadio(' + i + ')"><div class="lg" style="background-image:' + bg(fav[i].img ? imgx(fav[i].img, 150) : '') + '">' + (fav[i].img ? '' : svg(IC.radio)) + '</div><span class="nm">' + esc(fav[i].t) + '</span></div>';
+      h += '<div class="rt' + (radioDirecta(fav[i].u) ? '' : ' cal-servidor') + '" onclick="tocaRadio(' + i + ')"><div class="lg" style="background-image:' + bg(fav[i].img ? imgx(fav[i].img, 150) : '') + '">' + (fav[i].img ? '' : svg(IC.radio)) + '</div><span class="nm">' + esc(fav[i].t) + '</span></div>';
     parts.push(h);
   }
   h = '';
@@ -2095,7 +2114,7 @@ function pintaRapid() {
   RV = v.slice(0, 8);
   for (i = 0; i < RV.length; i++) {
     var p = RV[i].poster || (RV[i].k == 'yt' ? '' : api('caratula', { p: RV[i].p, m: 200 }));
-    h += '<div class="rt" onclick="continua(' + i + ')"><div class="lg poster" style="background-image:' + bg(p) + '">' + (p ? '' : svg(IC.video)) + '</div><span class="nm">' + esc(RV[i].n) + '</span></div>';
+    h += '<div class="rt cal-servidor" onclick="continua(' + i + ')"><div class="lg poster" style="background-image:' + bg(p) + '">' + (p ? '' : svg(IC.video)) + '</div><span class="nm">' + esc(RV[i].n) + '</span></div>';
   }
   if (h) parts.push(h);
   parts = parts0.concat(parts);
@@ -2116,7 +2135,11 @@ var IOS_VELL = /(iPad|iPhone|iPod).* OS [4-9]_/.test(navigator.userAgent);
 if (IOS_VELL) document.documentElement.className += ' ios-vell';
 /* Navegadors de tele (LG webOS, Samsung Tizen, Android TV…). La ràdio hi va millor directa que en HLS (que s'hi entretalla) */
 var NAV_TELE = NAV_TELE_DETECTAT;
+/* sense servidor, una ràdio pot sonar directament de l'emissora? (a l'iOS vell només les HLS) */
+function radioDirecta(u) { return !IOS_VELL || /\.m3u8(\?|$)/i.test(u || ''); }
 function radioItem(s) {
+  /* sense connexió amb el servidor: directament de l'emissora */
+  if (window.FORA && FORA.actiu) return { t: s.t, s: s.s || T('Ràdio'), art: s.img || '', k: 'radio', id: s.u, u: s.u, alt: [] };
   /* Vies possibles, per ordre: iOS vell -> HLS fet pel servidor (com la TV, que sí que va bé);
      http -> directe (el més ràpid); https -> via el servidor; m3u8 -> HLS reescrit */
   var u = s.u, d = { t: s.t, s: s.s || T('Ràdio'), art: s.img ? imgx(s.img, 200) : '', k: 'radio', id: s.u }, vies = [];
