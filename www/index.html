@@ -2098,9 +2098,11 @@ function marcSona() {
     h = '<div class="flex1"><b class="una" style="display:block">' + esc(c.nom) + '</b><span class="gris">' + esc(c.vod ? (c.s || '') : T('En directe')) + '</span></div>' +
       (c.vod ? '<button onclick="repPlay()" id="mc-play"></button>' : '<button onclick="tvCanvia(-1)">' + svg(IC.ant) + '</button><button onclick="tvCanvia(1)">' + svg(IC.seg) + '</button>') +
       '<button onclick="tvAtura()">' + svg(IC.tanca) + '</button>';
-    m.style.top = Math.round(r.bottom + 10) + 'px';
-    m.style.width = Math.round(r.width) + 'px';
-    m.style.right = Math.round(Math.min(document.documentElement.clientWidth, window.innerWidth || 1e5) - r.right) + 'px';
+    /* just a sota de la TV, amb les mateixes mides que s'han posat a la TV (no les de la pantalla: amb el mode tele
+       la pàgina està ampliada i no coincideixen) */
+    var ts = $('tv').style;
+    m.style.top = Math.round(parseFloat(ts.top) + parseFloat(ts.height) + 10) + 'px';
+    m.style.left = ts.left; m.style.width = ts.width; m.style.right = 'auto';
   } else {
     var radio = it.k == 'radio';
     h = '<div class="lg' + (radio ? '' : ' art') + '" style="background-image:' + bg(it.art) + ';' + (it.art ? '' : 'background-color:rgba(255,255,255,.2)') + '"></div>' +
@@ -2109,6 +2111,7 @@ function marcSona() {
     m.style.top = ((NAV_TELE ? 56 : 24) + sa) + 'px';
     m.style.width = '';
     m.style.right = (NAV_TELE ? 56 : 24) + 'px';
+    m.style.left = '';
   }
   m.innerHTML = h;
   m.style.display = '-webkit-flex';
