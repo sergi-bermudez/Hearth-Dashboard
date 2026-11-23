@@ -346,6 +346,7 @@ public static class CasaServidor
                 }
             case "x": Intermediari(ctx, Q(q, "u"), Q(q, "directe") == "1", Q(q, "directe") == "1" && Q(q, "tal") != "1"); return;
             case "hls": Hls(ctx, Q(q, "u")); return;
+            case "tv/cerca": TvCerca.Api(q, ctx); return;
             case "vtt":
                 {
                     string full = Ruta(c, p);
