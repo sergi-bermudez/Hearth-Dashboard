@@ -482,7 +482,7 @@ function wgForm() {
   var cam = /cloudedge|meari|camera|cam\b|ipcam/i.test((W.info && W.info.url) || '');
   p.innerHTML = '<h3>' + esc(T('Nou widget')) + '</h3>' + esc(T('Lloc')) + '<select id="wg-lloc" onchange="wgLloc()"><option value="inici">' + esc(T('Pantalla d\'inici')) + '</option><option value="casa"' + (cam ? ' selected' : '') + '>' + esc(T('Casa ▸ Càmeres')) + '</option></select>' +
     esc(T('Nom')) + '<input id="wg-nom" type="text" value="' + esc(t.substring(0, 40)) + '">' +
-    '<div id="wg-cl">' + esc(T('Per engegar el directe, toca el text (opcional)')) + '<input id="wg-clica" type="text" placeholder="' + esc(T('p. ex. Jardí')) + '"></div>' +
+    '<div id="wg-cl">' + esc(T('Passes fins al vídeo: textos a tocar, separats per comes (opcional)')) + '<input id="wg-clica" type="text" placeholder="' + esc(T('p. ex. Entrar, Jardí')) + '"></div>' +
     esc(T('S\'actualitza')) + '<select id="wg-cada"><option value="directe">' + esc(T('En directe (webcams, vídeo)')) + '</option><option value="30">' + esc(Tf('Cada {1}', '30 s')) + '</option><option value="60" selected>' + esc(Tf('Cada {1}', '1 min')) + '</option><option value="600">' + esc(Tf('Cada {1}', '10 min')) + '</option><option value="3600">' + esc(Tf('Cada {1}', '1 h')) + '</option></select>' +
     '<div id="wg-md">' + esc(T('Mida a l\'inici')) + '<select id="wg-mida">' + wgOpcionsMida() + '</select></div>' +
     '<button onclick="wgCancel()">' + esc(T('Cancel·la')) + '</button> <button class="pri" onclick="wgCrea()">' + esc(T('Afegeix')) + '</button>';

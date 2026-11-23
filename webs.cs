@@ -223,31 +223,45 @@ public static class Webs
 
     // Les cameres del nuvol (CloudEdge...): la web s'obre amb la llista d'aparells i cal tocar la camera per veure el directe.
     // Si a la pagina no hi ha cap video o canvas gran en marxa, es toca l'element que te exactament aquest text.
+    // Les passes per arribar al directe, escrites a la camera: els textos que cal tocar, per ordre, separats per comes
+    // (p. ex. "Entrar, Jard\u00ed"). Cada volta, si no hi ha video en marxa, es toca el darrer text que es vegi a la pagina
+    // (aixi, si ja s'ha entrat al compte, es toca directament la camera). Si un formulari te contrasenya, primer un clic
+    // al camp perque l'Edge deixi fer servir la contrasenya desada.
     static void EngegaDirecte(Captura c)
     {
         c.Clicat = DateTime.Now;
-        // si la web demana iniciar sessio i l'Edge ja hi ha posat l'usuari i la contrasenya desats, s'entra sol
-        try { if (EntraSol(c)) return; } catch { }
-        if (c.Clica == "") return;
         try
         {
-            string js = "(function(t){var v=document.querySelectorAll('video,canvas'),i,r;" +
-                "for(i=0;i<v.length;i++){r=v[i].getBoundingClientRect();if(r.width>200&&r.height>100&&(v[i].tagName!='VIDEO'||(!v[i].paused&&v[i].readyState>1)))return '';}" +
-                "var b=null,e=document.querySelectorAll('body *');" +
-                "for(i=0;i<e.length;i++){if(e[i].offsetWidth>0&&(e[i].textContent||'').replace(/\\s+/g,' ').replace(/^ | $/g,'')==t)b=e[i];}" +
-                "if(!b)return '';b.scrollIntoView({block:'center'});r=b.getBoundingClientRect();return Math.round(r.left+r.width/2)+','+Math.round(r.top+r.height/2);})(" + new JavaScriptSerializer().Serialize(c.Clica) + ")";
-            string r = Convert.ToString(Edge.Avalua(c.Pag, js, 4000));
-            if (string.IsNullOrEmpty(r) || r.IndexOf(',') < 0) return;
-            string[] xy = r.Split(',');
-            double x = double.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture), y = double.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture);
-            c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseMoved", "x", x, "y", y), 5000);
-            c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mousePressed", "x", x, "y", y, "button", "left", "buttons", 1, "clickCount", 1), 5000);
-            c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseReleased", "x", x, "y", y, "button", "left", "buttons", 0, "clickCount", 1), 5000);
-            Thread.Sleep(2500);
-            // despres de tocar, la pagina torna a la posicio del retall
-            if (c.Sx > 0 || c.Sy > 0) Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy), 3000);
+            List<string> passes = new List<string>();
+            foreach (string t in c.Clica.Split(new char[] { ',', '>', '\u203a', ';' })) if (t.Trim() != "") passes.Add(t.Trim());
+            if (passes.Count > 0)
+            {
+                string js = "(function(ts){function vis(e){var r=e.getBoundingClientRect();return r.width>4&&r.height>4&&getComputedStyle(e).visibility!='hidden';}" +
+                    "function mig(e){e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();return Math.round(r.left+r.width/2)+','+Math.round(r.top+r.height/2);}" +
+                    "function net(s){return (s||'').replace(/\\s+/g,' ').replace(/^ | $/g,'').toLowerCase();}" +
+                    "var v=document.querySelectorAll('video,canvas'),i,j,r;" +
+                    "for(i=0;i<v.length;i++){r=v[i].getBoundingClientRect();if(r.width>200&&r.height>100&&(v[i].tagName!='VIDEO'||(!v[i].paused&&v[i].readyState>1)))return '';}" +
+                    "var e=document.querySelectorAll('body *,input[type=submit],input[type=button]');" +
+                    "for(j=ts.length-1;j>=0;j--){var t=net(ts[j]),b=null;for(i=0;i<e.length;i++){var x=e[i],tx=x.tagName=='INPUT'?x.value:x.textContent;if(net(tx)==t&&vis(x))b=x;}" +
+                    "if(b){var p=null,ps=document.querySelectorAll('input[type=password]');for(i=0;i<ps.length;i++)if(vis(ps[i])){p=ps[i];break;}" +
+                    "return (p?mig(p):'')+'|'+mig(b)+'|'+j;}}return '';})(" + new JavaScriptSerializer().Serialize(passes) + ")";
+                string r = Convert.ToString(Edge.Avalua(c.Pag, js, 4000));
+                if (!string.IsNullOrEmpty(r) && r.IndexOf('|') >= 0)
+                {
+                    string[] pp = r.Split('|');
+                    if (pp[0] != "") { ClicReal(c, pp[0]); Thread.Sleep(600); try { NavTecla(c.Pag, "Escape"); } catch { } Thread.Sleep(200); }
+                    ClicReal(c, pp[1]);
+                    Registre(c, "toca \"" + passes[int.Parse(pp[2])] + "\"");
+                    Thread.Sleep(2500);
+                    // despres de tocar, la pagina torna a la posicio del retall
+                    if (c.Sx > 0 || c.Sy > 0) Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy), 3000);
+                    return;
+                }
+            }
         }
         catch { }
+        // cap text de les passes a la vista: si la web demana iniciar sessio i l'Edge ja hi ha posat les dades, s'entra sol
+        try { EntraSol(c); } catch { }
     }
 
     // Formulari d'inici de sessio emplenat per l'Edge (contrasenyes desades): un clic de debo al camp (perque l'Edge

@@ -1087,3 +1087,6 @@ TR.en["Mida de la caixa"]="Box size";
 TR.en["Petita"]="Small";
 TR.en["Gran"]="Large";
 TR.en["Edita"]="Edit";
+TR.en["Què s'ha de tocar a la web per arribar al vídeo? Els textos dels botons, per ordre i separats per comes (p. ex. Entrar, Jardí)"]="What has to be tapped on the site to reach the video? The button texts, in order, separated by commas (e.g. Sign in, Garden)";
+TR.en["Passes fins al vídeo: textos a tocar, separats per comes (opcional)"]="Steps to the video: texts to tap, separated by commas (optional)";
+TR.en["p. ex. Entrar, Jardí"]="e.g. Sign in, Garden";

@@ -1087,3 +1087,6 @@ TR.fr["Mida de la caixa"]="Taille de la case";
 TR.fr["Petita"]="Petite";
 TR.fr["Gran"]="Grande";
 TR.fr["Edita"]="Modifier";
+TR.fr["Què s'ha de tocar a la web per arribar al vídeo? Els textos dels botons, per ordre i separats per comes (p. ex. Entrar, Jardí)"]="Que faut-il toucher sur le site pour arriver à la vidéo ? Les textes des boutons, dans l'ordre, séparés par des virgules (p. ex. Connexion, Jardin)";
+TR.fr["Passes fins al vídeo: textos a tocar, separats per comes (opcional)"]="Étapes jusqu'à la vidéo : textes à toucher, séparés par des virgules (facultatif)";
+TR.fr["p. ex. Entrar, Jardí"]="p. ex. Connexion, Jardin";

@@ -1087,3 +1087,6 @@ TR.es["Mida de la caixa"]="Tamaño de la caja";
 TR.es["Petita"]="Pequeña";
 TR.es["Gran"]="Grande";
 TR.es["Edita"]="Editar";
+TR.es["Què s'ha de tocar a la web per arribar al vídeo? Els textos dels botons, per ordre i separats per comes (p. ex. Entrar, Jardí)"]="¿Qué hay que tocar en la web para llegar al vídeo? Los textos de los botones, en orden y separados por comas (p. ej. Entrar, Jardín)";
+TR.es["Passes fins al vídeo: textos a tocar, separats per comes (opcional)"]="Pasos hasta el vídeo: textos a tocar, separados por comas (opcional)";
+TR.es["p. ex. Entrar, Jardí"]="p. ej. Entrar, Jardín";

@@ -488,7 +488,7 @@ function camObre(i) {
 function camEdita() {
   var w = CM.gran; if (!w) return;
   var nom = prompt(T('Nom de la càmera'), w.nom || ''); if (nom == null) return;
-  var cl = prompt(T('Text que s\'ha de tocar a la web per veure aquesta càmera (el nom que hi surt, p. ex. Jardí)'), w.clica || nom); if (cl == null) return;
+  var cl = prompt(T('Què s\'ha de tocar a la web per arribar al vídeo? Els textos dels botons, per ordre i separats per comes (p. ex. Entrar, Jardí)'), w.clica || ('Entrar, ' + nom)); if (cl == null) return;
   dades('webs', function (l) {
     l = l || [];
     for (var i = 0; i < l.length; i++) if (l[i].id == w.id) { l[i].nom = nom; l[i].clica = cl.replace(/^\s+|\s+$/g, ''); }
