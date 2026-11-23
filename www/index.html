@@ -16,8 +16,15 @@
 <title>Hearth</title>
 <script src="i18n.js"></script>
 <script>
-/* L'Xbox 360 (Internet Explorer 9) no pot mostrar aquesta pantalla: té una versió pròpia, més senzilla */
-if (/Xbox/i.test(navigator.userAgent) && location.search.indexOf('complet') < 0) location.replace('/xbox.html');
+/* Navegadors molt vells (Xbox 360, Internet Explorer, teles i consoles antigues): si no entenen flexbox, no poden
+   mostrar aquesta pantalla i van a una versió senzilla. Els iPhone, iPad i iPod antics es queden aquí (ja hi estan adaptats).
+   ?complet=1 obre aquesta igualment; ?simple=1 obre la senzilla en qualsevol aparell. */
+(function () {
+  var q = location.search, st = document.documentElement.style, ua = navigator.userAgent;
+  var senseFlex = !('flex' in st) && !('webkitFlex' in st);
+  var vell = /Xbox|MSIE |Trident\//.test(ua) || (senseFlex && !/iPhone|iPad|iPod/.test(ua));
+  if (q.indexOf('complet') < 0 && (vell || q.indexOf('simple') >= 0)) location.replace('/simple.html');
+})();
 /* Si la pantalla d'inici no arrenca (un error, o dades d'aquest navegador fetes malbé), no es queda buida:
    el primer cop esborra les dades locals i ho torna a provar; si torna a fallar, ensenya l'error i un botó per reparar. */
 var HEARTH_ERRS = [];

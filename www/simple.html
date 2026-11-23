@@ -6,9 +6,9 @@
 <title>Hearth</title>
 <script src="i18n.js"></script>
 <!--
-  Hearth per a l'Xbox 360. El seu navegador és un Internet Explorer 9: no entén flexbox, degradats,
-  transicions ni HLS. Aquesta pantalla només fa servir el que IE9 sap fer (blocs, inline-block,
-  posicions absolutes, <audio> MP3 i <video> MP4) i botons grans per al comandament.
+  Hearth senzill, per a navegadors molt vells (Xbox 360, Internet Explorer 9-11, teles i consoles antigues).
+  No fa servir flexbox, degradats, transicions ni HLS: només blocs, inline-block, posicions absolutes,
+  <audio> MP3 i <video> MP4, i botons grans per a un comandament o un ratolí.
 -->
 <style>
 html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0b0d12;color:#fff;font-family:"Segoe UI",Arial,sans-serif;font-size:22px}
@@ -58,7 +58,7 @@ h2{font-size:34px;font-weight:400;margin:0 0 20px}
 </head>
 <body>
 <div id="cap">
-  <button id="p-inici" onclick="pest('inici')">Inici</button><button id="p-radio" onclick="pest('radio')">Ràdio</button><button id="p-musica" onclick="pest('musica')">Música</button><button id="p-pelis" onclick="pest('pelis')">Pel·lícules</button><button onclick="passi()">Fotos</button>
+  <button id="p-inici" onclick="pest('inici')">Inici</button><button id="p-radio" onclick="pest('radio')">Ràdio</button><button id="p-musica" onclick="pest('musica')">Música</button><button id="p-pelis" onclick="pest('pelis')">Pel·lícules</button><button onclick="passi()">Fotos</button><button onclick="location.href='/?complet=1'" style="float:right">Versió completa</button>
 </div>
 <div id="cos"></div>
 <div id="peu"><span class="art" id="pa"></span><span class="tx"><b id="pt">No sona res</b><span id="ps">Tria una ràdio o música</span></span><span class="ctl"><button id="pb" onclick="playPausa()">▶</button><button onclick="atura()">■</button></span></div>
@@ -165,7 +165,7 @@ au.addEventListener('pause', pinta, false);
 au.addEventListener('playing', pinta, false);
 au.addEventListener('ended', function () { if (R.pos < R.cua.length - 1) { R.pos++; toca(); } else pinta(); }, false);
 au.addEventListener('error', function () {
-  /* si una via no va, la següent; i si cap no va, es diu per què (així es pot saber què falla a l'Xbox) */
+  /* si una via no va, la següent; i si cap no va, es diu per què (així es pot saber què falla) */
   if (R.vies.length) { au.src = R.vies.shift(); au.play(); return; }
   var c = au.error ? au.error.code : '?';
   avis(T('No s\'ha pogut reproduir') + ' (' + (c == 4 ? T('format no compatible') : c == 2 ? T('error de xarxa') : 'codi ' + c) + ')', 6000);
@@ -232,7 +232,7 @@ function tocaCanco(i) {
   R.pos = i; toca();
 }
 
-/* ---------- Pel·lícules (només MP4: és el que fa sonar l'Xbox) ---------- */
+/* ---------- Pel·lícules (només MP4: és el que saben fer sonar els navegadors vells) ---------- */
 function carregaPelis() {
   $('cos').innerHTML = '<div class="gris">' + T('Carregant…') + '</div>';
   getJson(api('pelis/llista'), function (d) {
@@ -244,7 +244,7 @@ function carregaPelis() {
       n++;
       h += '<div class="it" onclick="obrePeli(' + i + ')"><div class="im poster" style="background-image:' + bg(api('caratula', { p: e.p, m: 300, cau: 1, v: e.pv || 0 })) + '"></div><div class="nm">' + esc(e.titol || e.n || e.p.split('/').pop()) + '</div></div>';
     }
-    $('cos').innerHTML = n ? h : '<div class="gris">' + T('No hi ha pel·lícules en MP4 (l\'Xbox no pot fer sonar altres formats).') + '</div>';
+    $('cos').innerHTML = n ? h : '<div class="gris">' + T('No hi ha pel·lícules en MP4 (aquest navegador no pot fer sonar altres formats).') + '</div>';
   }, function () { $('cos').innerHTML = '<div class="gris">' + T('No s\'ha pogut carregar la biblioteca.') + '</div>'; });
 }
 function obrePeli(i) {
@@ -254,7 +254,7 @@ function obrePeli(i) {
   g.innerHTML = '<video id="vid" controls autoplay src="' + esc(fUrl('pelis', e.p)) + '"></video><button class="tanca" onclick="tancaGran()">✕ ' + T('Tanca') + '</button>';
   g.style.display = 'block';
   var v = $('vid');
-  v.addEventListener('error', function () { avis(T('L\'Xbox no pot reproduir aquest vídeo') + (v.error ? ' (codi ' + v.error.code + ')' : ''), 6000); }, false);
+  v.addEventListener('error', function () { avis(T('Aquest navegador no pot reproduir aquest vídeo') + (v.error ? ' (codi ' + v.error.code + ')' : ''), 6000); }, false);
   try { v.play(); } catch (x) { }
 }
 
