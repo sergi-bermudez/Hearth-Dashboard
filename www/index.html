@@ -652,6 +652,9 @@ body.petit #mini .tm,body.petit #mini-ant,body.petit #mini-seg,body.petit #mini-
 html.sense-flex body.sona #mini{display:block;white-space:nowrap}
 html.sense-flex #mini>*{display:inline-block;vertical-align:middle}
 html.sense-flex #mini .txt{width:-webkit-calc(100% - 150px);width:calc(100% - 150px);white-space:normal}
+/* a les pantalles petites, a la barra només hi ha el play i la creu (la regla de dalt, «#mini>*», els tornava a mostrar tots) */
+html.sense-flex body.petit #mini .tm,html.sense-flex body.petit #mini-ant,html.sense-flex body.petit #mini-seg,html.sense-flex body.petit #mini-cast{display:none}
+html.sense-flex body.petit #mini .txt{width:-webkit-calc(100% - 150px);width:calc(100% - 150px)}
 html.sense-flex #cfg{display:inline-block;vertical-align:middle}
 /* ---- Navegadors sense flexbox (iOS 6 i anteriors) ---- */
 html.sense-flex #dash{display:block;overflow-y:auto}
