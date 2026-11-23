@@ -1730,8 +1730,19 @@ function tvAjusta() {
   if (TV.mode == 'gran' && vw && vh && W && H && TV.ajust != 'c') { var a = vw / vh, ap = W / H; k = a < ap ? ap / a : a / ap; }
   /* s'amplia el vídeo sencer amb transform (la mida de l'element no canvia: la LG atura el vídeo si canvia, i el seu
      object-fit:cover l'estirava en lloc de retallar-lo); el que sobra queda fora i es retalla */
-  var tr = k > 1.001 ? 'scale(' + k.toFixed(4) + ')' : '';
-  st.webkitTransform = tr; st.transform = tr;
+  if (NAV_TELE) {
+    /* a les teles (LG) la imatge sempre omple la caixa del vídeo i no fa cas de transform: es fa la caixa de la forma
+       del vídeo, més gran que la pantalla, i el que sobra queda retallat */
+    st.webkitTransform = st.transform = '';
+    if (k > 1.001) {
+      var a2 = vw / vh, w2, h2;
+      if (a2 < W / H) { w2 = W; h2 = Math.round(W / a2); } else { h2 = H; w2 = Math.round(H * a2); }
+      st.width = w2 + 'px'; st.height = h2 + 'px'; st.left = Math.round((W - w2) / 2) + 'px'; st.top = Math.round((H - h2) / 2) + 'px';
+    }
+  } else {
+    var tr = k > 1.001 ? 'scale(' + k.toFixed(4) + ')' : '';
+    st.webkitTransform = tr; st.transform = tr;
+  }
   /* si el navegador l'ha aturat igualment, continua (si no l'ha aturat qui mira) */
   setTimeout(function () { if (TV.canal && v.paused && !TV.pausaUsuari && v.getAttribute('src')) { var p = v.play(); if (p && p['catch']) p['catch'](function () { }); } }, 600);
 }
@@ -1794,7 +1805,7 @@ function tvLlocFet() {
   var w, h;
   if (marcObert()) {
     /* Passi de fotos: la TV a dalt a la dreta, el rellotge queda a baix a l'esquerra */
-    w = Math.min(440, Math.round(W * 0.42)); h = Math.round(w / tvAspecte());
+    h = Math.round(Math.min(440, Math.round(W * 0.42)) * 9 / 16); w = Math.round(h * tvAspecte());
     t.className = 'marc' + vod;
     var vora = NAV_TELE ? 56 : 24;
     st.width = w + 'px'; st.height = h + 'px'; st.left = (W - w - vora) + 'px'; st.top = (vora + sa) + 'px';
@@ -1807,7 +1818,7 @@ function tvLlocFet() {
     st.left = ((r.left - rp.left) / z) + 'px'; st.top = ((r.top - rp.top) / z) + 'px'; st.width = (r.width / z) + 'px'; st.height = (r.height / z) + 'px';
     return;
   }
-  w = TV.miniMida == 'p' ? Math.round(W * 0.26) : TV.miniMida == 'g' ? Math.round(W * 0.5) : (W > 900 ? 360 : 300); h = Math.round(w / tvAspecte());
+  w = TV.miniMida == 'p' ? Math.round(W * 0.26) : TV.miniMida == 'g' ? Math.round(W * 0.5) : (W > 900 ? 360 : 300); h = Math.round(w * 9 / 16); w = Math.round(h * tvAspecte());
   /* amb la barra d'apps a la dreta (teles, pantalles apaïsades) la barra no és a baix: abans se'n restava l'alçada
      sencera i el vídeo flotant quedava fora de la pantalla, per dalt */
   var lat = /\blat\b/.test(document.body.className), dreta = lat ? ($('nav').offsetWidth || 86) : 0;
@@ -1890,7 +1901,8 @@ function pintaSona(intern) {
     var cs = getComputedStyle(s), W = s.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0), estret = W < 620;
     /* En horitzontal: vídeo a l'esquerra i controls a la dreta. Apilat només si els controls no hi caben al costat */
     var fr = TV.mida == 'p' ? 0.36 : TV.mida == 'm' ? 0.5 : 0.64;
-    var asp = tvAspecte(), Wt = Math.round(Math.min(W * fr, esp * asp));
+    /* l'alçada, la que tindria un vídeo 16:9 d'aquesta mida; l'amplada, segons la forma del vídeo (un 4:3 no es fa més alt) */
+    var asp = tvAspecte(), Wt = Math.round(Math.min(W * fr * 9 / 16, esp) * asp);
     var pila = estret || W - Wt < 360;
     if (pila) Wt = Math.round(Math.min(W * (TV.mida == 'p' ? 0.6 : TV.mida == 'm' ? 0.8 : 1), (esp - 58) * asp));
     Wt = Math.max(160, Wt);
