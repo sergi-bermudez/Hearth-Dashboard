@@ -134,7 +134,7 @@ public static class Edge
     }
 
     // canvia-ho quan canvien les opcions d'engegada, perque l'Edge que ja corre es reinici\u00ef
-    const string ARGS_VERSIO = "3";
+    const string ARGS_VERSIO = "4";
 
     // Les pagines del servidor van en finestres amagades: algunes webs (cameres, videos) s'aturen si creuen que no es veuen.
     // Se'ls fa creure que la finestra es visible i te el focus.
@@ -172,6 +172,7 @@ public static class Edge
                 try { Cdp b0 = new Cdp(); Dictionary<string, object> v0 = Json("http://127.0.0.1:" + PORT + "/json/version", "GET") as Dictionary<string, object>; b0.Connecta((string)v0["webSocketDebuggerUrl"]); try { b0.Envia("Browser.close", null, 3000); } catch { } b0.Tanca(); } catch { }
                 for (int i = 0; i < 40 && Viu(); i++) Thread.Sleep(250);
                 if (Viu()) return;
+                Thread.Sleep(1500);
             }
             string exe = Ruta();
             if (exe == null) throw new Exception("No trobo el Microsoft Edge en aquest PC");
@@ -182,6 +183,11 @@ public static class Edge
                 "--disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows " +
                 "--disable-features=CalculateNativeWinOcclusion,IntensiveWakeUpThrottling --disable-background-media-suspend " +
                 "--window-size=1150,820 --window-position=-12000,-12000 about:blank";
+            // l'Edge no ha de recuperar les pestanyes de la vegada anterior (cada modul obre les que necessita)
+            try { string sd = Path.Combine(Path.Combine(perfil, "Default"), "Sessions"); if (Directory.Exists(sd)) Directory.Delete(sd, true); } catch { }
+            foreach (string sf in new string[] { "Current Session", "Current Tabs", "Last Session", "Last Tabs" })
+                try { string f = Path.Combine(Path.Combine(perfil, "Default"), sf); if (File.Exists(f)) File.Delete(f); } catch { }
+            args = "--disable-session-crashed-bubble " + args;
             ProcessStartInfo psi = new ProcessStartInfo(exe, args);
             psi.UseShellExecute = false;
             proc = Process.Start(psi);
