@@ -1691,10 +1691,21 @@ function tvToc() {
 function tvAjusta() {
   var v = $('tv-v'), t = $('tv'), st = v.style;
   var vw = v.videoWidth, vh = v.videoHeight, W = t.clientWidth, H = t.clientHeight;
-  if (TV.mode != 'gran' || !vw || !vh || !W || !H) { st.left = st.top = st.width = st.height = ''; return; }
-  var a = vw / vh, w, h;
-  if (TV.ajust == 'v') { h = H; w = Math.round(H * a); } else { w = W; h = Math.round(W / a); }
-  st.width = w + 'px'; st.height = h + 'px'; st.left = Math.round((W - w) / 2) + 'px'; st.top = Math.round((H - h) / 2) + 'px';
+  var of = 'objectFit' in st;
+  if (TV.mode != 'gran' || !vw || !vh || !W || !H) { st.left = st.top = st.width = st.height = ''; if (of) st.objectFit = ''; return; }
+  var a = vw / vh, ap = W / H;
+  if (of) {
+    /* el vídeo es queda de la mida de la pantalla i només canvia com s'hi encaixa la imatge: les teles (LG) aturen
+       el vídeo si se li canvia la mida a l'element */
+    st.left = st.top = st.width = st.height = '';
+    st.objectFit = TV.ajust == 'v' ? (a > ap ? 'cover' : 'contain') : (a < ap ? 'cover' : 'contain');
+  } else {
+    var w, h;
+    if (TV.ajust == 'v') { h = H; w = Math.round(H * a); } else { w = W; h = Math.round(W / a); }
+    st.width = w + 'px'; st.height = h + 'px'; st.left = Math.round((W - w) / 2) + 'px'; st.top = Math.round((H - h) / 2) + 'px';
+  }
+  /* si el navegador l'ha aturat igualment, continua (si no l'ha aturat qui mira) */
+  setTimeout(function () { if (TV.canal && v.paused && !TV.pausaUsuari && v.getAttribute('src')) { var p = v.play(); if (p && p['catch']) p['catch'](function () { }); } }, 600);
 }
 function tvBotoPlay() {
   var v = $('tv-v'), b = $('tv-gp');
