@@ -1151,6 +1151,12 @@ function aplicaDespert() {
   DESPERT.on = on;
   if (on) despertEngega(); else despertAtura();
 }
+/* El Chrome de l'Android no manté la pantalla encesa per un vídeo silenciat («muted»): fora de l'iOS, el vídeo
+   (que només té silenci) va sense silenciar però amb el volum a zero. A l'iOS, silenciat (allà el volum no es pot tocar). */
+function despertSilenci(v) {
+  if (/(iPad|iPhone|iPod)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)) { v.muted = true; return; }
+  v.muted = false; try { v.volume = 0; } catch (e) { }
+}
 function despertEngega() {
   if (navigator.wakeLock && navigator.wakeLock.request) {
     var dem = function () { if (DESPERT.on && !document.hidden) navigator.wakeLock.request('screen').then(function (w) { DESPERT.wl = w; }, function () { }); };
@@ -1164,7 +1170,7 @@ function despertEngega() {
   }
   /* la resta: un vídeo mut i minúscul en bucle (cal un toc per començar) */
   var v = document.createElement('video');
-  v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.muted = true; v.loop = true; v.src = 'despert.mp4';
+  v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.loop = true; v.src = 'despert.mp4'; despertSilenci(v);
   /* prou gran perquè el Chrome de l'Android el compti com a vídeo visible (si no, deixa apagar la pantalla); darrere de tot */
     v.style.cssText = 'position:fixed;left:0;bottom:0;width:160px;height:90px;opacity:0.01;pointer-events:none;z-index:-1';
   document.body.appendChild(v); DESPERT.v = v;
@@ -1187,7 +1193,7 @@ function despertSo() {
       return;
     }
     var v = document.createElement('video');
-    v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.muted = true; v.loop = true; v.src = 'despert.mp4';
+    v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.loop = true; v.src = 'despert.mp4'; despertSilenci(v);
     /* prou gran perquè el Chrome de l'Android el compti com a vídeo visible (si no, deixa apagar la pantalla); darrere de tot */
     v.style.cssText = 'position:fixed;left:0;bottom:0;width:160px;height:90px;opacity:0.01;pointer-events:none;z-index:-1';
     document.body.appendChild(v); DESPERT.sv = v;
