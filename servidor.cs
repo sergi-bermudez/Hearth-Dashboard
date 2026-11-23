@@ -340,7 +340,7 @@ public static class CasaServidor
                     }
                     return;
                 }
-            case "x": Intermediari(ctx, Q(q, "u"), Q(q, "directe") == "1"); return;
+            case "x": Intermediari(ctx, Q(q, "u"), Q(q, "directe") == "1", Q(q, "directe") == "1" && Q(q, "tal") != "1"); return;
             case "hls": Hls(ctx, Q(q, "u")); return;
             case "vtt":
                 {
@@ -910,7 +910,7 @@ public static class CasaServidor
     }
 
     // ---------- Intermediari (radio, podcasts, temps) ----------
-    internal static void Intermediari(HttpListenerContext ctx, string u, bool directe)
+    internal static void Intermediari(HttpListenerContext ctx, string u, bool directe, bool continu = false)
     {
         HttpListenerResponse res = ctx.Response;
         if (string.IsNullOrEmpty(u) || !(u.StartsWith("http://") || u.StartsWith("https://"))) { Error(res, 400, "URL no valida"); return; }
@@ -952,14 +952,59 @@ public static class CasaServidor
             if (cr != null && !directe) res.AddHeader("Content-Range", cr);
             if (directe) res.AddHeader("Cache-Control", "no-cache, no-store");
             string ar = rs.Headers["Accept-Ranges"];
-            if (ar != null) res.AddHeader("Accept-Ranges", ar);
+            if (ar != null && !continu) res.AddHeader("Accept-Ranges", ar);
             string ce = rs.Headers["Content-Encoding"];
             if (ce != null) res.AddHeader("Content-Encoding", ce);
             long len = rs.ContentLength;
-            if (len >= 0) res.ContentLength64 = len; else res.SendChunked = true;
+            // una emissora en directe no te final: algunes (p. ex. Los 40 Classic) diuen una mida, el navegador la pren per
+            // un fitxer, el reprodueix fins al final i torna a comencar. Aqui no se'n diu la mida i, si l'emissora talla,
+            // el servidor s'hi torna a connectar sense que el reproductor se n'adoni.
+            // (les teles fan servir la via d'abans, tal com ve: "tal=1")
+            if (continu) res.SendChunked = true;
+            else if (len >= 0) res.ContentLength64 = len; else res.SendChunked = true;
             if (ctx.Request.HttpMethod == "HEAD") return;
+            if (continu && rs.StatusCode == HttpStatusCode.OK) { CopiaEnDirecte(rs.GetResponseStream(), res.OutputStream, u); return; }
             using (Stream s = rs.GetResponseStream()) Copiar(s, res.OutputStream, long.MaxValue);
         }
+    }
+
+    static void CopiaEnDirecte(Stream de, Stream a, string u)
+    {
+        byte[] buf = new byte[16384];
+        int seguides = 0;
+        DateTime darrera = DateTime.Now;
+        HttpWebResponse act = null;
+        try
+        {
+            while (true)
+            {
+                int r;
+                try { r = de.Read(buf, 0, buf.Length); } catch { r = -1; }
+                if (r > 0) { a.Write(buf, 0, r); continue; }   // si el reproductor ja no hi es, Write falla i s'acaba
+                try { de.Close(); } catch { }
+                try { if (act != null) act.Close(); } catch { }
+                act = null;
+                if ((DateTime.Now - darrera).TotalSeconds > 60) seguides = 0;
+                darrera = DateTime.Now;
+                while (act == null)
+                {
+                    if (++seguides > 8) return;
+                    Thread.Sleep(seguides == 1 ? 200 : 1500);
+                    try
+                    {
+                        HttpWebRequest rq = (HttpWebRequest)WebRequest.Create(u);
+                        rq.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+                        rq.AllowAutoRedirect = true; rq.MaximumAutomaticRedirections = 10;
+                        rq.Timeout = 15000; rq.ReadWriteTimeout = 30000; rq.KeepAlive = false; rq.Accept = "*/*";
+                        act = (HttpWebResponse)rq.GetResponse();
+                        if (act.StatusCode != HttpStatusCode.OK) { act.Close(); act = null; continue; }
+                        de = act.GetResponseStream();
+                    }
+                    catch { act = null; }
+                }
+            }
+        }
+        finally { try { de.Close(); } catch { } try { if (act != null) act.Close(); } catch { } }
     }
 
     static string TipusPerUrl(string u, string per)

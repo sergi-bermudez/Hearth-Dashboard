@@ -1346,7 +1346,7 @@ function progres() {
   if (!it) return;
   var d = duradaActual(), t = tempsActual();
   if (it.k == 'spotify') { d = SP.estat ? SP.estat.dur : 0; t = SP.estat ? SP.estat.pos + (SP.estat.sona ? (Date.now() - SP.rebut) / 1000 : 0) : 0; if (d && t > d) t = d; }
-  var ok = d && isFinite(d), pc = ok ? (100 * t / d) : 0;
+  var ok = d && isFinite(d) && it.k != 'radio', pc = ok ? (100 * t / d) : 0;
   $('mini-prog').style.width = pc + '%';
   $('mini-tm').textContent = it.k == 'radio' ? T('En directe') : (ok ? durada(t) + ' / ' + durada(d) : durada(t));
   var sp = $('s-prog');
@@ -1960,8 +1960,17 @@ function radioItem(s) {
   if (/\.m3u8(\?|$)/i.test(u)) vies.push(api('hls', { u: u }));
   else {
     if (IOS_VELL) vies.push(api('radio/hls', { u: u }));
-    if (/^http:/i.test(u)) vies.push(u);
-    vies.push(api('x', { u: u, directe: 1 }));
+    if (/Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|BRAVIA|Android TV|AFT[A-Z]|CrKey/i.test(navigator.userAgent)) {
+      /* les teles, com sempre: l'emissora tal com ve, sense recodificar */
+      if (/^http:/i.test(u)) vies.push(u);
+      vies.push(api('x', { u: u, directe: 1, tal: 1 }));
+    } else {
+      /* primer, un MP3 continu fet pel servidor (com el que rep l'iPad): algunes emissores tallen cada poc o diuen
+         que "s'han acabat", i ffmpeg s'hi torna a connectar sense que el reproductor ho noti. La resta, com a reserva */
+      if (!IOS_VELL) vies.push(api('radio/mp3', { u: u }));
+      vies.push(api('x', { u: u, directe: 1 }));
+      if (/^http:/i.test(u)) vies.push(u);
+    }
     if (!IOS_VELL) vies.push(api('radio/hls', { u: u }));
   }
   d.u = vies.shift();
