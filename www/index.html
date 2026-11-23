@@ -1743,8 +1743,13 @@ function tvAjusta() {
     var tr = k > 1.001 ? 'scale(' + k.toFixed(4) + ')' : '';
     st.webkitTransform = tr; st.transform = tr;
   }
-  /* si el navegador l'ha aturat igualment, continua (si no l'ha aturat qui mira) */
-  setTimeout(function () { if (TV.canal && v.paused && !TV.pausaUsuari && v.getAttribute('src')) { var p = v.play(); if (p && p['catch']) p['catch'](function () { }); } }, 600);
+  tvReprenSiCal();
+}
+/* Les teles (LG) aturen el vídeo una estona després de canviar-li la mida: es torna a engegar uns quants cops,
+   si no l'ha aturat qui mira */
+function tvReprenSiCal() {
+  var v = $('tv-v'), ts = [400, 1000, 2000, 3500];
+  for (var i = 0; i < ts.length; i++) setTimeout(function () { if (TV.canal && v.paused && !TV.pausaUsuari && v.getAttribute('src') && !v.ended) { var p = v.play(); if (p && p['catch']) p['catch'](function () { }); } }, ts[i]);
 }
 function tvBotoPlay() {
   var v = $('tv-v'), b = $('tv-gp');
@@ -1776,7 +1781,7 @@ function tvLloc() {
       setTimeout(function () { v.style.webkitTransform = ''; t.style.webkitTransform = ''; v.style.width = ''; tvAjusta(); void v.offsetHeight; }, 60);
     } else setTimeout(tvAjusta, 60);
     /* el navegador d'algunes teles (LG) atura el vídeo quan canvia de mida o de lloc: si no l'ha aturat qui mira, continua */
-    setTimeout(function () { if (TV.canal && v.paused && !TV.pausaUsuari && v.getAttribute('src')) { var p = v.play(); if (p && p['catch']) p['catch'](function () { }); } }, 700);
+    tvReprenSiCal();
   }
 }
 function tvLlocFet() {
@@ -1818,7 +1823,8 @@ function tvLlocFet() {
     st.left = ((r.left - rp.left) / z) + 'px'; st.top = ((r.top - rp.top) / z) + 'px'; st.width = (r.width / z) + 'px'; st.height = (r.height / z) + 'px';
     return;
   }
-  w = TV.miniMida == 'p' ? Math.round(W * 0.26) : TV.miniMida == 'g' ? Math.round(W * 0.5) : (W > 900 ? 360 : 300); h = Math.round(w * 9 / 16); w = Math.round(h * tvAspecte());
+  /* S, M i L, sempre diferents (amb la pàgina ampliada, abans S i M sortien gairebé iguals) */
+  w = Math.round(W * (TV.miniMida == 'p' ? 0.22 : TV.miniMida == 'g' ? 0.46 : 0.32)); h = Math.round(w * 9 / 16); w = Math.round(h * tvAspecte());
   /* amb la barra d'apps a la dreta (teles, pantalles apaïsades) la barra no és a baix: abans se'n restava l'alçada
      sencera i el vídeo flotant quedava fora de la pantalla, per dalt */
   var lat = /\blat\b/.test(document.body.className), dreta = lat ? ($('nav').offsetWidth || 86) : 0;
