@@ -134,7 +134,7 @@ public static class Edge
     }
 
     // canvia-ho quan canvien les opcions d'engegada, perque l'Edge que ja corre es reinici\u00ef
-    const string ARGS_VERSIO = "2";
+    const string ARGS_VERSIO = "3";
 
     // Les pagines del servidor van en finestres amagades: algunes webs (cameres, videos) s'aturen si creuen que no es veuen.
     // Se'ls fa creure que la finestra es visible i te el focus.
