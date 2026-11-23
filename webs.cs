@@ -251,12 +251,13 @@ public static class Webs
                     "function mig(e){e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();return Math.round(r.left+r.width/2)+','+Math.round(r.top+r.height/2);}" +
                     "function net(s){return (s||'').replace(/\\s+/g,' ').replace(/^ | $/g,'').toLowerCase();}" +
                     "var v=document.querySelectorAll('video,canvas'),i,j,r;" +
-                    "for(i=0;i<v.length;i++){r=v[i].getBoundingClientRect();if(r.width>200&&r.height>100&&(v[i].tagName!='VIDEO'||(!v[i].paused&&v[i].readyState>1)))return '';}" +
+                    "for(i=0;i<v.length;i++){r=v[i].getBoundingClientRect();if(r.width>200&&r.height>100&&(v[i].tagName!='VIDEO'||(!v[i].paused&&v[i].readyState>1)))return 'V';}" +
                     "var e=document.querySelectorAll('body *,input[type=submit],input[type=button]');" +
                     "for(j=ts.length-1;j>=0;j--){var t=net(ts[j]),b=null;for(i=0;i<e.length;i++){var x=e[i],tx=x.tagName=='INPUT'?x.value:x.textContent;if(net(tx)==t&&vis(x))b=x;}" +
                     "if(b){var p=null,ps=document.querySelectorAll('input[type=password]');for(i=0;i<ps.length;i++)if(vis(ps[i])){p=ps[i];break;}" +
                     "return (p?mig(p):'')+'|'+mig(b)+'|'+j;}}return '';})(" + new JavaScriptSerializer().Serialize(passes) + ")";
                 string r = Convert.ToString(Edge.Avalua(c.Pag, js, 4000));
+                if (r == "V") { Registre(c, "video en marxa"); return; }
                 if (!string.IsNullOrEmpty(r) && r.IndexOf('|') >= 0)
                 {
                     string[] pp = r.Split('|');
@@ -270,9 +271,10 @@ public static class Webs
                 }
             }
         }
-        catch { }
+        catch (Exception e) { Registre(c, "error a les passes: " + e.Message); }
         // cap text de les passes a la vista: si la web demana iniciar sessio i l'Edge ja hi ha posat les dades, s'entra sol
-        try { EntraSol(c); } catch { }
+        try { if (!EntraSol(c)) Registre(c, "cap pas a la vista (" + (c.Clica == "" ? "sense passes" : c.Clica) + ") i cap formulari amb contrasenya"); }
+        catch (Exception e) { Registre(c, "error a l'inici de sessio: " + e.Message); }
     }
 
     // Formulari d'inici de sessio emplenat per l'Edge (contrasenyes desades): un clic de debo al camp (perque l'Edge
@@ -318,8 +320,11 @@ public static class Webs
     }
 
     // Que ha fet el servidor amb les cameres (dades/cameres-diagnostic.txt, les darreres linies)
+    static readonly Dictionary<string, string> darrerDiag = new Dictionary<string, string>();
     static void Registre(Captura c, string txt)
     {
+        string ant;
+        lock (darrerDiag) { if (darrerDiag.TryGetValue(c.Id, out ant) && ant == txt) return; darrerDiag[c.Id] = txt; }
         try
         {
             string f = Path.Combine(CasaServidor.DirDades, "cameres-diagnostic.txt");
@@ -410,6 +415,13 @@ public static class Webs
                         res.AddHeader("Cache-Control", "no-cache, no-store");
                         res.ContentLength64 = b.Length;
                         res.OutputStream.Write(b, 0, b.Length);
+                        return;
+                    }
+                case "diag":
+                    {
+                        string t;
+                        lock (darrerDiag) darrerDiag.TryGetValue(id, out t);
+                        CasaServidor.Json(res, CasaServidor.Dic("text", t ?? ""));
                         return;
                     }
                 case "clic":
