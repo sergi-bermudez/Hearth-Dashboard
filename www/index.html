@@ -2713,7 +2713,7 @@ function pantHola() {
   var t0 = Date.now();
   var it = R.cua[R.pos], sona = TV.canal ? TV.canal.nom : it ? it.t + (it.s ? ' · ' + it.s : '') : '';
   var pausa = TV.canal ? $('tv-v').paused : it ? sonaPausat() : false;
-  getJson(api('pantalles/hola', { d: DISP.id, v: 2, sona: sona || '', pausa: pausa ? 1 : '', nom: modeTele() ? T('Tele') + (DISP.nom && DISP.nom != 'PC' ? ' (' + DISP.nom + ')' : '') : DISP.nom || nomDispositiuDefecte(), tele: modeTele() ? 1 : '', _: t0 }), function (r) {
+  getJson(api('pantalles/hola', { d: DISP.id, v: 2, sona: sona || '', pausa: pausa ? 1 : '', nom: modeTele() ? T('Tele') + (DISP.nom && DISP.nom != 'PC' ? ' (' + DISP.nom + ')' : '') : DISP.nom || nomDispositiuDefecte(), tele: modeTele() ? 1 : '', amagat: document.hidden ? 1 : '', _: t0 }), function (r) {
     var l = r && r.o ? r.o : r;
     /* diferència entre el rellotge del servidor i el d'aquest aparell (per començar alhora) */
     if (r && r.t) { var ara = Date.now(); PANT.dif = r.t - (t0 + ara) / 2; }
@@ -2727,7 +2727,8 @@ function pantHola() {
   }, function () { connexio(false); });
 }
 function horaServidor() { return Date.now() + (PANT.dif || 0); }
-setInterval(function () { if (!document.hidden) pantHola(); }, 4000);
+/* també amb la pàgina amagada (pestanya de fons, finestra tapada), perquè continuï sortint a la llista de pantalles */
+setInterval(pantHola, 4000);
 setTimeout(pantHola, 1500);
 /* El que sona ara, per enviar-ho a una altra pantalla */
 function ordreActual() {
