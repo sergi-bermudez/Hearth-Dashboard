@@ -664,7 +664,7 @@ body.offline .app.cal-servidor,body.offline #nav div.cal-servidor{opacity:.3}
 
 <div id="tv">
   <video id="tv-v" webkit-playsinline playsinline></video>
-  <div class="tv-capa" id="tv-capa" onclick="if (+new Date() - (TV.touchT || 0) > 700) tvToc()"></div>
+  <div class="tv-capa" id="tv-capa" onclick="tvToc()"></div>
   <div class="tv-estat" id="tv-estat"></div>
   <div class="tv-ctl"><span class="directe" id="tv-directe" data-t>DIRECTE</span><div class="nm una" id="tv-nom"></div>
     <span id="tv-vol"></span><button onclick="castObre()" id="tv-b-cast"></button><button onclick="tvNatiu()" id="tv-b-natiu"></button><button onclick="tvMode('normal')" id="tv-b-petit"></button><button onclick="tvAtura()" id="tv-b-x"></button></div>
@@ -1539,15 +1539,7 @@ function tvEscoltes(v) {
     setTimeout(tvProva, 300);
   });
   v.addEventListener('waiting', function () { if (TV.canal && !TV.estat) tvEstat(T('Carregant…')); });
-  /* a l'iPad el segon toc d'un doble toc no arriba com a clic (Safari l'espera per fer zoom): es fan servir els tocs directament */
-  $('tv-capa').addEventListener('touchend', function (e) {
-    if (e.changedTouches && e.changedTouches.length > 1) return;
-    e.preventDefault();
-    TV.touchT = +new Date();
-    tvToc();
-  }, false);
   v.addEventListener('loadedmetadata', function () {
-    tvAjusta();
     var r = TV.represa;
     TV.represa = null;
     if (r && TV.canal && TV.canal.vod && r.t > 30 && (!v.duration || r.t < v.duration - 60)) { try { v.currentTime = r.t; } catch (e) { } }
@@ -1649,30 +1641,7 @@ function tvMode(m) {
   else if (A.vista == 'dash') pintaSona();
   notifica();
 }
-/* Un toc: en petit, maximitza; en gran, mostra els controls.
-   Dos tocs seguits: maximitza i omple d'amplada; un altre doble toc omple d'alçada (retalla els costats); el següent el torna a fer petit */
-function tvToc() {
-  var ara = +new Date(), doble = ara - (TV.tocT || 0) < 380;
-  TV.tocT = doble ? 0 : ara;
-  if (doble) {
-    if (TV.modeAbans != 'gran') { TV.ajust = 'h'; tvAjusta(); }
-    else if (TV.ajust != 'v') { TV.ajust = 'v'; tvAjusta(); }
-    else { TV.ajust = 'h'; tvMode('normal'); }
-    TV.modeAbans = TV.mode;
-    return;
-  }
-  TV.modeAbans = TV.mode;
-  if (TV.mode == 'gran') tvMostraCtl(); else { TV.ajust = 'h'; tvMode('gran'); }
-}
-/* Com omple el vídeo la pantalla gran: 'h' tota l'amplada, 'v' tota l'alçada (calculat a mà: l'iOS 9 no fa object-fit als vídeos) */
-function tvAjusta() {
-  var v = $('tv-v'), t = $('tv'), st = v.style;
-  var vw = v.videoWidth, vh = v.videoHeight, W = t.clientWidth, H = t.clientHeight;
-  if (TV.mode != 'gran' || !vw || !vh || !W || !H) { st.left = st.top = st.width = st.height = ''; return; }
-  var a = vw / vh, w, h;
-  if (TV.ajust == 'v') { h = H; w = Math.round(H * a); } else { w = W; h = Math.round(W / a); }
-  st.width = w + 'px'; st.height = h + 'px'; st.left = Math.round((W - w) / 2) + 'px'; st.top = Math.round((H - h) / 2) + 'px';
-}
+function tvToc() { if (TV.mode == 'gran') tvMostraCtl(); else tvMode('gran'); }
 function tvMostraCtl() {
   var t = $('tv');
   t.className = t.className.replace(/\s*amaga/g, '');
@@ -1693,7 +1662,7 @@ function tvLloc() {
     var v = $('tv-v');
     v.style.webkitTransform = 'translateZ(0)'; t.style.webkitTransform = 'translateZ(0)';
     v.style.width = '99.9%';
-    setTimeout(function () { v.style.webkitTransform = ''; t.style.webkitTransform = ''; v.style.width = ''; tvAjusta(); void v.offsetHeight; }, 60);
+    setTimeout(function () { v.style.webkitTransform = ''; t.style.webkitTransform = ''; v.style.width = ''; void v.offsetHeight; }, 60);
   }
 }
 function tvLlocFet() {
@@ -1736,25 +1705,13 @@ function tvMiniMida() {
 }
 /* Mida del reproductor de so a la pantalla d'inici: S / M / L */
 var AUD = { mida: ls('auMida') || 'g' };
-/* En canviar la mida, el reproductor (i el botó de la mida) canvien de lloc: a la tele, el punter del comandament es
-   queda on era i el clic següent requeia sobre una altra cosa (un canal de TV, ✕...) i aturava la ràdio.
-   Durant un moment després de canviar-la, només es deixa tornar a tocar la mida. */
-var MIDA_T = 0;
-document.addEventListener('click', function (e) {
-  if (Date.now() - MIDA_T > 1500) return;
-  var el = e.target;
-  while (el && el.nodeType == 1) { if (el.className && /\bmida\b/.test(el.className)) return; el = el.parentNode; }
-  e.stopPropagation(); e.preventDefault();
-}, true);
 function audMidaCanvia() {
-  MIDA_T = Date.now();
   AUD.mida = AUD.mida == 'p' ? 'm' : AUD.mida == 'm' ? 'g' : 'p';
   ls('auMida', AUD.mida);
   estatCos();
   pintaSona();
 }
 function tvMidaCanvia() {
-  MIDA_T = Date.now();
   TV.mida = TV.mida == 'p' ? 'm' : TV.mida == 'm' ? 'g' : 'p';
   ls('tvMida', TV.mida);
   pintaSona();
@@ -1960,17 +1917,11 @@ function radioItem(s) {
   if (/\.m3u8(\?|$)/i.test(u)) vies.push(api('hls', { u: u }));
   else {
     if (IOS_VELL) vies.push(api('radio/hls', { u: u }));
-    if (/Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|BRAVIA|Android TV|AFT[A-Z]|CrKey/i.test(navigator.userAgent)) {
-      /* les teles, com sempre: l'emissora tal com ve, sense recodificar */
-      if (/^http:/i.test(u)) vies.push(u);
-      vies.push(api('x', { u: u, directe: 1, tal: 1 }));
-    } else {
-      /* primer, un MP3 continu fet pel servidor (com el que rep l'iPad): algunes emissores tallen cada poc o diuen
-         que "s'han acabat", i ffmpeg s'hi torna a connectar sense que el reproductor ho noti. La resta, com a reserva */
-      if (!IOS_VELL) vies.push(api('radio/mp3', { u: u }));
-      vies.push(api('x', { u: u, directe: 1 }));
-      if (/^http:/i.test(u)) vies.push(u);
-    }
+    /* primer, un MP3 continu fet pel servidor (com el que rep l'iPad): algunes emissores tallen cada poc o diuen
+       que "s'han acabat", i ffmpeg s'hi torna a connectar sense que el reproductor ho noti. La resta, com a reserva */
+    if (!IOS_VELL) vies.push(api('radio/mp3', { u: u }));
+    vies.push(api('x', { u: u, directe: 1 }));
+    if (/^http:/i.test(u)) vies.push(u);
     if (!IOS_VELL) vies.push(api('radio/hls', { u: u }));
   }
   d.u = vies.shift();
