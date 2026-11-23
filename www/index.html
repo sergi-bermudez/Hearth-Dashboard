@@ -1764,7 +1764,9 @@ function espaiSona() {
   var baix = dash.getBoundingClientRect().bottom - parseFloat(cs.paddingBottom || 0);
   var cap = document.querySelector('.d-cap').getBoundingClientRect().bottom;
   var rap = $('rapid'), rapH = rap.style.display == 'none' || !rap.offsetHeight ? 0 : rap.offsetHeight + parseFloat(getComputedStyle(rap).marginBottom || 0);
-  var dk = $('dock'), dockH = dk.offsetHeight + parseFloat(getComputedStyle(dk).marginTop || 0);
+  /* amb el moll a la dreta (tele, pantalles apaïsades) el moll no ocupa alçada: abans es restava igualment i la TV
+     quedava al mínim (160 px) fos quina fos la mida triada */
+  var dk = $('dock'), dockH = /\blat\b/.test(document.body.className) ? 0 : dk.offsetHeight + parseFloat(getComputedStyle(dk).marginTop || 0);
   var vores = parseFloat(ss.paddingTop || 0) + parseFloat(ss.paddingBottom || 0) + parseFloat(ss.borderTopWidth || 0) + parseFloat(ss.borderBottomWidth || 0) + parseFloat(ss.marginBottom || 0) + parseFloat(ss.marginTop || 0);
   return Math.max(60, Math.floor(baix - dockH - rapH - cap - 22 - vores) - (SONA_RED || 0));
 }
