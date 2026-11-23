@@ -1003,3 +1003,5 @@ TR.es["Les webs s'obren en un navegador amagat al PC, de la mida d'aquesta panta
 TR.es["Favorits"]="Favoritos";
 TR.es["Treu dels favorits"]="Quitar de favoritos";
 TR.es["Afegeix als favorits"]="Añadir a favoritos";
+TR.es["Mode vídeo: la web es mou sola. Toca per passar a imatge"]="Modo vídeo: la web se mueve sola. Toca para pasar a imagen";
+TR.es["Mode imatge: s'actualitza quan la toques. Toca per passar a vídeo"]="Modo imagen: se actualiza cuando la tocas. Toca para pasar a vídeo";

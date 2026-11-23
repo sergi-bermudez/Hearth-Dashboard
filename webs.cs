@@ -229,7 +229,7 @@ public static class Webs
                     {
                         int min;
                         if (!int.TryParse(CasaServidor.Q(q, "min"), out min)) min = 800;
-                        byte[] b = Imatge(id, CasaServidor.Q(q, "completa") == "1", Math.Max(300, min));
+                        byte[] b = Imatge(id, CasaServidor.Q(q, "completa") == "1", Math.Max(id.StartsWith("nav-") ? 80 : 300, min));
                         res.ContentType = "image/jpeg";
                         res.AddHeader("Cache-Control", "no-cache, no-store");
                         res.ContentLength64 = b.Length;

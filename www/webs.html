@@ -69,7 +69,7 @@
   <div class="cap"><button onclick="tanca()">‹ Webs</button><div class="t" id="v-t"></div>
     <button onclick="roda(-500)" id="b-amunt">▲</button><button onclick="roda(500)" id="b-avall">▼</button><button onclick="recarrega()">⟳</button></div>
   <div id="nbarra">
-    <button class="nb" onclick="tanca()" title="Webs"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg></button>
+    <button class="nb" onclick="navVideo()" id="n-mode" title="Vídeo o imatge"></button>
     <button class="nb" onclick="navAcc('nav-enrere')" title="Enrere"><svg class="ic" viewBox="0 0 24 24"><path d="M15.4 7.4L14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg></button>
     <button class="nb" onclick="navAcc('nav-endavant')" title="Endavant"><svg class="ic" viewBox="0 0 24 24"><path d="M8.6 16.6L10 18l6-6-6-6-1.4 1.4 4.6 4.6z"/></svg></button>
     <form id="n-form" onsubmit="navVes($('n-adr').value);return false"><span id="n-cad"></span><input id="n-adr" type="text" inputmode="url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Busca o escriu una adreça" onfocus="navAdrFocus(true)" onblur="navAdrFocus(false)" oninput="navSuggereix(true)" onkeydown="if(event.keyCode==8||event.keyCode==46)NAVS.esborra=1"><button type="button" id="n-fav" onclick="navFavorit()" title="Afegeix als favorits">☆</button><button type="button" id="n-rec" onclick="navAcc('nav-recarrega')" title="Recarrega"><svg class="ic" viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button></form>
@@ -265,9 +265,19 @@ function navRefresca() {
   W.t = setTimeout(navCaptura, 120);
   clearTimeout(W.ti); W.infoFins = Date.now() + 15000; W.ti = setTimeout(navInfo, 600);
 }
+/* Vídeo: la web es va actualitzant sola contínuament (per mirar vídeos o coses que es mouen).
+   Imatge: només s'actualitza quan toques, mous o escrius (va més lleugera) */
+var NAVM = { video: !!ls('navVideo') };
+function navPintaMode() {
+  var b = $('n-mode'); if (!b) return;
+  b.innerHTML = svg(NAVM.video ? IC.video : IC.fotos);
+  b.title = NAVM.video ? T('Mode vídeo: la web es mou sola. Toca per passar a imatge') : T('Mode imatge: s\'actualitza quan la toques. Toca per passar a vídeo');
+  b.style.background = NAVM.video ? 'rgba(10,132,255,.35)' : '';
+}
+function navVideo() { NAVM.video = !NAVM.video; ls('navVideo', NAVM.video); navPintaMode(); clearTimeout(W.t); navCaptura(); }
 function navCaptura() {
   var w = W.obert; if (!w || !w.nav || !W.actiu) return;
-  var u = api('web/imatge', { id: w.id, min: 200, t: Date.now() }), nou = new Image();
+  var u = api('web/imatge', { id: w.id, min: NAVM.video ? 100 : 200, t: Date.now() }), nou = new Image();
   nou.onload = function () {
     if (W.obert != w) return;
     var im = $('img');
@@ -278,7 +288,7 @@ function navCaptura() {
     im.style.left = '0'; im.style.top = '0'; im.style.width = Math.round(nou.width / d) + 'px'; im.style.height = Math.round(nou.height / d) + 'px';
     $('estat').style.display = 'none';
     if (W.carregant && W.seq.length <= 2 && !(W.info && W.info.carregant)) navProg(false);
-    W.t = setTimeout(navCaptura, W.seq.length ? W.seq.shift() : 6000);
+    W.t = setTimeout(navCaptura, NAVM.video ? 120 : W.seq.length ? W.seq.shift() : 6000);
   };
   nou.onerror = function () { $('estat').textContent = 'El PC no respon. Torno a provar…'; $('estat').style.display = 'block'; W.t = setTimeout(navCaptura, 4000); };
   nou.src = u;
@@ -420,6 +430,7 @@ dades('webs', function (d) {
   if (h) for (var i = 0; i < W.defs.length; i++) if (W.defs[i].id == h) { obre(i); ja = true; }
   /* l'app s'obre directament al navegador (les webs desades, amb el botó de la graella) */
   if (!ja) obreNav('');
+  navPintaMode();
 });
 </script>
 </body>

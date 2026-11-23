@@ -947,6 +947,8 @@ function targetaWeb() {
   return null;
 }
 function pintaWebDash() {
+  /* les webs desades ja no existeixen (ara hi ha el navegador): no es mostren a la pantalla d'inici */
+  WB.defs = []; if ($('fweb')) $('fweb').style.display = 'none'; return;
   var w = targetaWeb(), d = $('fweb');
   clearTimeout(WB.t);
   if (!w || A.vista != 'dash') { d.style.display = 'none'; return; }
@@ -963,7 +965,6 @@ function pintaDock() {
   var h = '', n = '<div onclick="navInici()" id="nv-dash">' + svg(IC.casa) + T('Inici') + '</div>';
   for (var i = 0; i < GRUPS.length; i++) {
     var g = GRUPS[i];
-    if (g.id == 'webs' && !WB.defs.length) continue;
     if (!grupPermes(g)) continue;
     h += '<div class="app cal-servidor" id="dk-' + g.id + '" onclick="if(FORA.actiu){avis(T(\'Això necessita el servidor, que ara no respon.\'));return;}obreGrup(\'' + g.id + '\')"><div class="bx" style="' + grad(g.c1, g.c2) + '">' + svg(g.ic) + '</div><span class="nm">' + esc(T(g.nom)) + '</span></div>';
     n += '<div class="cal-servidor" onclick="if(FORA.actiu){avis(T(\'Això necessita el servidor, que ara no respon.\'));return;}obreGrup(\'' + g.id + '\')" id="nv-' + g.id + '">' + svg(g.ic) + esc(T(g.nom)) + '</div>';

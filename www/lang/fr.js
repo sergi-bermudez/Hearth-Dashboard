@@ -1003,3 +1003,5 @@ TR.fr["Les webs s'obren en un navegador amagat al PC, de la mida d'aquesta panta
 TR.fr["Favorits"]="Favoris";
 TR.fr["Treu dels favorits"]="Retirer des favoris";
 TR.fr["Afegeix als favorits"]="Ajouter aux favoris";
+TR.fr["Mode vídeo: la web es mou sola. Toca per passar a imatge"]="Mode vidéo : la page bouge toute seule. Touchez pour passer en image";
+TR.fr["Mode imatge: s'actualitza quan la toques. Toca per passar a vídeo"]="Mode image : se met à jour quand vous la touchez. Touchez pour passer en vidéo";
