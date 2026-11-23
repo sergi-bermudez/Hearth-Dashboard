@@ -16,6 +16,8 @@
 <title>Hearth</title>
 <script src="i18n.js"></script>
 <script>
+/* L'Xbox 360 (Internet Explorer 9) no pot mostrar aquesta pantalla: té una versió pròpia, més senzilla */
+if (/Xbox/i.test(navigator.userAgent) && location.search.indexOf('complet') < 0) location.replace('/xbox.html');
 /* Si la pantalla d'inici no arrenca (un error, o dades d'aquest navegador fetes malbé), no es queda buida:
    el primer cop esborra les dades locals i ho torna a provar; si torna a fallar, ensenya l'error i un botó per reparar. */
 var HEARTH_ERRS = [];
