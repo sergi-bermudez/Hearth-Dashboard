@@ -991,6 +991,9 @@ function pintaPestanyes(id) {
 var FR = {}, ORDRE = [];
 function obre(id, arg) {
   if (!permesa(id)) { if (id == 'config') obreConfig(); return; }
+  /* en canviar d'app, alguns navegadors de tele (LG) aturen el so: si s'atura just ara, continua (vegeu més avall) */
+  A.canviApp = Date.now();
+  if (R.cua.length) registra('obre ' + id);
   var f = FR[id];
   /* iOS 9: una app que s'ha amagat i es torna a mostrar sovint ja no rep els tocs.
      Als iPads antics es torna a obrir de nou cada vegada (es desa el que calgui en tancar-la). */
@@ -1237,7 +1240,7 @@ function repPlay() {
   if (au.paused) {
     if (R.cua[R.pos].k == 'radio') au.src = mitja(R.cua[R.pos].u);
     au.play();
-  } else au.pause();
+  } else { A.pausaMa = Date.now(); au.pause(); }
 }
 function repSeguent() {
   if (TV.canal && TV.canal.vod) { vodSalta(30); return; }
@@ -1288,7 +1291,16 @@ au.addEventListener('canplay', function () {
   R.represa = null;
 });
 au.addEventListener('play', function () { iconesPlay(); notifica(); });
-au.addEventListener('pause', function () { iconesPlay(); poDesaPos(); notifica(); });
+au.addEventListener('pause', function () {
+  iconesPlay(); poDesaPos(); notifica();
+  /* s'ha aturat sense que ningú ho demanés, just en canviar d'app (passa a la LG): continua */
+  var it = R.cua[R.pos];
+  if (it && it.k != 'spotify' && !au.ended && Date.now() - (A.canviApp || 0) < 2500 && Date.now() - (A.represApp || 0) > 4000 && Date.now() - (A.pausaMa || 0) > 2500) {
+    A.represApp = Date.now();
+    registra('Hearth continua (canvi d\'app)');
+    setTimeout(function () { if (au.paused && R.cua.length) { var p = au.play(); if (p && p['catch']) p['catch'](function () { }); } }, 300);
+  }
+});
 au.addEventListener('ended', function () {
   var it = R.cua[R.pos];
   /* una ràdio en directe no s'acaba mai: si el navegador (p. ex. el d'una tele) la dona per acabada, es torna a connectar */
