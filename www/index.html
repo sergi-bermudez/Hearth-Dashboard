@@ -1786,12 +1786,15 @@ function tvLlocFet() {
     return;
   }
   w = TV.miniMida == 'p' ? Math.round(W * 0.26) : TV.miniMida == 'g' ? Math.round(W * 0.5) : (W > 900 ? 360 : 300); h = Math.round(w * 9 / 16);
-  var peu = ($('nav').offsetHeight || 66) + ($('mini').offsetHeight || 74);
+  /* amb la barra d'apps a la dreta (teles, pantalles apaïsades) la barra no és a baix: abans se'n restava l'alçada
+     sencera i el vídeo flotant quedava fora de la pantalla, per dalt */
+  var lat = /\blat\b/.test(document.body.className), dreta = lat ? ($('nav').offsetWidth || 86) : 0;
+  var peu = (lat ? 0 : ($('nav').offsetHeight || 66)) + ($('mini').offsetHeight || 0);
   if (h > H - peu - 14 - 30) { h = H - peu - 14 - 30; w = Math.round(h * 16 / 9); }
   $('tv-b-mmida').textContent = TV.miniMida == 'p' ? 'S' : TV.miniMida == 'g' ? 'L' : 'M';
   t.className = 'mini' + vod;
   st.width = w + 'px'; st.height = h + 'px';
-  st.left = (W - w - 16) + 'px'; st.top = (H - h - peu - 14) + 'px';
+  st.left = (W - w - 16 - dreta) + 'px'; st.top = (H - h - peu - 14) + 'px';
 }
 /* Mida del vídeo flotant (quan es miren altres apps): S / M / L */
 function tvMiniMida() {
