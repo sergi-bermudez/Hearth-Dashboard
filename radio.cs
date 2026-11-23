@@ -246,6 +246,37 @@ public static class RadioHls
         HttpListenerResponse res = ctx.Response;
         try
         {
+            if (nom == "video")
+            {
+                // Una pel.licula convertida al vol per a navegadors vells (Xbox 360): H.264 720p i AAC estereo, en MP4
+                // fragmentat (es pot enviar mentre es fa), amb una mida molt gran perque el navegador l'accepti.
+                string full = CasaServidor.Ruta("pelis", CasaServidor.Q(q, "p"));
+                if (full == null || !File.Exists(full)) { CasaServidor.Error(res, 404, "No"); return; }
+                string ff = SoPC.RutaFfmpeg();
+                if (ff == null) { CasaServidor.Error(res, 503, "Falta ffmpeg.exe"); return; }
+                double ss; double.TryParse(CasaServidor.Q(q, "ss"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out ss);
+                string args = "-nostdin -loglevel error " + (ss > 0 ? "-ss " + ((int)ss) + " " : "") + "-i " + Cometes(full) +
+                    " -map 0:v:0 -map 0:a:0? -c:v libx264 -preset veryfast -profile:v main -level 3.1 -pix_fmt yuv420p -vf \"scale=-2:'min(720,ih)'\" -b:v 2500k -maxrate 3000k -bufsize 6000k" +
+                    " -c:a aac -b:a 160k -ac 2 -ar 44100 -movflags frag_keyframe+empty_moov+default_base_moof -f mp4 pipe:1";
+                ProcessStartInfo si = new ProcessStartInfo(ff, args);
+                si.UseShellExecute = false; si.CreateNoWindow = true; si.RedirectStandardOutput = true; si.RedirectStandardError = true;
+                Process p = Process.Start(si);
+                p.ErrorDataReceived += delegate { };
+                p.BeginErrorReadLine();
+                try
+                {
+                    res.ContentType = "video/mp4";
+                    res.AddHeader("Cache-Control", "no-cache, no-store");
+                    res.SendChunked = false; res.ContentLength64 = 20000000000L; res.KeepAlive = false;
+                    if (ctx.Request.HttpMethod == "HEAD") return;
+                    Stream o = p.StandardOutput.BaseStream;
+                    byte[] buf = new byte[65536];
+                    int n;
+                    while ((n = o.Read(buf, 0, buf.Length)) > 0) res.OutputStream.Write(buf, 0, n);
+                }
+                finally { try { if (!p.HasExited) p.Kill(); } catch { } try { p.Dispose(); } catch { } }
+                return;
+            }
             if (nom == "mp3")
             {
                 // La radio com un MP3 que no s'acaba mai: ffmpeg llegeix l'emissora (i s'hi torna a connectar si talla

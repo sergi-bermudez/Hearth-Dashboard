@@ -339,22 +339,29 @@ function carregaPelis() {
     var l = d.pelis || [], h = '', n = 0;
     X.pelis = l;
     for (var i = 0; i < l.length; i++) {
-      var e = l[i], ok = /^(mp4|m4v)$/i.test(e.ext || '');
-      if (!ok) continue;
+      var e = l[i];
       n++;
       h += '<div class="it" onclick="obrePeli(' + i + ')"><div class="im poster" style="background-image:' + bg(api('caratula', { p: e.p, m: 300, cau: 1, v: e.pv || 0 })) + '"></div><div class="nm">' + esc(e.titol || e.n || e.p.split('/').pop()) + '</div></div>';
     }
-    $('cos').innerHTML = n ? h : '<div class="gris">' + T('No hi ha pel·lícules en MP4 (aquest navegador no pot fer sonar altres formats).') + '</div>';
+    $('cos').innerHTML = n ? h : '<div class="gris">' + T('No hi ha pel·lícules.') + '</div>';
   }, function () { $('cos').innerHTML = '<div class="gris">' + T('No s\'ha pogut carregar la biblioteca.') + '</div>'; });
 }
 function obrePeli(i) {
   var e = X.pelis[i];
   atura();
+  /* primer el fitxer tal com és (si és un MP4 que aquest navegador entén, es pot avançar i tirar enrere);
+     si no el sap fer sonar, el servidor el converteix al vol a un MP4 que sí que entén */
+  var directe = /^(mp4|m4v)$/i.test(e.ext || ''), conv = api('radio/video', { p: e.p });
   var g = $('gran');
-  g.innerHTML = '<video id="vid" controls autoplay src="' + esc(fUrl('pelis', e.p)) + '"></video><button class="tanca" onclick="tancaGran()">✕ ' + T('Tanca') + '</button>';
+  g.innerHTML = '<video id="vid" controls autoplay></video><button class="tanca" onclick="tancaGran()">✕ ' + T('Tanca') + '</button>';
   g.style.display = 'block';
-  var v = $('vid');
-  v.addEventListener('error', function () { avis(T('Aquest navegador no pot reproduir aquest vídeo') + (v.error ? ' (codi ' + v.error.code + ')' : ''), 6000); }, false);
+  var v = $('vid'), convertint = !directe;
+  v.addEventListener('error', function () {
+    if (!convertint) { convertint = true; avis(T('Convertint la pel·lícula per a aquest navegador…'), 5000); v.src = conv; try { v.play(); } catch (x) { } return; }
+    avis(T('No s\'ha pogut reproduir aquest vídeo') + (v.error ? ' (codi ' + v.error.code + ')' : ''), 6000);
+  }, false);
+  if (convertint) avis(T('Convertint la pel·lícula per a aquest navegador…'), 5000);
+  v.src = directe ? fUrl('pelis', e.p) : conv;
   try { v.play(); } catch (x) { }
 }
 
