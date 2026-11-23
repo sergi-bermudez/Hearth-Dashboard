@@ -1086,3 +1086,4 @@ TR.fr["Lloc"]="Où";
 TR.fr["Mida de la caixa"]="Taille de la case";
 TR.fr["Petita"]="Petite";
 TR.fr["Gran"]="Grande";
+TR.fr["Edita"]="Modifier";

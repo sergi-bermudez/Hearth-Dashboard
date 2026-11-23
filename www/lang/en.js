@@ -1086,3 +1086,4 @@ TR.en["Lloc"]="Where";
 TR.en["Mida de la caixa"]="Box size";
 TR.en["Petita"]="Small";
 TR.en["Gran"]="Large";
+TR.en["Edita"]="Edit";

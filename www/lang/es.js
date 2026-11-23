@@ -1086,3 +1086,4 @@ TR.es["Lloc"]="Dónde";
 TR.es["Mida de la caixa"]="Tamaño de la caja";
 TR.es["Petita"]="Pequeña";
 TR.es["Gran"]="Grande";
+TR.es["Edita"]="Editar";
