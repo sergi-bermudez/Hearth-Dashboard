@@ -297,7 +297,9 @@ public static class Webs
                     "for(i=0;i<v.length;i++){r=v[i].getBoundingClientRect();if(r.width>200&&r.height>100&&(v[i].tagName!='VIDEO'||(!v[i].paused&&v[i].readyState>1)))return 'V';}" +
                     "var e=document.querySelectorAll('body *,input[type=submit],input[type=button]');" +
                     "for(j=ts.length-1;j>=0;j--){var t=net(ts[j]),b=null;for(i=0;i<e.length;i++){var x=e[i],tx=x.tagName=='INPUT'?x.value:x.textContent;if(net(tx)==t&&vis(x))b=x;}" +
-                    "if(b){var p=null,ps=document.querySelectorAll('input[type=password]');for(i=0;i<ps.length;i++)if(vis(ps[i])){p=ps[i];break;}" +
+                    "if(b){var o=document.querySelectorAll('[data-hearth-pas]');for(i=0;i<o.length;i++)o[i].removeAttribute('data-hearth-pas');" +
+                    "(b.closest('button,a,input,select,textarea,[tabindex],[role=button]')||b).setAttribute('data-hearth-pas','1');" +
+                    "var p=null,ps=document.querySelectorAll('input[type=password]');for(i=0;i<ps.length;i++)if(vis(ps[i])){p=ps[i];break;}" +
                     "return (p?mig(p):'')+'|'+mig(b)+'|'+j;}}return '';})(" + new JavaScriptSerializer().Serialize(passes) + ")";
                 string r = Convert.ToString(Edge.Avalua(c.Pag, js, 4000));
                 if (r == "V") { Registre(c, "video en marxa"); return; }
@@ -309,8 +311,9 @@ public static class Webs
                     string pas = passes[int.Parse(pp[2])];
                     if (pas == c.DarrerPas && (DateTime.Now - c.DarrerPasQuan).TotalSeconds < 45) { Registre(c, "esperant despres de tocar \"" + pas + "\""); return; }
                     c.DarrerPas = pas; c.DarrerPasQuan = DateTime.Now;
-                    // com una persona: un sol clic al boto (el clic de debo ja fa que l'Edge deixi fer servir la contrasenya desada)
-                    ClicReal(c, pp[1]);
+                    // amb el teclat, com una persona: focus al boto i Enter (no depen de les coordenades); si no s'hi pot posar
+                    // el focus, Tab des del camp de la contrasenya; i si tampoc, un clic
+                    if (!PremMarcat(c)) ClicReal(c, pp[1]);
                     Registre(c, "toca \"" + passes[int.Parse(pp[2])] + "\"");
                     Thread.Sleep(2500);
                     // despres de tocar, la pagina torna a la posicio del retall
@@ -334,6 +337,7 @@ public static class Webs
         "var re=/^(log ?in|sign ?in|entrar|iniciar|acceder|login|connexi|connecter|se connecter|anmelden|aceder|inicio)/i,bs=(f||document).querySelectorAll('button,input[type=submit],[role=button],a,div,span'),b=null;" +
         "for(i=0;i<bs.length;i++){var t=(bs[i].innerText||bs[i].value||'').replace(/\\s+/g,' ').replace(/^ | $/g,'');if(t.length<30&&re.test(t)&&vis(bs[i])&&(!b||b.contains(bs[i])))b=bs[i];}" +
         "if(!b){b=(f||document).querySelector('button[type=submit],input[type=submit]')||(f||document).querySelector('button');}" +
+        "var o=document.querySelectorAll('[data-hearth-pas]');for(i=0;i<o.length;i++)o[i].removeAttribute('data-hearth-pas');if(b&&vis(b))b.setAttribute('data-hearth-pas','1');" +
         "return mig(p)+'|'+(b&&vis(b)?mig(b):'');})()";
 
     // Una camera: el retall segueix el video (el mes gran de la pagina), sigui on sigui, encara que la web canvi\u00ef de disseny
@@ -384,6 +388,25 @@ public static class Webs
         catch { }
     }
 
+    // L'element marcat (data-hearth-pas): se li posa el focus i es prem Enter amb una tecla de debo.
+    // Si no accepta el focus directament, s'hi arriba amb Tab des del camp de la contrasenya.
+    static bool PremMarcat(Captura c)
+    {
+        string r = Convert.ToString(Edge.Avalua(c.Pag, "(function(){var b=document.querySelector('[data-hearth-pas]');if(!b)return '';" +
+            "try{b.focus();}catch(e){}if(document.activeElement==b)return 'F';" +
+            "var ps=document.querySelectorAll('input[type=password]'),i;for(i=0;i<ps.length;i++){var r=ps[i].getBoundingClientRect();if(r.width>4&&r.height>4){ps[i].focus();return 'T';}}return '';})()", 3000));
+        if (r == "F") { NavTecla(c.Pag, "Enter"); Registre(c, "focus i Enter"); return true; }
+        if (r != "T") return false;
+        for (int i = 0; i < 10; i++)
+        {
+            NavTecla(c.Pag, "Tab");
+            Thread.Sleep(80);
+            object a = Edge.Avalua(c.Pag, "(function(){var e=document.activeElement;return !!(e&&e.hasAttribute&&e.hasAttribute('data-hearth-pas'));})()", 3000);
+            if (a is bool && (bool)a) { NavTecla(c.Pag, "Enter"); Registre(c, "Tab (" + (i + 1) + ") i Enter"); return true; }
+        }
+        return false;
+    }
+
     static bool EntraSol(Captura c)
     {
         string r = Convert.ToString(Edge.Avalua(c.Pag, LOGIN_JS, 4000));
@@ -393,8 +416,11 @@ public static class Webs
         if ((DateTime.Now - c.Entrat).TotalSeconds < 60) return true;
         c.Entrat = DateTime.Now;
         // l'Edge nomes deixa fer servir la contrasenya emplenada despres d'un gest de debo: primer un clic al camp
-        if (pb[1] != "") ClicReal(c, pb[1]);
-        else { ClicReal(c, pb[0]); Thread.Sleep(300); NavTecla(c.Pag, "Enter"); }
+        if (pb[1] == "" || !PremMarcat(c))
+        {
+            if (pb[1] != "") ClicReal(c, pb[1]);
+            else { ClicReal(c, pb[0]); Thread.Sleep(300); NavTecla(c.Pag, "Enter"); }
+        }
         Registre(c, "inici de sessio: camp " + pb[0] + ", boto " + (pb[1] != "" ? pb[1] : "(Enter)"));
         Thread.Sleep(4000);
         if (c.Sx > 0 || c.Sy > 0) Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy), 3000);
