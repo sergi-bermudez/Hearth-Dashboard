@@ -76,6 +76,7 @@ public static class Webs
                 c = new Captura();
                 c.Id = id; c.Url = ""; c.W = w > 0 ? w : 1024; c.H = h > 0 ? h : 700;
                 c.Target = Edge.NovaPagina("about:blank");
+                RegistraPestanya(c.Target);
                 c.Pag = new Cdp();
                 c.Pag.Connecta(Edge.WsPagina(c.Target));
                 c.Pag.Envia("Page.enable", null, 5000);
@@ -151,6 +152,7 @@ public static class Webs
             c.Id = id; c.Url = url; c.W = w; c.H = h;
             // s'obre en blanc per preparar-la abans que carregui la web
             c.Target = Edge.NovaPagina("about:blank");
+            RegistraPestanya(c.Target);
             c.Pag = new Cdp();
             c.Pag.Connecta(Edge.WsPagina(c.Target));
             c.Pag.Envia("Page.enable", null, 5000);
@@ -185,8 +187,28 @@ public static class Webs
     }
 
     // Tanca les webs que ningu mira fa estona
+    // Les pestanyes que obre aquest modul, desades en un fitxer: si el servidor es reinicia (actualitzacions), l'Edge continua
+    // obert amb les pestanyes d'abans, que ja no fa servir ningu (i una camera hi podria continuar emetent). Es tanquen.
+    static HashSet<string> nostres;
+    static string FitxerPestanyes { get { return Path.Combine(CasaServidor.DirDades, "webs-pestanyes.txt"); } }
+    static void DesaPestanyes() { try { File.WriteAllLines(FitxerPestanyes, new List<string>(nostres).ToArray()); } catch { } }
+    static void CarregaPestanyes()
+    {
+        if (nostres != null) return;
+        nostres = new HashSet<string>();
+        try { if (File.Exists(FitxerPestanyes)) foreach (string l in File.ReadAllLines(FitxerPestanyes)) if (l.Trim() != "") nostres.Add(l.Trim()); } catch { }
+    }
+    static void RegistraPestanya(string t) { lock (lk) { CarregaPestanyes(); nostres.Add(t); DesaPestanyes(); } }
+
+    public static void Inicia()
+    {
+        // en engegar el servidor, al cap d'un minut es tanquen les pestanyes que hagin quedat d'abans
+        lock (lk) { if (neteja == null) neteja = new Timer(Neteja, null, 60000, 60000); }
+    }
+
     static void Neteja(object o)
     {
+        try { TancaOrfes(); } catch { }
         List<Captura> velles = new List<Captura>();
         lock (lk)
         {
@@ -204,6 +226,26 @@ public static class Webs
             lock (c.Lk) { c.Aparcada = true; c.VideoTrobat = false; c.Retall = false; c.Cx = 0; c.Cy = 0; c.Cw = c.W; c.Ch = c.H; c.Darrera = null; }
             try { c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", c.Url), 10000); Registre(c, "ningu la mira: s'atura el directe"); } catch { }
         }
+    }
+
+    static void TancaOrfes()
+    {
+        List<string> orfes = new List<string>();
+        lock (lk)
+        {
+            CarregaPestanyes();
+            if (nostres.Count == 0) return;
+            HashSet<string> vives = new HashSet<string>();
+            foreach (Captura c in obertes.Values) if (c.Target != null) vives.Add(c.Target);
+            foreach (string t in nostres) if (!vives.Contains(t)) orfes.Add(t);
+            if (orfes.Count == 0) return;
+            foreach (string t in orfes) nostres.Remove(t);
+            DesaPestanyes();
+        }
+        if (!Edge.Viu()) return;
+        HashSet<string> existents = new HashSet<string>();
+        foreach (string[] p in Edge.Pagines()) existents.Add(p[0]);
+        foreach (string t in orfes) if (existents.Contains(t)) { try { Edge.TancaPagina(t); Console.WriteLine("  Webs: tancada una pestanya que ja no es feia servir"); } catch { } }
     }
 
     static byte[] Imatge(string id, bool completa, int minMs)

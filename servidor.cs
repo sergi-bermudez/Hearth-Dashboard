@@ -163,6 +163,7 @@ public static class CasaServidor
         GFotos.AlArrencar();
         Actualitza.Inicia();
         Botigues.Inicia();
+        Webs.Inicia();
         while (true)
         {
             HttpListenerContext ctx;
