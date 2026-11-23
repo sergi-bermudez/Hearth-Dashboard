@@ -1165,7 +1165,8 @@ function despertEngega() {
   /* la resta: un vídeo mut i minúscul en bucle (cal un toc per començar) */
   var v = document.createElement('video');
   v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.muted = true; v.loop = true; v.src = 'despert.mp4';
-  v.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none';
+  /* prou gran perquè el Chrome de l'Android el compti com a vídeo visible (si no, deixa apagar la pantalla); darrere de tot */
+    v.style.cssText = 'position:fixed;left:0;bottom:0;width:160px;height:90px;opacity:0.01;pointer-events:none;z-index:-1';
   document.body.appendChild(v); DESPERT.v = v;
   var prova = function () { if (DESPERT.v) { var p = DESPERT.v.play(); if (p && p['catch']) p['catch'](function () { }); } };
   prova(); DESPERT.toc = prova; document.addEventListener('touchend', prova); document.addEventListener('click', prova);
@@ -1187,7 +1188,8 @@ function despertSo() {
     }
     var v = document.createElement('video');
     v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.muted = true; v.loop = true; v.src = 'despert.mp4';
-    v.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none';
+    /* prou gran perquè el Chrome de l'Android el compti com a vídeo visible (si no, deixa apagar la pantalla); darrere de tot */
+    v.style.cssText = 'position:fixed;left:0;bottom:0;width:160px;height:90px;opacity:0.01;pointer-events:none;z-index:-1';
     document.body.appendChild(v); DESPERT.sv = v;
     DESPERT.soToc = function () { if (DESPERT.sv && DESPERT.sv.paused) { try { var p = DESPERT.sv.play(); if (p && p['catch']) p['catch'](function () { }); } catch (e) { } } };
     DESPERT.soToc(); document.addEventListener('touchend', DESPERT.soToc); document.addEventListener('click', DESPERT.soToc);
