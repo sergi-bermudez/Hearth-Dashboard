@@ -21,6 +21,7 @@ public static class Webs
         public int W, H; public double Dsf = 1, Zoom = 1, Sx, Sy; public bool Mobil;
         public double Cx, Cy, Cw, Ch;
         public bool Retall;
+        public string Clica = ""; public DateTime Clicat = DateTime.MinValue;
     }
     static readonly Dictionary<string, Captura> obertes = new Dictionary<string, Captura>();
     static readonly object lk = new object();
@@ -155,6 +156,7 @@ public static class Webs
         c.Retall = cl != null && Num(cl, "w", 0) > 10 && Num(cl, "h", 0) > 10;
         if (c.Retall) { c.Cx = Num(cl, "x", 0); c.Cy = Num(cl, "y", 0); c.Cw = Num(cl, "w", c.W); c.Ch = Num(cl, "h", c.H); }
         else { c.Cx = 0; c.Cy = 0; c.Cw = c.W; c.Ch = c.H; }
+        c.Clica = def.ContainsKey("clica") && def["clica"] != null ? def["clica"].ToString().Trim() : "";
     }
 
     // Tanca les webs que ningu mira fa estona
@@ -178,6 +180,7 @@ public static class Webs
         // un widget: cada cop, la pagina a la posicio i l'ampliacio de quan es va retallar (si s'ha recarregat, tornaria a dalt)
         if (!id.StartsWith("nav-") && (c.Sx > 0 || c.Sy > 0 || Math.Abs(c.Zoom - 1) > 0.01))
             try { Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{var d=document.documentElement;if(d&&{2}!=1&&d.style.zoom!='{2}')d.style.zoom='{2}';if(Math.abs(window.scrollX-{0})>2||Math.abs(window.scrollY-{1})>2)window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy, c.Zoom), 3000); } catch { }
+        if (!id.StartsWith("nav-") && c.Clica != "" && (DateTime.Now - c.Clicat).TotalSeconds > 10) EngegaDirecte(c);
         lock (c.Lk)
         {
             c.Vist = DateTime.Now;
@@ -190,6 +193,32 @@ public static class Webs
             if (!completa) { c.Darrera = b; c.Quan = DateTime.Now; }
             return b;
         }
+    }
+
+    // Les cameres del nuvol (CloudEdge...): la web s'obre amb la llista d'aparells i cal tocar la camera per veure el directe.
+    // Si a la pagina no hi ha cap video o canvas gran en marxa, es toca l'element que te exactament aquest text.
+    static void EngegaDirecte(Captura c)
+    {
+        c.Clicat = DateTime.Now;
+        try
+        {
+            string js = "(function(t){var v=document.querySelectorAll('video,canvas'),i,r;" +
+                "for(i=0;i<v.length;i++){r=v[i].getBoundingClientRect();if(r.width>200&&r.height>100&&(v[i].tagName!='VIDEO'||(!v[i].paused&&v[i].readyState>1)))return '';}" +
+                "var b=null,e=document.querySelectorAll('body *');" +
+                "for(i=0;i<e.length;i++){if(e[i].offsetWidth>0&&(e[i].textContent||'').replace(/\\s+/g,' ').replace(/^ | $/g,'')==t)b=e[i];}" +
+                "if(!b)return '';b.scrollIntoView({block:'center'});r=b.getBoundingClientRect();return Math.round(r.left+r.width/2)+','+Math.round(r.top+r.height/2);})(" + new JavaScriptSerializer().Serialize(c.Clica) + ")";
+            string r = Convert.ToString(Edge.Avalua(c.Pag, js, 4000));
+            if (string.IsNullOrEmpty(r) || r.IndexOf(',') < 0) return;
+            string[] xy = r.Split(',');
+            double x = double.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture), y = double.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture);
+            c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseMoved", "x", x, "y", y), 5000);
+            c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mousePressed", "x", x, "y", y, "button", "left", "buttons", 1, "clickCount", 1), 5000);
+            c.Pag.Envia("Input.dispatchMouseEvent", CasaServidor.Dic("type", "mouseReleased", "x", x, "y", y, "button", "left", "buttons", 0, "clickCount", 1), 5000);
+            Thread.Sleep(2500);
+            // despres de tocar, la pagina torna a la posicio del retall
+            if (c.Sx > 0 || c.Sy > 0) Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy), 3000);
+        }
+        catch { }
     }
 
     static void Clic(string id, double fx, double fy)

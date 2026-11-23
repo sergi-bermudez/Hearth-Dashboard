@@ -943,7 +943,7 @@ function clicMig(e) {
 var WB = { defs: [], t: null, ts: {} };
 /* ---------- Widgets: parts de webs retallades des del navegador (una webcam, el temps, un gràfic de borsa...) ---------- */
 function pintaWebDash() {
-  var d = $('fweb'), l = WB.defs || [], h = '', i;
+  var d = $('fweb'), l = (WB.defs || []).filter(function (w) { return w.lloc != 'casa'; }), h = '', i;
   for (var k in WB.ts) if (WB.ts.hasOwnProperty(k)) clearTimeout(WB.ts[k]);
   WB.ts = {};
   if (!l.length || A.vista != 'dash' || $('mig').clientHeight < 120) { d.style.display = 'none'; return; }
@@ -2464,7 +2464,7 @@ function permesa(id) {
   if (id == 'spotify' && !A.ajustos.spotify) return false;
   if (id == 'futbol' && A.ajustos.futbol === false) return false;
   if (id == 'missatges' && !A.ajustos.whatsapp) return false;
-  if (id == 'casa' && !A.ajustos.tuya) return false;
+  if (id == 'casa' && !A.ajustos.tuya && !(WB.defs || []).some(function (w) { return w.lloc == 'casa'; })) return false;
   /* a la tele només el que té sentit amb el comandament: escoltar, mirar, fotos i la casa */
   if (modeTele() && TELE_AMAGA[id]) return false;
   return !INF.actiu || id == 'dash' || INF.apps.indexOf(id) >= 0;

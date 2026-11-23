@@ -438,7 +438,7 @@ function wgObre() {
   var p = $('wg-panell');
   if (p.style.display == 'block') { p.style.display = 'none'; return; }
   var h = '<h3>' + esc(T('Widgets a la pantalla d\'inici')) + '</h3>';
-  for (var i = 0; i < WG.l.length; i++) h += '<div class="el"><div class="t">' + esc(WG.l[i].nom || WG.l[i].url) + '<br><small class="gris">' + esc(WG.l[i].mode == 'directe' ? T('En directe') : Tf('Cada {1}', wgCada(WG.l[i].interval))) + '</small></div><button onclick="wgTreu(' + i + ')">' + svg(IC.paperera) + '</button></div>';
+  for (var i = 0; i < WG.l.length; i++) h += '<div class="el"><div class="t">' + esc(WG.l[i].nom || WG.l[i].url) + '<br><small class="gris">' + (WG.l[i].lloc == 'casa' ? esc(T('Casa ▸ Càmeres')) + ' · ' : '') + esc(WG.l[i].mode == 'directe' ? T('En directe') : Tf('Cada {1}', wgCada(WG.l[i].interval))) + '</small></div><button onclick="wgTreu(' + i + ')">' + svg(IC.paperera) + '</button></div>';
   if (!WG.l.length) h += '<div class="gris petit" style="margin-bottom:8px">' + esc(T('Encara no n\'hi ha cap. Obre una web (una webcam, el temps, un gràfic de borsa…) i retalla\'n la part que vulguis veure a l\'inici.')) + '</div>';
   h += '<button class="pri" style="width:100%;margin-top:10px" onclick="wgComenca()">✂ ' + esc(T('Retalla una part d\'aquesta web')) + '</button>';
   p.innerHTML = h; p.style.display = 'block';
@@ -469,11 +469,22 @@ function wgComenca() {
 })();
 function wgForm() {
   var p = $('wg-panell'), t = (W.info && W.info.titol) || '';
-  p.innerHTML = '<h3>' + esc(T('Nou widget')) + '</h3>' + esc(T('Nom')) + '<input id="wg-nom" type="text" value="' + esc(t.substring(0, 40)) + '">' +
+  var cam = /cloudedge|meari|camera|cam\b|ipcam/i.test((W.info && W.info.url) || '');
+  p.innerHTML = '<h3>' + esc(T('Nou widget')) + '</h3>' + esc(T('On')) + '<select id="wg-lloc" onchange="wgLloc()"><option value="inici">' + esc(T('Pantalla d\'inici')) + '</option><option value="casa"' + (cam ? ' selected' : '') + '>' + esc(T('Casa ▸ Càmeres')) + '</option></select>' +
+    esc(T('Nom')) + '<input id="wg-nom" type="text" value="' + esc(t.substring(0, 40)) + '">' +
+    '<div id="wg-cl">' + esc(T('Per engegar el directe, toca el text (opcional)')) + '<input id="wg-clica" type="text" placeholder="' + esc(T('p. ex. Jardí')) + '"></div>' +
     esc(T('S\'actualitza')) + '<select id="wg-cada"><option value="directe">' + esc(T('En directe (webcams, vídeo)')) + '</option><option value="30">' + esc(Tf('Cada {1}', '30 s')) + '</option><option value="60" selected>' + esc(Tf('Cada {1}', '1 min')) + '</option><option value="600">' + esc(Tf('Cada {1}', '10 min')) + '</option><option value="3600">' + esc(Tf('Cada {1}', '1 h')) + '</option></select>' +
-    esc(T('Mida a l\'inici')) + '<select id="wg-mida">' + wgOpcionsMida() + '</select>' +
-    '<button onclick="wgCancel()">' + esc(T('Cancel·la')) + '</button> <button class="pri" onclick="wgCrea()">' + esc(T('Afegeix a l\'inici')) + '</button>';
+    '<div id="wg-md">' + esc(T('Mida a l\'inici')) + '<select id="wg-mida">' + wgOpcionsMida() + '</select></div>' +
+    '<button onclick="wgCancel()">' + esc(T('Cancel·la')) + '</button> <button class="pri" onclick="wgCrea()">' + esc(T('Afegeix')) + '</button>';
   p.style.display = 'block';
+  wgLloc();
+}
+/* una càmera va a l'app Casa: en directe i, si cal, amb el text que s'ha de tocar per obrir-ne el vídeo */
+function wgLloc() {
+  var casa = $('wg-lloc').value == 'casa';
+  $('wg-cl').style.display = casa ? '' : 'none';
+  $('wg-md').style.display = casa ? 'none' : '';
+  if (casa) $('wg-cada').value = 'directe';
 }
 /* mides com els widgets de l'Android: caselles de la graella de la pantalla d'inici (columnes x files) */
 var WG_MIDES = [['1x1', 'Petit (1×1)'], ['2x1', 'Ample (2×1)'], ['1x2', 'Alt (1×2)'], ['2x2', 'Gran (2×2)'], ['3x1', 'Molt ample (3×1)'], ['3x2', 'Molt gran (3×2)']];
@@ -492,8 +503,9 @@ function wgCrea() {
     sx: Math.round(i.sx || 0), sy: Math.round(i.sy || 0), zoom: i.zoom || 1,
     clip: { x: Math.round(s.x * kx), y: Math.round(s.y * ky), w: Math.round(s.w * kx), h: Math.round(s.h * ky) },
     mode: c == 'directe' ? 'directe' : 'imatge', interval: c == 'directe' ? 3 : +c, mida: $('wg-mida').value };
+  if ($('wg-lloc').value == 'casa') { w.lloc = 'casa'; w.clica = $('wg-clica').value.replace(/^\s+|\s+$/g, ''); }
   WG.l.unshift(w);
-  wgDesa(function () { avis(T('Widget afegit a la pantalla d\'inici'), 3000); });
+  wgDesa(function () { avis(w.lloc == 'casa' ? T('Càmera afegida a Casa') : T('Widget afegit a la pantalla d\'inici'), 3000); });
   wgCancel();
 }
 

@@ -51,6 +51,16 @@ h2.g{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8d95a1;ma
 #det input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:rgba(128,128,128,.35)}
 #det input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:12px;background:#ff9f1c;margin-top:-9px}
 #det .gris{font-size:13px}
+.cams{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:0 -6px}
+.cam{width:50%;padding:6px}
+.cam .c{position:relative;border-radius:20px;overflow:hidden;background:#000 center/cover no-repeat;padding-top:56.25%;cursor:pointer}
+.cam .nm{position:absolute;left:12px;bottom:10px;background:rgba(0,0,0,.55);padding:4px 10px;border-radius:10px;font-weight:600;font-size:14px}
+.cam .ld{position:absolute;left:0;right:0;top:45%;text-align:center;color:#8d95a1;font-size:13px}
+#camg{position:fixed;left:0;top:0;right:0;bottom:0;background:#000;z-index:60;display:none}
+#camg img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain}
+#camg .bt{position:absolute;top:12px;background:rgba(0,0,0,.55);color:#fff;border-radius:14px;padding:10px 16px;font-size:15px}
+#camg .tn{position:absolute;left:16px;bottom:14px;background:rgba(0,0,0,.55);padding:6px 12px;border-radius:10px;font-weight:600}
+@media (orientation:portrait) and (max-width:600px){ .cam{width:100%} }
 @media (orientation:portrait){ .ap{width:33.33%} }
 </style>
 </head>
@@ -60,6 +70,7 @@ h2.g{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8d95a1;ma
   <div class="esc" id="esc"></div>
   <div id="cont"><div class="gris">Carregant…</div></div>
 </div>
+<div id="camg"></div>
 <div id="det" onclick="if(event.target==this)tancaDet()"><div class="cx" id="detc"></div></div>
 <script src="comu.js"></script>
 <script>
@@ -197,14 +208,15 @@ function carrega(fresc) {
   clearTimeout(CA.t);
   if (Date.now() - CA.ocupat < 3000) { CA.t = setTimeout(carrega, 3000); return; }
   getJson(api('tuya/dispositius', fresc ? { fresc: 1 } : {}), function (l) {
-    CA.l = l || [];
+    CA.l = l || []; CA.err = null;
     pinta();
     carregaSpecs();
     if (CA.det) pintaDet();
     CA.t = setTimeout(carrega, 6000);
   }, function (st, txt) {
     var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
-    $('cont').innerHTML = '<div class="ajuda">' + (/configurar/.test(m || '') ? T('Encara no has connectat Tuya. Ves a Configuració ▸ Casa (Tuya) i segueix els passos.') : esc(m || T('No s\'ha pogut connectar amb Tuya.'))) + '</div>';
+    CA.err = /configurar/.test(m || '') ? 'cfg' : (m || T('No s\'ha pogut connectar amb Tuya.'));
+    pintaErr();
     CA.t = setTimeout(carrega, 20000);
   });
 }
@@ -217,6 +229,7 @@ function pinta() {
     var t = tipus(d);
     (grups[t] = grups[t] || []).push(i);
   }
+  h += camHtml();
   if (favs.length) h += '<h2 class="g">★ ' + T('Preferits') + '</h2><div class="rj">' + favs.map(rajola).join('') + '</div>';
   var ordre = GRUPS_CAT.concat([['altre', 'Altres', []]]);
   for (i = 0; i < ordre.length; i++) {
@@ -225,6 +238,7 @@ function pinta() {
     h += '<h2 class="g">' + esc(T(ordre[i][1])) + '</h2><div class="rj">' + g.map(rajola).join('') + '</div>';
   }
   $('cont').innerHTML = h || '<div class="gris">' + T('No hi ha cap aparell.') + '</div>';
+  camRefresca();
 }
 function rajola(i) {
   var d = CA.l[i], sw = interruptor(d), on = sw && d.estat[sw], b = brillantor(d), t = tipus(d), fav = CA.fav.indexOf(d.id) >= 0, extra = '';
@@ -348,6 +362,64 @@ function canviaFav(i) {
   if (Casa && Casa.casaCanviada) Casa.casaCanviada();
   pinta();
 }
+/* ---------- Càmeres: trossos de webs (CloudEdge...) retallats des del navegador i desats a Casa ---------- */
+var CM = { l: [], ts: {}, gran: null, tg: null, gen: 0 };
+function pintaErr() {
+  var cfg = CA.err == 'cfg';
+  $('cont').innerHTML = camHtml() + (cfg && CM.l.length ? '' : '<div class="ajuda">' + (cfg ? T('Encara no has connectat Tuya. Ves a Configuració ▸ Casa (Tuya) i segueix els passos.') : esc(CA.err)) + '</div>');
+  camRefresca();
+}
+function camCarrega() {
+  dades('webs', function (d) {
+    CM.l = (d || []).filter(function (w) { return w.lloc == 'casa'; });
+    if (CA.err) pintaErr(); else pinta();
+  });
+}
+function camHtml() {
+  if (!CM.l.length) return '';
+  var h = '<h2 class="g">' + esc(T('Càmeres')) + '</h2><div class="cams">';
+  for (var i = 0; i < CM.l.length; i++) h += '<div class="cam"><div class="c" id="cam-' + esc(CM.l[i].id) + '" onclick="camObre(' + i + ')"' + (CM[CM.l[i].id] ? ' style="background-image:' + bg(CM[CM.l[i].id]) + '"' : '') + '>' + (CM[CM.l[i].id] ? '' : '<div class="ld">' + esc(T('Connectant…')) + '</div>') + '<div class="nm">' + esc(CM.l[i].nom || '') + '</div></div></div>';
+  return h + '</div>';
+}
+function camRefresca() {
+  var gen = CM.gen;
+  for (var i = 0; i < CM.l.length; i++) (function (w) {
+    if (CM.ts[w.id]) return;
+    function va() {
+      CM.ts[w.id] = 0;
+      if (gen != CM.gen || !CA.visible || CM.gran || !$('cam-' + w.id)) return;
+      var u = api('web/imatge', { id: w.id, min: 2500, t: Date.now() }), im = new Image();
+      CM.ts[w.id] = -1;
+      im.onload = function () { if (gen != CM.gen) return; CM[w.id] = u; var e = $('cam-' + w.id); if (e) { e.style.backgroundImage = bg(u); var l = e.querySelector('.ld'); if (l) l.parentNode.removeChild(l); } CM.ts[w.id] = setTimeout(va, 3000); };
+      im.onerror = function () { if (gen == CM.gen) CM.ts[w.id] = setTimeout(va, 10000); };
+      im.src = u;
+    }
+    va();
+  })(CM.l[i]);
+}
+function camAtura() { CM.gen++; for (var k in CM.ts) if (CM.ts.hasOwnProperty(k)) { if (CM.ts[k] > 0) clearTimeout(CM.ts[k]); } CM.ts = {}; }
+/* a pantalla completa, tan de pressa com arribin les imatges */
+function camObre(i) {
+  var w = CM.l[i];
+  CM.gran = w;
+  camAtura();
+  $('camg').innerHTML = '<img id="camg-i"' + (CM[w.id] ? ' src="' + esc(CM[w.id]) + '"' : '') + '><div class="tn">' + esc(w.nom || '') + '</div>' +
+    '<button class="bt" style="right:12px" onclick="camTanca()">✕</button>' +
+    '<button class="bt" style="right:70px" onclick="camWeb()">' + esc(T('Controls')) + '</button>' +
+    (CM.l.length > 1 ? '<button class="bt" style="left:12px" onclick="camObre(' + ((i + 1) % CM.l.length) + ')">' + esc(T('Següent')) + ' ›</button>' : '');
+  $('camg').style.display = 'block';
+  clearTimeout(CM.tg);
+  (function va() {
+    if (CM.gran != w) return;
+    var u = api('web/imatge', { id: w.id, min: 700, t: Date.now() }), im = new Image();
+    im.onload = function () { if (CM.gran != w) return; CM[w.id] = u; $('camg-i').src = u; CM.tg = setTimeout(va, 250); };
+    im.onerror = function () { CM.tg = setTimeout(va, 3000); };
+    im.src = u;
+  })();
+}
+function camTanca() { CM.gran = null; clearTimeout(CM.tg); $('camg').style.display = 'none'; camRefresca(); }
+/* per moure la càmera, parlar o veure gravacions: la web sencera al navegador */
+function camWeb() { var w = CM.gran; camTanca(); if (Casa && Casa.obre) Casa.obre('webs', w.url); }
 function escenes() {
   getJson(api('tuya/escenes'), function (d) {
     var l = (d && d.escenes) || [], h = '';
@@ -360,9 +432,10 @@ function escena(i) {
   var e = CA.esc[i];
   post(api('tuya/escena', { casa: e.casa, id: e.id }), '', function () { avis(Tf('«{1}» activada', e.nom)); setTimeout(function () { carrega(true); }, 1500); }, errXarxa(T('activar l\'escena')));
 }
-window.casaMostra = function () { carrega(true); };
-window.casaAmaga = function () { clearTimeout(CA.t); tancaDet(); };
-dades('casa_fav', function (f) { CA.fav = f || []; carrega(); escenes(); });
+window.casaMostra = function () { CA.visible = true; carrega(true); camCarrega(); };
+window.casaAmaga = function () { CA.visible = false; clearTimeout(CA.t); tancaDet(); camTanca(); camAtura(); };
+CA.visible = true;
+dades('casa_fav', function (f) { CA.fav = f || []; carrega(); escenes(); camCarrega(); });
 </script>
 </body>
 </html>
