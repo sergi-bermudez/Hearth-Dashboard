@@ -291,7 +291,7 @@ function pintaRadios() {
 function tocaRadio(i) {
   var r = X.radios[i], u = r.u;
   /* MP3 continu fet pel servidor (IE9 sí que el sap fer sonar); si no, l'emissora a través del servidor o directa */
-  var vies = [api('radio/mp3', { u: u }), api('x', { u: u, directe: 1 })];
+  var vies = [api('radio/mp3', { u: u, mida: 1 }), api('x', { u: u, directe: 1 })];
   if (/^http:/i.test(u)) vies.push(u);
   R.cua = [{ t: r.t, s: r.s || T('Ràdio'), art: r.img ? api('imgx', { u: r.img, m: 200 }) : '', vies: vies }];
   R.pos = 0; toca();
@@ -421,7 +421,7 @@ function rebOrdre(o) {
   var cua = [];
   for (var i = 0; i < o.cua.length; i++) {
     var it = o.cua[i];
-    if (it.k == 'radio' && it.id) cua.push({ t: it.t, s: it.s || T('Ràdio'), art: it.art, vies: [api('radio/mp3', { u: it.id }), api('x', { u: it.id, directe: 1 })].concat(/^http:/i.test(it.id) ? [it.id] : []) });
+    if (it.k == 'radio' && it.id) cua.push({ t: it.t, s: it.s || T('Ràdio'), art: it.art, vies: [api('radio/mp3', { u: it.id, mida: 1 }), api('x', { u: it.id, directe: 1 })].concat(/^http:/i.test(it.id) ? [it.id] : []) });
     else if (it.u && it.k != 'spotify') cua.push({ t: it.t, s: it.s, art: it.art, u: it.u });
   }
   if (!cua.length) { avis(T('Això no es pot reproduir en aquest navegador') + (o.t ? ': ' + o.t : ''), 6000); return; }

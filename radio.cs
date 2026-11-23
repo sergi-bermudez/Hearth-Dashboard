@@ -266,7 +266,10 @@ public static class RadioHls
                 {
                     res.ContentType = "audio/mpeg";
                     res.AddHeader("Cache-Control", "no-cache, no-store");
-                    res.SendChunked = true;
+                    // Els navegadors vells (Internet Explorer 9 de l'Xbox 360) no fan sonar un so sense mida: se'ls en diu una de
+                    // molt gran (unes 70 hores a 128 kbps) i se'ls envia fins que tanquen
+                    if (CasaServidor.Q(q, "mida") == "1") { res.SendChunked = false; res.ContentLength64 = 4000000000L; res.KeepAlive = false; }
+                    else res.SendChunked = true;
                     if (ctx.Request.HttpMethod == "HEAD") return;
                     Stream o = p.StandardOutput.BaseStream;
                     byte[] buf = new byte[8192];
