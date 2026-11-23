@@ -330,6 +330,15 @@ function navClic(cx, cy) {
   var p = $('punt'), mr = $('marc').getBoundingClientRect();
   p.style.left = (cx - mr.left) + 'px'; p.style.top = (cy - mr.top) + 'px'; p.style.display = 'block';
   setTimeout(function () { p.style.display = 'none'; }, 500);
+  /* si s'ha tocat un camp per escriure, el teclat s'obre de seguida. Cal fer-ho dins del mateix toc (si no, l'iPad no
+     obre el teclat), per això es pregunta al PC sense esperar en segon pla (és una resposta molt ràpida) */
+  try {
+    var x = new XMLHttpRequest();
+    x.open('GET', api('web/nav-que', { id: W.obert.id, x: fx.toFixed(4), y: fy.toFixed(4) }), false);
+    x.send(null);
+    var d = x.status == 200 ? JSON.parse(x.responseText) : null;
+    if (d && d.edita) { navMostraTeclat(d); var t = $('tecl-t'); t.focus(); try { t.setSelectionRange(t.value.length, t.value.length); } catch (e) { } }
+  } catch (e) { }
   navProg(true);
   post(api('web/clic', { id: W.obert.id, x: fx.toFixed(4), y: fy.toFixed(4) }), '', navRefresca, errXarxa('fer el clic'));
 }

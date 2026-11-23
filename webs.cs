@@ -326,6 +326,22 @@ public static class Webs
                         CasaServidor.Text(res, "{\"ok\":true}", "application/json");
                         return;
                     }
+                case "nav-que":
+                    {
+                        // que hi ha en aquest punt de la pagina: si es un camp per escriure, l'aparell obre el teclat de seguida
+                        Captura c = Obre(id);
+                        double fx, fy;
+                        double.TryParse(CasaServidor.Q(q, "x"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out fx);
+                        double.TryParse(CasaServidor.Q(q, "y"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out fy);
+                        string js = string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                            "(function(){{var e=document.elementFromPoint({0},{1});if(!e)return {{edita:false}};var t=(e.tagName||'').toLowerCase(),ty=(e.type||'').toLowerCase();" +
+                            "var ed=t=='textarea'||(t=='input'&&!/^(button|submit|checkbox|radio|range|color|file|image|reset|hidden)$/.test(ty))||e.isContentEditable===true;" +
+                            "return {{edita:ed,valor:ed?(e.isContentEditable?(e.innerText||''):(e.value||'')).substring(0,2000):'',contrasenya:ty=='password'}};}})()",
+                            fx * c.Cw, fy * c.Ch);
+                        object v = Edge.Avalua(c.Pag, js, 3000);
+                        CasaServidor.Text(res, new JavaScriptSerializer().Serialize(v), "application/json");
+                        return;
+                    }
                 case "nav-info":
                     {
                         Captura c = Obre(id);
