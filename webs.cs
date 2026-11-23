@@ -22,6 +22,7 @@ public static class Webs
         public double Cx, Cy, Cw, Ch;
         public bool Retall;
         public string Clica = ""; public DateTime Clicat = DateTime.MinValue;
+        public string DarrerPas = ""; public DateTime DarrerPasQuan = DateTime.MinValue;
         public bool Camera, VideoTrobat, Aparcada; public DateTime Buscat = DateTime.MinValue, Entrat = DateTime.MinValue;
     }
     static readonly Dictionary<string, Captura> obertes = new Dictionary<string, Captura>();
@@ -303,6 +304,11 @@ public static class Webs
                 if (!string.IsNullOrEmpty(r) && r.IndexOf('|') >= 0)
                 {
                     string[] pp = r.Split('|');
+                    // despres de tocar un pas, la web pot trigar a respondre (entrar al compte triga): no es torna a tocar
+                    // el mateix pas fins al cap de 45 s, perque tocar-lo mentre carrega torna a comencar
+                    string pas = passes[int.Parse(pp[2])];
+                    if (pas == c.DarrerPas && (DateTime.Now - c.DarrerPasQuan).TotalSeconds < 45) { Registre(c, "esperant despres de tocar \"" + pas + "\""); return; }
+                    c.DarrerPas = pas; c.DarrerPasQuan = DateTime.Now;
                     if (pp[0] != "") Desperta(c, pp[0]);
                     ClicReal(c, pp[1]);
                     Registre(c, "toca \"" + passes[int.Parse(pp[2])] + "\"");
@@ -385,10 +391,7 @@ public static class Webs
     {
         ClicReal(c, xy);
         Thread.Sleep(500);
-        try { NavTecla(c.Pag, "End"); } catch { }
-        try { c.Pag.Envia("Input.insertText", CasaServidor.Dic("text", " "), 3000); NavTecla(c.Pag, "Backspace"); } catch { }
         try { Edge.Avalua(c.Pag, "(function(){var l=document.querySelectorAll('input'),i,n=0;for(i=0;i<l.length;i++)if(l[i].value){l[i].dispatchEvent(new Event('input',{bubbles:true}));l[i].dispatchEvent(new Event('change',{bubbles:true}));n++;}return n;})()", 3000); } catch { }
-        try { NavTecla(c.Pag, "Escape"); } catch { }
         Thread.Sleep(250);
     }
 
@@ -398,7 +401,7 @@ public static class Webs
         if (string.IsNullOrEmpty(r) || r.IndexOf('|') < 0) return false;
         string[] pb = r.Split('|');
         // com a molt un intent cada 30 s, per no bloquejar el compte
-        if ((DateTime.Now - c.Entrat).TotalSeconds < 30) return true;
+        if ((DateTime.Now - c.Entrat).TotalSeconds < 60) return true;
         c.Entrat = DateTime.Now;
         // l'Edge nomes deixa fer servir la contrasenya emplenada despres d'un gest de debo: primer un clic al camp
         Desperta(c, pb[0]);
