@@ -61,6 +61,7 @@ h2.g{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8d95a1;ma
 #camg .bts{position:absolute;top:12px;right:12px}
 #camg .bts .bt{position:static;margin-left:8px}
 #camg .bt{position:absolute;top:12px;background:rgba(0,0,0,.55);color:#fff;border-radius:14px;padding:10px 16px;font-size:15px}
+#camg .tn div{font-weight:400;font-size:12px;color:#c9ced6;margin-top:2px}
 #camg .tn{position:absolute;left:16px;bottom:14px;background:rgba(0,0,0,.55);padding:6px 12px;border-radius:10px;font-weight:600}
 @media (orientation:portrait) and (max-width:600px){ .cam{width:100%} }
 .ap.m-m,.ap.m-g{width:50%}
@@ -481,7 +482,7 @@ function camObre(i) {
   var w = CM.l[i];
   CM.gran = w;
   camAtura();
-  $('camg').innerHTML = '<img id="camg-i" onclick="camToc(event)"' + (CM[w.id] ? ' src="' + esc(CM[w.id]) + '"' : '') + '><div class="tn">' + esc(w.nom || '') + '</div>' +
+  $('camg').innerHTML = '<img id="camg-i" onclick="camToc(event)"' + (CM[w.id] ? ' src="' + esc(CM[w.id]) + '"' : '') + '><div class="tn">' + esc(w.nom || '') + '<div id="camg-d"></div></div>' +
     '<div class="bts"><button class="bt" onclick="camEdita()">✎ ' + esc(T('Edita')) + '</button><button class="bt" onclick="camWeb()">' + esc(T('Controls')) + '</button><button class="bt" onclick="camTanca()">✕</button></div>' +
     (CM.l.length > 1 ? '<button class="bt" style="left:12px" onclick="camObre(' + ((i + 1) % CM.l.length) + ')">' + esc(T('Següent')) + ' ›</button>' : '');
   $('camg').style.display = 'block';
@@ -489,7 +490,11 @@ function camObre(i) {
   (function va() {
     if (CM.gran != w) return;
     var u = api('web/imatge', { id: w.id, min: 700, t: Date.now() }), im = new Image();
-    im.onload = function () { if (CM.gran != w) return; CM[w.id] = u; $('camg-i').src = u; CM.tg = setTimeout(va, 250); };
+    im.onload = function () {
+      if (CM.gran != w) return; CM[w.id] = u; $('camg-i').src = u; CM.tg = setTimeout(va, 250);
+      /* què està fent el servidor amb la càmera (login, tocar el nom...) */
+      if (!CM.td || Date.now() - CM.td > 4000) { CM.td = Date.now(); getJson(api('web/diag', { id: w.id }), function (r) { if ($('camg-d')) $('camg-d').textContent = (r && r.text) || ''; }, function () { }); }
+    };
     im.onerror = function () { CM.tg = setTimeout(va, 3000); };
     im.src = u;
   })();
