@@ -2437,6 +2437,8 @@ function puntMissatges() {
 }
 function mostraNotif(n) {
   NF.actual = n;
+  /* Missatges protegit amb PIN i bloquejat: sense nom ni text */
+  if (msgBloquejat(A.ajustos)) n = { srv: n.srv, nom: T('Missatge nou'), text: '', img: '' };
   var av = $('nf-av');
   av.style.backgroundImage = n.img && /^https/.test(n.img) ? bg(imgx(n.img, 96)) : 'none';
   av.textContent = n.img && /^https/.test(n.img) ? '' : (n.nom || '?').charAt(0).toUpperCase();

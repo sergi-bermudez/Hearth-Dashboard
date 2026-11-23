@@ -127,6 +127,9 @@ function ls(k, v) {
     return r ? JSON.parse(r) : null;
   } catch (e) { return null; }
 }
+/* PIN de l'app Missatges: es desa només un resum, i cada aparell recorda quan s'ha obert per darrer cop (5 minuts) */
+function hashPin(p) { var h = 5381, t = 'hearth-pin:' + p, i; for (i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return 'h' + (h >>> 0).toString(36); }
+function msgBloquejat(aj) { return !!(aj && aj.msgPin) && !(Date.now() - (ls('msgObert') || 0) < 300000); }
 var avisT = null;
 function avis(t, ms) {
   var a = $('avis');

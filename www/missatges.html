@@ -42,6 +42,11 @@
 #buit{-webkit-flex:1;flex:1;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;color:#8d95a1;text-align:center;padding:30px}
 #login{position:absolute;top:50px;left:0;right:0;bottom:0;background:#0e1116;display:none;text-align:center;padding:40px 30px;overflow:auto}
 #login img{width:264px;height:264px;background:#fff;border-radius:12px;padding:12px;margin:18px auto;display:block}
+#pin{position:absolute;top:0;left:0;right:0;bottom:0;background:#0e1116;z-index:20;display:none;text-align:center;padding-top:40px;overflow:auto}
+#pin .pts{margin:18px 0 22px;font-size:34px;letter-spacing:14px;height:40px}
+#pin .tec{width:270px;margin:0 auto}
+#pin .tec button{width:74px;height:74px;border-radius:37px;margin:8px;font-size:28px;background:rgba(255,255,255,.08);padding:0}
+#pin.mal .pts{color:#ff453a}
 @media (orientation:portrait){
   #esq{width:auto;-webkit-flex:1;flex:1;border:0}
   #dre{display:none}
@@ -52,6 +57,7 @@
 </style>
 </head>
 <body>
+<div id="pin"><h1>Missatges</h1><div class="gris" id="pin-t"></div><div class="pts" id="pin-p"></div><div class="tec" id="pin-tec"></div></div>
 <div id="tabs"></div>
 <div id="wa">
   <div id="esq"><h1>Missatges</h1><div id="xats"><div class="gris" style="padding:16px">Connectant…</div></div></div>
@@ -206,12 +212,55 @@ window.casaObre = function (a) {
   a = decodeURIComponent(a);
   var k = 'wa', p = a.indexOf('|');
   if (p > 0 && p < 4) { k = a.substring(0, p); a = a.substring(p + 1); }
-  if (k == W.srv) { for (var i = 0; i < W.llista.length; i++) if (W.llista[i].nom == a) { obreXat(i); return; } W.pendent = a; return; }
-  if (W.actius.length) triaSrv(k, a); else inicia(k, a);
+  /* si ja és obert i desbloquejat, directament; si no, passant pel PIN */
+  if (PIN.aj && !msgBloquejat(PIN.aj) && $('pin').style.display == 'none' && k == W.srv) { for (var i = 0; i < W.llista.length; i++) if (W.llista[i].nom == a) { obreXat(i); return; } W.pendent = a; return; }
+  entra(k, a);
 };
-window.casaAmaga = function () { clearTimeout(W.t); clearTimeout(W.tx); clearTimeout(W.tc); };
-window.casaMostra = function () { if (W.srv) { estat(); comptes(); } if (W.xat) carregaMsgs(); };
-inicia();
+/* ---------- PIN (Configuració ▸ Missatges): es demana en obrir l'app i si fa més de 5 minuts que se n'ha sortit ---------- */
+var PIN = { aj: null, v: '' };
+function pinPinta() {
+  var h = '', t = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
+  for (var i = 0; i < t.length; i++) h += t[i] ? '<button onclick="pinTecla(\'' + t[i] + '\')">' + t[i] + '</button>' : '<button style="visibility:hidden"></button>';
+  $('pin-tec').innerHTML = h;
+  $('pin-t').textContent = T('Escriu el PIN');
+  $('pin-p').textContent = '';
+}
+function pinTecla(k) {
+  $('pin').className = '';
+  if (k == '⌫') PIN.v = PIN.v.slice(0, -1); else if (PIN.v.length < 4) PIN.v += k;
+  $('pin-p').textContent = new Array(PIN.v.length + 1).join('●');
+  if (PIN.v.length < 4) return;
+  if (hashPin(PIN.v) == PIN.aj.msgPin) { PIN.v = ''; ls('msgObert', Date.now()); $('pin').style.display = 'none'; entra2(); }
+  else { PIN.v = ''; $('pin').className = 'mal'; $('pin-t').textContent = T('PIN incorrecte'); setTimeout(function () { $('pin-p').textContent = ''; }, 600); }
+}
+/* mentre l'app és oberta, es manté desbloquejada */
+setInterval(function () { if (PIN.aj && PIN.aj.msgPin && $('pin').style.display == 'none' && !W.amagada) ls('msgObert', Date.now()); }, 30000);
+function entra(srv, xat) {
+  dades('ajustos', function (a) {
+    PIN.aj = a || {};
+    PIN.pend = [srv, xat];
+    if (msgBloquejat(PIN.aj)) {
+      clearTimeout(W.t); clearTimeout(W.tx); clearTimeout(W.tc);
+      PIN.v = ''; pinPinta(); $('pin').className = ''; $('pin').style.display = 'block';
+      return;
+    }
+    $('pin').style.display = 'none';
+    entra2();
+  });
+}
+function entra2() {
+  var p = PIN.pend || [];
+  PIN.pend = null;
+  if (!W.actius.length || p[0]) inicia(p[0], p[1]);
+  else { if (W.srv) { estat(); comptes(); } if (W.xat) carregaMsgs(); }
+}
+window.casaAmaga = function () {
+  W.amagada = true;
+  if (PIN.aj && PIN.aj.msgPin && $('pin').style.display == 'none') ls('msgObert', Date.now());
+  clearTimeout(W.t); clearTimeout(W.tx); clearTimeout(W.tc);
+};
+window.casaMostra = function () { W.amagada = false; entra(); };
+entra();
 </script>
 </body>
 </html>

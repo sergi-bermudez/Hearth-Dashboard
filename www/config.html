@@ -308,6 +308,10 @@ body{background:#000}
     <h2>Missatges</h2>
     <div class="desc">Els missatges es llegeixen i s'envien amb les webs de cada servei a l'Edge del PC, cadascun en una pestanya de l'app Missatges. El WhatsApp i Google Messages es vinculen un sol cop escanejant el codi QR amb el telèfon; per al Messenger cal iniciar la sessió de Facebook un cop a l'Edge del PC.</div>
     <div class="peu"><button onclick="obreApp('missatges')">Obre Missatges</button> <button onclick="post(api('admin/wa/atura'),'',function(){avis(T('WhatsApp aturat'))},errXarxa('aturar'))">Atura el WhatsApp</button> <button onclick="post(api('admin/xat/sms/atura'),'',function(){avis(T('Google Messages aturat'))},errXarxa('aturar'))">Atura Google Messages</button> <button onclick="post(api('admin/xat/fb/atura'),'',function(){avis(T('Messenger aturat'))},errXarxa('aturar'))">Atura el Messenger</button></div>
+    <h3>Protegeix amb un PIN</h3>
+    <div class="desc">L'app Missatges demanarà aquest PIN en obrir-la (i un altre cop si fa més de 5 minuts que n'has sortit). Mentre està bloquejada, els avisos de la pantalla d'inici només diuen «Missatge nou».</div>
+    <label class="check"><input type="checkbox" id="mp-on" onchange="mpCanvia()"> Demana un PIN per obrir Missatges</label>
+    <div class="fila" id="mp-fila" style="display:none"><label>PIN (4 xifres)</label><input type="password" id="mp-pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••"> <button class="pri" onclick="mpDesa()">Desa el PIN</button></div>
   </div>
 
   <div class="sec" id="s-compra">
@@ -444,7 +448,7 @@ function carrega() {
     C.dp = p || { propi: false, ajustos: {} };
     if (!C.dp.ajustos) C.dp.ajustos = {};
     $('aj-ciutat').value = C.aj.ciutat || '';
-    $('fn-spotify').checked = !!C.aj.spotify; $('fn-whatsapp').checked = !!C.aj.whatsapp; $('fn-sms').checked = !!C.aj.sms; $('fn-messenger').checked = !!C.aj.messenger; $('fn-futbol').checked = C.aj.futbol !== false;
+    $('fn-spotify').checked = !!C.aj.spotify; $('fn-whatsapp').checked = !!C.aj.whatsapp; $('fn-sms').checked = !!C.aj.sms; $('fn-messenger').checked = !!C.aj.messenger; $('mp-on').checked = !!C.aj.msgPin; $('mp-fila').style.display = C.aj.msgPin ? '' : 'none'; $('fn-futbol').checked = C.aj.futbol !== false;
     omplInici();
     dpPinta();
     valorsMenu();
@@ -705,6 +709,18 @@ function infDesa(activa) {
 }
 function obreApp(a) { if (Casa) Casa.obre(a); }
 
+function mpCanvia() {
+  var on = $('mp-on').checked;
+  $('mp-fila').style.display = on ? '' : 'none';
+  if (!on && C.aj.msgPin) { delete C.aj.msgPin; desaDades('ajustos', C.aj, function () { avis(T('Missatges ja no demana PIN')); if (Casa) Casa.recarrega(); }); }
+}
+function mpDesa() {
+  var p = $('mp-pin').value;
+  if (!/^\d{4}$/.test(p)) { avis(T('El PIN ha de tenir 4 xifres'), 3000); return; }
+  C.aj.msgPin = hashPin(p); $('mp-pin').value = '';
+  ls('msgObert', 0);
+  desaDades('ajustos', C.aj, function () { avis(T('PIN desat')); if (Casa) Casa.recarrega(); });
+}
 function desaFuncions() {
   C.aj.spotify = $('fn-spotify').checked;
   C.aj.whatsapp = $('fn-whatsapp').checked;
