@@ -1574,7 +1574,6 @@ function tvEscoltes(v) {
   }, false);
   v.addEventListener('loadedmetadata', function () {
     tvAjusta();
-    if (Math.abs(tvAspecte() - 16 / 9) > 0.05) { if (A.vista == 'dash' && TV.mode != 'gran') pintaSona(); else tvLloc(); }
     var r = TV.represa;
     TV.represa = null;
     if (r && TV.canal && TV.canal.vod && r.t > 30 && (!v.duration || r.t < v.duration - 60)) { try { v.currentTime = r.t; } catch (e) { } }
@@ -1810,7 +1809,7 @@ function tvLlocFet() {
   var w, h;
   if (marcObert()) {
     /* Passi de fotos: la TV a dalt a la dreta, el rellotge queda a baix a l'esquerra */
-    h = Math.round(Math.min(440, Math.round(W * 0.42)) * 9 / 16); w = Math.round(h * tvAspecte());
+    w = Math.min(440, Math.round(W * 0.42)); h = Math.round(w * 9 / 16);
     t.className = 'marc' + vod;
     var vora = NAV_TELE ? 56 : 24;
     st.width = w + 'px'; st.height = h + 'px'; st.left = (W - w - vora) + 'px'; st.top = (vora + sa) + 'px';
@@ -1824,12 +1823,12 @@ function tvLlocFet() {
     return;
   }
   /* S, M i L, sempre diferents (amb la pàgina ampliada, abans S i M sortien gairebé iguals) */
-  w = Math.round(W * (TV.miniMida == 'p' ? 0.22 : TV.miniMida == 'g' ? 0.46 : 0.32)); h = Math.round(w * 9 / 16); w = Math.round(h * tvAspecte());
+  w = Math.round(W * (TV.miniMida == 'p' ? 0.22 : TV.miniMida == 'g' ? 0.46 : 0.32)); h = Math.round(w * 9 / 16);
   /* amb la barra d'apps a la dreta (teles, pantalles apaïsades) la barra no és a baix: abans se'n restava l'alçada
      sencera i el vídeo flotant quedava fora de la pantalla, per dalt */
   var lat = /\blat\b/.test(document.body.className), dreta = lat ? ($('nav').offsetWidth || 86) : 0;
   var peu = (lat ? 0 : ($('nav').offsetHeight || 66)) + ($('mini').offsetHeight || 0);
-  if (h > H - peu - 14 - 30) { h = H - peu - 14 - 30; w = Math.round(h * tvAspecte()); }
+  if (h > H - peu - 14 - 30) { h = H - peu - 14 - 30; w = Math.round(h * 16 / 9); }
   $('tv-b-mmida').textContent = TV.miniMida == 'p' ? 'S' : TV.miniMida == 'g' ? 'L' : 'M';
   t.className = 'mini' + vod;
   st.width = w + 'px'; st.height = h + 'px';
@@ -1907,8 +1906,7 @@ function pintaSona(intern) {
     var cs = getComputedStyle(s), W = s.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0), estret = W < 620;
     /* En horitzontal: vídeo a l'esquerra i controls a la dreta. Apilat només si els controls no hi caben al costat */
     var fr = TV.mida == 'p' ? 0.36 : TV.mida == 'm' ? 0.5 : 0.64;
-    /* l'alçada, la que tindria un vídeo 16:9 d'aquesta mida; l'amplada, segons la forma del vídeo (un 4:3 no es fa més alt) */
-    var asp = tvAspecte(), Wt = Math.round(Math.min(W * fr * 9 / 16, esp) * asp);
+    var asp = 16 / 9, Wt = Math.round(Math.min(W * fr, esp * asp));
     var pila = estret || W - Wt < 360;
     if (pila) Wt = Math.round(Math.min(W * (TV.mida == 'p' ? 0.6 : TV.mida == 'm' ? 0.8 : 1), (esp - 58) * asp));
     Wt = Math.max(160, Wt);
