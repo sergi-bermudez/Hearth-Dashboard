@@ -1997,7 +1997,10 @@ function tocaRadio(i) { repInicia([radioItem(A.radios[i])], 0); }
 var IOS_VELL = /(iPad|iPhone|iPod).* OS [4-9]_/.test(navigator.userAgent);
 if (IOS_VELL) document.documentElement.className += ' ios-vell';
 /* Navegadors de tele (LG webOS, Samsung Tizen, Android TV…). La ràdio hi va millor directa que en HLS (que s'hi entretalla) */
-var NAV_TELE = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|BRAVIA|Android TV|AFT[A-Z]|CrKey/i.test(navigator.userAgent);
+/* PROVA: de moment les teles reben exactament el mateix que un Android (sense cap adaptació de tele).
+   Per tornar-les a adaptar, NAV_TELE ha de tornar a ser la detecció de la línia següent. */
+var NAV_TELE_DETECTAT = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|BRAVIA|Android TV|AFT[A-Z]|CrKey/i.test(navigator.userAgent);
+var NAV_TELE = false;
 function radioItem(s) {
   /* Vies possibles, per ordre: iOS vell -> HLS fet pel servidor (com la TV, que sí que va bé);
      http -> directe (el més ràpid); https -> via el servidor; m3u8 -> HLS reescrit */
