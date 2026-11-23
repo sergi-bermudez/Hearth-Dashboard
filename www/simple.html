@@ -38,7 +38,7 @@ svg{display:inline-block}
 .ag-e b{display:inline-block;min-width:70px}
 .ag-e .imp{color:#ff9f0a;font-weight:bold}
 /* moll d'apps a la dreta */
-#dock{position:absolute;right:24px;top:50%;width:88px;margin-top:-180px;padding:10px 0;border-radius:22px;background:#1b1f26;background:rgba(20,22,28,.72);text-align:center}
+#dock{position:absolute;right:24px;top:50%;width:88px;margin-top:-220px;padding:10px 0;border-radius:22px;background:#1b1f26;background:rgba(20,22,28,.72);text-align:center}
 .app{display:block;cursor:pointer;padding:6px 0;border-radius:14px;margin:0 6px}
 .app .bx{width:52px;height:52px;border-radius:14px;margin:0 auto 4px;text-align:center;line-height:52px}
 .app .bx svg{width:28px;height:28px;fill:#fff;vertical-align:middle}
@@ -75,6 +75,15 @@ svg{display:inline-block}
 .fila:hover{background:#2a2f38}
 .fila span{color:#9aa3af;font-size:15px;margin-left:12px}
 h2{font-size:30px;font-weight:400;margin:0 0 18px}
+/* navegador: l'Edge del PC obre la web i aquí se'n veu la imatge (clic = clic, botons per moure i escriure) */
+#nv-barra{white-space:nowrap;margin-bottom:8px}
+#nv-barra button{margin:0 6px 0 0;padding:8px 14px}
+#nv-adr{width:46%;font-size:18px;padding:8px 12px;border-radius:10px;border:0;background:#2a2f38;color:#fff;margin-right:6px;font-family:inherit}
+#nv-marc{position:relative;overflow:hidden;background:#fff}
+#nv-img{display:block;cursor:pointer}
+#nv-tecl{display:none;margin-top:8px;white-space:nowrap}
+#nv-tecl input{width:50%;font-size:18px;padding:8px 12px;border-radius:10px;border:0;margin-right:6px;font-family:inherit}
+#nv-tecl button{margin:0 6px 0 0;padding:8px 14px}
 /* passi de fotos i vídeo, a pantalla completa */
 #gran{position:absolute;left:0;top:0;width:100%;height:100%;background:#000;display:none;z-index:50}
 #gran .f{position:absolute;left:0;top:0;width:100%;height:100%;background:#000 center no-repeat;background-size:cover}
@@ -121,7 +130,7 @@ function dades(n, ok) { getJson(api('dades', { n: n }), ok, function () { ok(nul
 var avisT;
 function avis(t, ms) { var a = $('avis'); a.innerHTML = esc(t); a.style.display = 'block'; clearTimeout(avisT); avisT = setTimeout(function () { a.style.display = 'none'; }, ms || 3500); }
 var X = { ajustos: {}, pest: 'inici', radios: [], pila: [], pelis: [], fotos: [] };
-var IC = {"casa": "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", "pelis": "M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z", "musica": "M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z", "radio": "M3.24 6.15C2.51 6.43 2 7.17 2 8v12c0 1.1.89 2 2 2h16c1.11 0 2-.9 2-2V8c0-1.11-.89-2-2-2H8.3l8.26-3.34L15.88 1 3.24 6.15zM7 20c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm13-8h-2v-2h-2v2H4V8h16v4z", "fotos": "M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z", "play": "M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z", "pausa": "M6 4h4.2v16H6zM13.8 4H18v16h-4.2z", "tanca": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"};
+var IC = {"web": "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.99 7.99 0 0 1 5.08 16zm2.95-8H5.08a7.99 7.99 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z", "casa": "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", "pelis": "M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z", "musica": "M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z", "radio": "M3.24 6.15C2.51 6.43 2 7.17 2 8v12c0 1.1.89 2 2 2h16c1.11 0 2-.9 2-2V8c0-1.11-.89-2-2-2H8.3l8.26-3.34L15.88 1 3.24 6.15zM7 20c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm13-8h-2v-2h-2v2H4V8h16v4z", "fotos": "M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z", "play": "M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z", "pausa": "M6 4h4.2v16H6zM13.8 4H18v16h-4.2z", "tanca": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"};
 function svg(d) { return '<svg viewBox="0 0 24 24" class="ic"><path d="' + d + '"/></svg>'; }
 var NUVOL = 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z';
 function sol(cx, cy, r) {
@@ -152,7 +161,8 @@ var APPS = [
   { id: 'radio', nom: 'Ràdio', ic: 'radio', c: '#f08a24' },
   { id: 'musica', nom: 'Música', ic: 'musica', c: '#e5484d' },
   { id: 'pelis', nom: 'Pel·lícules', ic: 'pelis', c: '#4f6ef7' },
-  { id: 'fotos', nom: 'Fotos', ic: 'fotos', c: '#22b573' }
+  { id: 'fotos', nom: 'Fotos', ic: 'fotos', c: '#22b573' },
+  { id: 'web', nom: 'Web', ic: 'web', c: '#0d9aa6' }
 ];
 function pintaDock() {
   var h = '';
@@ -169,9 +179,10 @@ function obreApp(p) {
   if (p == 'radio') pintaRadios();
   else if (p == 'musica') { X.pila = [{ f: { vista: 'albums' }, t: '' }]; carregaMusica(); }
   else if (p == 'pelis') carregaPelis();
+  else if (p == 'web') obreWeb();
   pinta();
 }
-function tancaApp() { X.pest = 'inici'; $('app').style.display = 'none'; document.body.className = ''; pinta(); }
+function tancaApp() { clearTimeout(NV.t); X.pest = 'inici'; $('app').style.display = 'none'; document.body.className = ''; pinta(); }
 
 /* ---------- Inici: rellotge, temps i agenda ---------- */
 var DIES = ['diumenge', 'dilluns', 'dimarts', 'dimecres', 'dijous', 'divendres', 'dissabte'];
@@ -384,6 +395,64 @@ function trossos(n) {
     var est = $('vid-est'); if (est) est.innerHTML = esc(n == 0 ? T('Preparant la pel·lícula per a aquest navegador…') : T('Preparant la part següent…'));
     VC.t = setTimeout(function () { trossos(n); }, 3000);
   }, function () { VC.t = setTimeout(function () { trossos(n); }, 5000); });
+}
+
+/* ---------- Navegador ---------- */
+var NV = { id: '', t: null, seq: [], video: false, w: 0, h: 0 };
+(function () {
+  var id = ''; try { id = JSON.parse(localStorage.getItem('casa.navId') || 'null') || ''; } catch (e) { }
+  if (!id) { id = 'nav-'; for (var i = 0; i < 8; i++) id += 'abcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random() * 36)); try { localStorage.setItem('casa.navId', JSON.stringify(id)); } catch (e) { } }
+  NV.id = id;
+  try { NV.video = JSON.parse(localStorage.getItem('casa.navVideo') || 'false') === true; } catch (e) { }
+})();
+function postX(u, ok) {
+  var x = new XMLHttpRequest(); x.open('POST', u, true);
+  x.onreadystatechange = function () { if (x.readyState == 4 && ok) ok(x.status); };
+  x.send('');
+}
+function obreWeb() {
+  $('cos').scrollTop = 0;
+  $('cos').innerHTML = '<div id="nv-barra"><button onclick="nvAcc(\'nav-enrere\')">‹</button><button onclick="nvAcc(\'nav-endavant\')">›</button>' +
+    '<input id="nv-adr" type="text" onkeydown="if(event.keyCode==13)nvVes(this.value)"><button class="pri" onclick="nvVes($(\'nv-adr\').value)">' + T('Ves-hi') + '</button>' +
+    '<button onclick="nvAcc(\'nav-recarrega\')">⟳</button><button onclick="nvMou(-1)">▲</button><button onclick="nvMou(1)">▼</button>' +
+    '<button onclick="nvTeclat()">' + T('Escriu') + '</button><button id="nv-mode" onclick="nvMode()"></button></div>' +
+    '<div id="nv-marc"><img id="nv-img" alt=""></div>' +
+    '<div id="nv-tecl"><input id="nv-t" type="text" onkeydown="if(event.keyCode==13)nvEscriu(true)"><button onclick="nvEscriu(false)">' + T('Posa') + '</button><button class="pri" onclick="nvEscriu(true)">' + T('Envia') + ' ↵</button></div>';
+  nvPintaMode();
+  /* la web, de la mida que hi cap aquí */
+  var c = $('cos');
+  NV.w = Math.max(320, c.clientWidth - 80); NV.h = Math.max(240, c.clientHeight - 180);
+  $('nv-marc').style.width = NV.w + 'px'; $('nv-marc').style.height = NV.h + 'px';
+  $('nv-img').onclick = function (e) {
+    e = e || window.event;
+    var r = this.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+    /* si és un camp per escriure, s'obre la barra per escriure-hi */
+    try {
+      var x = new XMLHttpRequest(); x.open('GET', api('web/nav-que', { id: NV.id, x: fx.toFixed(4), y: fy.toFixed(4) }), false); x.send(null);
+      var d = x.status == 200 ? JSON.parse(x.responseText) : null;
+      if (d && d.edita) { $('nv-tecl').style.display = 'block'; $('nv-t').value = d.valor || ''; try { $('nv-t').focus(); } catch (y) { } }
+    } catch (y) { }
+    postX(api('web/clic', { id: NV.id, x: fx.toFixed(4), y: fy.toFixed(4) }), nvRefresca);
+  };
+  postX(api('web/nav-obre', { id: NV.id, w: NV.w, h: NV.h, dsf: 1 }), function () { nvRefresca(); });
+}
+function nvPintaMode() { var b = $('nv-mode'); if (b) { b.innerHTML = NV.video ? T('Vídeo') : T('Imatge'); b.className = NV.video ? 'pri' : ''; } }
+function nvMode() { NV.video = !NV.video; try { localStorage.setItem('casa.navVideo', JSON.stringify(NV.video)); } catch (e) { } nvPintaMode(); nvRefresca(); }
+function nvVes(u) { postX(api('web/nav-ves', { id: NV.id, u: u }), nvRefresca); }
+function nvAcc(a) { postX(api('web/' + a, { id: NV.id }), nvRefresca); }
+function nvMou(d) { postX(api('web/roda', { id: NV.id, d: Math.round(d * NV.h * 0.8) }), nvRefresca); }
+function nvTeclat() { var t = $('nv-tecl'); t.style.display = t.style.display == 'block' ? 'none' : 'block'; if (t.style.display == 'block') try { $('nv-t').focus(); } catch (e) { } }
+function nvEscriu(enter) { postX(api('web/nav-escriu', { id: NV.id, t: $('nv-t').value, enter: enter ? 1 : '' }), function () { if (enter) $('nv-tecl').style.display = 'none'; nvRefresca(); }); }
+function nvRefresca() { NV.seq = [300, 1000, 2500, 5000]; clearTimeout(NV.t); NV.t = setTimeout(nvCaptura, 150); nvInfo(); setTimeout(nvInfo, 2500); }
+function nvCaptura() {
+  if (X.pest != 'web' || !$('nv-img')) return;
+  var u = api('web/imatge', { id: NV.id, min: NV.video ? 100 : 200, t: new Date().getTime() }), im = new Image();
+  im.onload = function () { var i = $('nv-img'); if (!i) return; i.src = u; NV.t = setTimeout(nvCaptura, NV.video ? 150 : NV.seq.length ? NV.seq.shift() : 8000); };
+  im.onerror = function () { NV.t = setTimeout(nvCaptura, 4000); };
+  im.src = u;
+}
+function nvInfo() {
+  getJson(api('web/nav-info', { id: NV.id }), function (d) { var a = $('nv-adr'); if (a && d && document.activeElement != a) a.value = d.url || ''; });
 }
 
 /* ---------- Passi de fotos ---------- */
