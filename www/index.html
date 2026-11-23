@@ -619,6 +619,26 @@ body.petit #sona .s-ctl button{width:40px;height:40px;margin-right:4px}
 body.petit .d-dock{padding:6px 2px}
 body.petit .d-dock .app .bx{width:50px;height:50px}
 body.petit .d-dock .app .nm{font-size:11px}
+/* pantalles molt petites: les apps en una sola fila, petites i sense nom; el temps al costat del rellotge */
+body.petit .d-dock{padding:7px 4px;border-radius:18px}
+body.petit .d-dock .app .nm{display:none}
+body.petit .d-dock .app .bx{width:38px;height:38px;border-radius:10px;margin:0 auto}
+body.petit .d-dock .app .bx .ic,body.petit .d-dock .app .bx svg{width:22px;height:22px}
+body.petit .d-cap{position:relative}
+body.petit #temps{position:absolute;right:4px;top:40px;margin:0;padding:2px 8px;text-align:right;background:none !important;border:0 !important;box-shadow:none !important;max-width:46%}
+body.petit #temps .t-ara{display:block;text-align:right}
+body.petit #temps .t-ara svg,body.petit #temps .t-ara .ic{display:inline-block;vertical-align:middle;width:30px;height:30px;margin-right:4px}
+body.petit #temps .t-ara .gr{display:inline-block;vertical-align:middle;font-size:32px}
+body.petit #temps .t-ds.una{display:none}
+body.petit #temps .t-ds{font-size:12px;margin-top:2px;white-space:nowrap}
+body.petit #hora{text-align:left}
+/* sense flexbox (iOS 6): el dock com una taula d'una fila, enganxat a baix, i el que sona a sota */
+html.sense-flex body.petit .d-dock{display:table;table-layout:fixed;white-space:nowrap;position:absolute;left:10px;bottom:10px;width:-webkit-calc(100% - 20px);width:calc(100% - 20px);margin:0;box-sizing:border-box}
+html.sense-flex body.petit .d-dock .app{display:table-cell;width:auto;margin:0;vertical-align:middle}
+html.sense-flex body.petit .d-dock .app .bx{padding-top:8px}
+html.sense-flex body.petit.sona:not(.en-app) .d-dock{bottom:68px}
+html.sense-flex body.petit #dash{padding-bottom:72px}
+html.sense-flex body.petit.sona:not(.en-app) #dash{padding-bottom:130px}
 html.sense-flex #cfg-av.act,html.sense-flex #cfg-av.err{display:inline-block}
 /* el que sona, a les pantalles petites: només la barra de baix (el panell gran no hi cap) */
 body.petit:not(.en-app) #sona{display:none !important}
