@@ -281,6 +281,62 @@ public static class Webs
     // (p. ex. "Entrar, Jard\u00ed"). Cada volta, si no hi ha video en marxa, es toca el darrer text que es vegi a la pagina
     // (aixi, si ja s'ha entrat al compte, es toca directament la camera). Si un formulari te contrasenya, primer un clic
     // al camp perque l'Edge deixi fer servir la contrasenya desada.
+    // ---------- Marcs (iframes): moltes webs posen el login o la llista dins d'una pagina dins de la pagina ----------
+    // Cada marc s'avalua en un mon aillat propi (funciona encara que el marc vingui d'una altra adreca).
+    class Marc { public string Id; public bool Principal; }
+
+    static List<Marc> Marcs(Captura c)
+    {
+        List<Marc> l = new List<Marc>();
+        try
+        {
+            Dictionary<string, object> r = c.Pag.Envia("Page.getFrameTree", null, 4000);
+            AfegeixMarcs(r.ContainsKey("frameTree") ? r["frameTree"] as Dictionary<string, object> : null, l, true);
+        }
+        catch { }
+        if (l.Count == 0) l.Add(new Marc { Id = "", Principal = true });
+        return l;
+    }
+
+    static void AfegeixMarcs(Dictionary<string, object> t, List<Marc> l, bool principal)
+    {
+        if (t == null) return;
+        Dictionary<string, object> f = t.ContainsKey("frame") ? t["frame"] as Dictionary<string, object> : null;
+        if (f != null && f.ContainsKey("id")) l.Add(new Marc { Id = f["id"].ToString(), Principal = principal });
+        object[] fills = t.ContainsKey("childFrames") ? t["childFrames"] as object[] : null;
+        if (fills != null) foreach (object o in fills) AfegeixMarcs(o as Dictionary<string, object>, l, false);
+    }
+
+    static object AvaluaMarc(Captura c, Marc m, string expr, int ms)
+    {
+        if (m.Principal) return Edge.Avalua(c.Pag, expr, ms);
+        object ctxId;
+        Dictionary<string, object> w = c.Pag.Envia("Page.createIsolatedWorld", CasaServidor.Dic("frameId", m.Id, "worldName", "hearth", "grantUniveralAccess", true), 4000);
+        if (!w.TryGetValue("executionContextId", out ctxId)) return null;
+        return Edge.Valor(c.Pag.Envia("Runtime.evaluate", CasaServidor.Dic("expression", expr, "contextId", ctxId, "awaitPromise", true, "returnByValue", true), ms));
+    }
+
+    // On comenca el marc dins la finestra (per sumar-ho a les coordenades de dins del marc)
+    static double[] OrigenMarc(Captura c, Marc m)
+    {
+        if (m.Principal) return new double[] { 0, 0 };
+        try
+        {
+            c.Pag.Envia("DOM.getDocument", CasaServidor.Dic("depth", 0), 4000);
+            Dictionary<string, object> o = c.Pag.Envia("DOM.getFrameOwner", CasaServidor.Dic("frameId", m.Id), 4000);
+            Dictionary<string, object> b = c.Pag.Envia("DOM.getBoxModel", CasaServidor.Dic("backendNodeId", o["backendNodeId"]), 4000);
+            object[] q = (b["model"] as Dictionary<string, object>)["content"] as object[];
+            return new double[] { Convert.ToDouble(q[0], System.Globalization.CultureInfo.InvariantCulture), Convert.ToDouble(q[1], System.Globalization.CultureInfo.InvariantCulture) };
+        }
+        catch { return new double[] { 0, 0 }; }
+    }
+
+    static string MouXY(string xy, double[] o)
+    {
+        string[] a = xy.Split(',');
+        return (double.Parse(a[0], System.Globalization.CultureInfo.InvariantCulture) + o[0]).ToString(System.Globalization.CultureInfo.InvariantCulture) + "," + (double.Parse(a[1], System.Globalization.CultureInfo.InvariantCulture) + o[1]).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     static void EngegaDirecte(Captura c)
     {
         c.Clicat = DateTime.Now;
@@ -301,9 +357,18 @@ public static class Webs
                     "(b.closest('button,a,input,select,textarea,[tabindex],[role=button]')||b).setAttribute('data-hearth-pas','1');" +
                     "var p=null,ps=document.querySelectorAll('input[type=password]');for(i=0;i<ps.length;i++)if(vis(ps[i])){p=ps[i];break;}" +
                     "return (p?mig(p):'')+'|'+mig(b)+'|'+j;}}return '';})(" + new JavaScriptSerializer().Serialize(passes) + ")";
-                string r = Convert.ToString(Edge.Avalua(c.Pag, js, 4000));
-                if (r == "V") { Registre(c, "video en marxa"); return; }
-                if (!string.IsNullOrEmpty(r) && r.IndexOf('|') >= 0)
+                // a tots els marcs: si n'hi ha un amb video, res; si no, el pas mes avancat que es vegi
+                string r = null; Marc mr = null; int millor = -1;
+                foreach (Marc m in Marcs(c))
+                {
+                    string rm;
+                    try { rm = Convert.ToString(AvaluaMarc(c, m, js, 4000)); } catch { continue; }
+                    if (rm == "V") { Registre(c, "video en marxa"); return; }
+                    if (string.IsNullOrEmpty(rm) || rm.IndexOf('|') < 0) continue;
+                    int jm = int.Parse(rm.Split('|')[2]);
+                    if (jm > millor) { millor = jm; r = rm; mr = m; }
+                }
+                if (r != null)
                 {
                     string[] pp = r.Split('|');
                     // despres de tocar un pas, la web pot trigar a respondre (entrar al compte triga): no es torna a tocar
@@ -313,8 +378,8 @@ public static class Webs
                     c.DarrerPas = pas; c.DarrerPasQuan = DateTime.Now;
                     // amb el teclat, com una persona: focus al boto i Enter (no depen de les coordenades); si no s'hi pot posar
                     // el focus, Tab des del camp de la contrasenya; i si tampoc, un clic
-                    if (!PremMarcat(c)) ClicReal(c, pp[1]);
-                    Registre(c, "toca \"" + passes[int.Parse(pp[2])] + "\"");
+                    if (!PremMarcat(c, mr)) ClicReal(c, MouXY(pp[1], OrigenMarc(c, mr)));
+                    Registre(c, "toca \"" + passes[int.Parse(pp[2])] + "\"" + (mr.Principal ? "" : " (dins d'un marc)"));
                     Thread.Sleep(2500);
                     // despres de tocar, la pagina torna a la posicio del retall
                     if (c.Sx > 0 || c.Sy > 0) Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy), 3000);
@@ -346,16 +411,29 @@ public static class Webs
         c.Buscat = DateTime.Now;
         try
         {
-            string r = Convert.ToString(Edge.Avalua(c.Pag, "(function(){var v=document.querySelectorAll('video,canvas'),b=null,a=0,i,r;" +
+            const string VJS = "(function(){var v=document.querySelectorAll('video,canvas'),b=null,a=0,i,r;" +
                 "for(i=0;i<v.length;i++){r=v[i].getBoundingClientRect();if(r.width>160&&r.height>90&&r.width*r.height>a){a=r.width*r.height;b=r;}}" +
                 "if(!b)return '';var x=Math.max(0,b.left),y=Math.max(0,b.top),w=Math.min(innerWidth,b.right)-x,h=Math.min(innerHeight,b.bottom)-y;" +
-                "if(w<160||h<90)return '';return [x,y,w,h].map(Math.round).join(',');})()", 3000));
-            if (string.IsNullOrEmpty(r)) return;
-            string[] a = r.Split(',');
+                "if(w<160||h<90)return '';return [x,y,w,h].map(Math.round).join(',');})()";
+            // el video mes gran de tots els marcs
+            double[] mx = null; double area = 0;
+            foreach (Marc m in Marcs(c))
+            {
+                string rm;
+                try { rm = Convert.ToString(AvaluaMarc(c, m, VJS, 3000)); } catch { continue; }
+                if (string.IsNullOrEmpty(rm)) continue;
+                string[] a = rm.Split(',');
+                double[] v = new double[4];
+                for (int k = 0; k < 4; k++) v[k] = double.Parse(a[k], System.Globalization.CultureInfo.InvariantCulture);
+                if (v[2] * v[3] <= area) continue;
+                double[] o = OrigenMarc(c, m);
+                v[0] += o[0]; v[1] += o[1];
+                area = v[2] * v[3]; mx = v;
+            }
+            if (mx == null) return;
             lock (c.Lk)
             {
-                c.Cx = double.Parse(a[0], System.Globalization.CultureInfo.InvariantCulture); c.Cy = double.Parse(a[1], System.Globalization.CultureInfo.InvariantCulture);
-                c.Cw = double.Parse(a[2], System.Globalization.CultureInfo.InvariantCulture); c.Ch = double.Parse(a[3], System.Globalization.CultureInfo.InvariantCulture);
+                c.Cx = mx[0]; c.Cy = mx[1]; c.Cw = mx[2]; c.Ch = mx[3];
                 c.Retall = true; c.VideoTrobat = true;
             }
         }
@@ -390,9 +468,9 @@ public static class Webs
 
     // L'element marcat (data-hearth-pas): se li posa el focus i es prem Enter amb una tecla de debo.
     // Si no accepta el focus directament, s'hi arriba amb Tab des del camp de la contrasenya.
-    static bool PremMarcat(Captura c)
+    static bool PremMarcat(Captura c, Marc m)
     {
-        string r = Convert.ToString(Edge.Avalua(c.Pag, "(function(){var b=document.querySelector('[data-hearth-pas]');if(!b)return '';" +
+        string r = Convert.ToString(AvaluaMarc(c, m, "(function(){var b=document.querySelector('[data-hearth-pas]');if(!b)return '';" +
             "try{b.focus();}catch(e){}if(document.activeElement==b)return 'F';" +
             "var ps=document.querySelectorAll('input[type=password]'),i;for(i=0;i<ps.length;i++){var r=ps[i].getBoundingClientRect();if(r.width>4&&r.height>4){ps[i].focus();return 'T';}}return '';})()", 3000));
         if (r == "F") { NavTecla(c.Pag, "Enter"); Registre(c, "focus i Enter"); return true; }
@@ -401,7 +479,7 @@ public static class Webs
         {
             NavTecla(c.Pag, "Tab");
             Thread.Sleep(80);
-            object a = Edge.Avalua(c.Pag, "(function(){var e=document.activeElement;return !!(e&&e.hasAttribute&&e.hasAttribute('data-hearth-pas'));})()", 3000);
+            object a = AvaluaMarc(c, m, "(function(){var e=document.activeElement;return !!(e&&e.hasAttribute&&e.hasAttribute('data-hearth-pas'));})()", 3000);
             if (a is bool && (bool)a) { NavTecla(c.Pag, "Enter"); Registre(c, "Tab (" + (i + 1) + ") i Enter"); return true; }
         }
         return false;
@@ -409,14 +487,23 @@ public static class Webs
 
     static bool EntraSol(Captura c)
     {
-        string r = Convert.ToString(Edge.Avalua(c.Pag, LOGIN_JS, 4000));
-        if (string.IsNullOrEmpty(r) || r.IndexOf('|') < 0) return false;
+        string r = null; Marc mr = null;
+        foreach (Marc m in Marcs(c))
+        {
+            string rm;
+            try { rm = Convert.ToString(AvaluaMarc(c, m, LOGIN_JS, 4000)); } catch { continue; }
+            if (!string.IsNullOrEmpty(rm) && rm.IndexOf('|') >= 0) { r = rm; mr = m; break; }
+        }
+        if (r == null) return false;
+        double[] om = OrigenMarc(c, mr);
         string[] pb = r.Split('|');
+        pb[0] = MouXY(pb[0], om);
+        if (pb[1] != "") pb[1] = MouXY(pb[1], om);
         // com a molt un intent cada 30 s, per no bloquejar el compte
         if ((DateTime.Now - c.Entrat).TotalSeconds < 60) return true;
         c.Entrat = DateTime.Now;
         // l'Edge nomes deixa fer servir la contrasenya emplenada despres d'un gest de debo: primer un clic al camp
-        if (pb[1] == "" || !PremMarcat(c))
+        if (pb[1] == "" || !PremMarcat(c, mr))
         {
             if (pb[1] != "") ClicReal(c, pb[1]);
             else { ClicReal(c, pb[0]); Thread.Sleep(300); NavTecla(c.Pag, "Enter"); }
