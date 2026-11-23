@@ -848,7 +848,7 @@ function carregaAjustos() {
     fonsInicia();
     pintaDock();
     if (A.vista == 'dash') { pintaRapid(); pintaSona(); }
-    if (A.ajustos.whatsapp && NF.para !== false) { NF.para = false; vigilaMissatges(); }
+    if ((A.ajustos.whatsapp || A.ajustos.sms || A.ajustos.messenger) && NF.para !== false) { NF.para = false; vigilaMissatges(); }
     casaCarrega();
   });
 }
@@ -2365,21 +2365,36 @@ function pintaAgenda() {
 
 
 /* ---------- Avisos de WhatsApp ---------- */
-var NF = { des: Date.now(), t: null, actual: null, para: true };
+var NF = { des: {}, tot: {}, t: null, actual: null, para: true };
+/* els serveis de missatges: clau, funció a Configuració, adreça de l'API */
+var SRV_MSG = [['wa', 'whatsapp', 'admin/wa/'], ['sms', 'sms', 'admin/xat/sms/'], ['fb', 'messenger', 'admin/xat/fb/']];
 function vigilaMissatges() {
   clearTimeout(NF.t);
-  if (NF.para || !A.ajustos.whatsapp) return;
-  getJson(api('admin/wa/nous', { des: NF.des }), function (d) {
-    var l = d && d.llista ? d.llista : (d && d.length ? d : []);
-    NF.total = d && d.total ? d.total : 0;
+  if (NF.para) return;
+  var act = [], i;
+  for (i = 0; i < SRV_MSG.length; i++) if (A.ajustos[SRV_MSG[i][1]]) act.push(SRV_MSG[i]);
+  if (!act.length) return;
+  var pend = act.length;
+  function fet() {
+    if (--pend > 0) return;
+    NF.total = 0; for (var k in NF.tot) if (NF.tot.hasOwnProperty(k)) NF.total += NF.tot[k];
     puntMissatges();
-    if (l && l.length) {
-      for (var i = 0; i < l.length; i++) if (l[i].ts > NF.des) NF.des = l[i].ts;
-      var n = l[l.length - 1];
-      if (A.vista != 'missatges') mostraNotif(n);
-    }
-    NF.t = setTimeout(vigilaMissatges, 15000);
-  }, function (st) { if (st == 401) NF.para = true; else NF.t = setTimeout(vigilaMissatges, 60000); });
+    if (!NF.para) NF.t = setTimeout(vigilaMissatges, 15000);
+  }
+  for (i = 0; i < act.length; i++) (function (sv) {
+    var k = sv[0];
+    if (!NF.des[k]) NF.des[k] = Date.now();
+    getJson(api(sv[2] + 'nous', { des: NF.des[k] }), function (d) {
+      var l = d && d.llista ? d.llista : (d && d.length ? d : []);
+      NF.tot[k] = d && d.total ? d.total : 0;
+      if (l && l.length) {
+        for (var j = 0; j < l.length; j++) if (l[j].ts > NF.des[k]) NF.des[k] = l[j].ts;
+        var n = l[l.length - 1]; n.srv = k;
+        if (A.vista != 'missatges') mostraNotif(n);
+      }
+      fet();
+    }, function (st) { if (st == 401) NF.para = true; fet(); });
+  })(act[i]);
 }
 /* Punt vermell a la icona de Missatges quan hi ha missatges sense llegir */
 function puntMissatges() {
@@ -2395,7 +2410,7 @@ function mostraNotif(n) {
   var av = $('nf-av');
   av.style.backgroundImage = n.img && /^https/.test(n.img) ? bg(imgx(n.img, 96)) : 'none';
   av.textContent = n.img && /^https/.test(n.img) ? '' : (n.nom || '?').charAt(0).toUpperCase();
-  $('nf-nom').textContent = n.nom;
+  $('nf-nom').textContent = n.nom + (n.srv == 'sms' ? ' · SMS' : n.srv == 'fb' ? ' · Messenger' : '');
   $('nf-text').textContent = n.text || '';
   var e = $('notif');
   e.style.display = '-webkit-flex'; e.style.display = 'flex';
@@ -2404,7 +2419,7 @@ function mostraNotif(n) {
 }
 function clicNotif() {
   $('notif').style.display = 'none';
-  if (NF.actual && permesa('missatges')) obre('missatges', NF.actual.nom);
+  if (NF.actual && permesa('missatges')) obre('missatges', (NF.actual.srv || 'wa') + '|' + NF.actual.nom);
 }
 
 /* ---------- Mode infantil ---------- */
@@ -2463,7 +2478,7 @@ function permesa(id) {
   /* Spotify i WhatsApp estan desactivats fins que s'activen a Configuració */
   if (id == 'spotify' && !A.ajustos.spotify) return false;
   if (id == 'futbol' && A.ajustos.futbol === false) return false;
-  if (id == 'missatges' && !A.ajustos.whatsapp) return false;
+  if (id == 'missatges' && !A.ajustos.whatsapp && !A.ajustos.sms && !A.ajustos.messenger) return false;
   if (id == 'casa' && !A.ajustos.tuya && !(WB.defs || []).some(function (w) { return w.lloc == 'casa'; })) return false;
   /* a la tele només el que té sentit amb el comandament: escoltar, mirar, fotos i la casa */
   if (modeTele() && TELE_AMAGA[id]) return false;

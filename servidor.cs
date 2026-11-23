@@ -160,6 +160,7 @@ public static class CasaServidor
         Mdns.Inicia("hearth");
         if (FuncioActiva("spotify")) Spotify.AlArrencar();
         if (FuncioActiva("whatsapp")) WhatsApp.AlArrencar();
+        Xats.AlArrencar();
         GFotos.AlArrencar();
         Actualitza.Inicia();
         Botigues.Inicia();
@@ -413,6 +414,16 @@ public static class CasaServidor
             return;
         }
         if (nom.StartsWith("compra/")) { Botigues.Api(nom.Substring(7), q, ctx, true); return; }
+        if (nom.StartsWith("xat/"))
+        {
+            // xat/<servei>/<api>: Google Messages (sms) i Messenger (fb)
+            string[] xp = nom.Substring(4).Split(new char[] { '/' }, 2);
+            string fn = Xats.Funcio(xp[0]);
+            if (fn == null || xp.Length < 2) { Error(ctx.Response, 404, "API desconeguda"); return; }
+            if (xp[1] != "atura" && !FuncioActiva(fn)) { Error(ctx.Response, 403, "Aquest servei de missatges est\u00e0 desactivat (Configuraci\u00f3 \u25b8 Funcions opcionals)"); return; }
+            Xats.Api(xp[0], xp[1], q, ctx);
+            return;
+        }
         if (nom.StartsWith("wa/")) { if (nom != "wa/atura" && !FuncioActiva("whatsapp")) { Error(ctx.Response, 403, "WhatsApp est\u00e0 desactivat (Configuraci\u00f3 \u25b8 Funcions opcionals)"); return; } WhatsApp.Api(nom.Substring(3), q, ctx); return; }
         switch (nom)
         {

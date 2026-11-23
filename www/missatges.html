@@ -7,7 +7,11 @@
 <title>Missatges</title>
 <script src="i18n.js"></script>
 <style>
-#wa{position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex}
+#tabs{position:absolute;top:0;left:0;right:0;height:50px;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:0 10px;background:#12181d;border-bottom:1px solid rgba(255,255,255,.08);z-index:5}
+#tabs button{margin-right:8px;padding:8px 16px;border-radius:18px;background:rgba(255,255,255,.07);font-size:15px;position:relative}
+#tabs button.on{background:#25d366;color:#000}
+#tabs button i{font-style:normal;background:#ff3b30;color:#fff;border-radius:10px;font-size:11px;padding:1px 6px;margin-left:6px;font-weight:700}
+#wa{position:absolute;top:50px;left:0;right:0;bottom:0;display:-webkit-flex;display:flex}
 #esq{width:340px;-webkit-flex:none;flex:none;border-right:1px solid rgba(255,255,255,.08);overflow-y:auto;-webkit-overflow-scrolling:touch}
 #dre{-webkit-flex:1;flex:1;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;min-width:0;background:#0b1014}
 #esq h1{margin:18px 16px 10px}
@@ -36,7 +40,7 @@
 #peu button{margin-left:10px;width:46px;height:46px;border-radius:23px;padding:0;background:#25d366;color:#000}
 #peu button .ic{width:24px;height:24px}
 #buit{-webkit-flex:1;flex:1;display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;color:#8d95a1;text-align:center;padding:30px}
-#login{position:absolute;top:0;left:0;right:0;bottom:0;background:#0e1116;display:none;text-align:center;padding:40px 30px;overflow:auto}
+#login{position:absolute;top:50px;left:0;right:0;bottom:0;background:#0e1116;display:none;text-align:center;padding:40px 30px;overflow:auto}
 #login img{width:264px;height:264px;background:#fff;border-radius:12px;padding:12px;margin:18px auto;display:block}
 @media (orientation:portrait){
   #esq{width:auto;-webkit-flex:1;flex:1;border:0}
@@ -48,8 +52,9 @@
 </style>
 </head>
 <body>
+<div id="tabs"></div>
 <div id="wa">
-  <div id="esq"><h1>Missatges</h1><div id="xats"><div class="gris" style="padding:16px">Connectant amb WhatsApp…</div></div></div>
+  <div id="esq"><h1>Missatges</h1><div id="xats"><div class="gris" style="padding:16px">Connectant…</div></div></div>
   <div id="dre">
     <div id="buit">Tria un xat de la llista.</div>
     <div id="cap" style="display:none"><button class="torna" onclick="tancaXat()">‹</button><b id="cap-nom"></b></div>
@@ -58,34 +63,86 @@
   </div>
 </div>
 <div id="login">
-  <h1>Connecta el WhatsApp</h1>
-  <div class="gris">Al telèfon: WhatsApp ▸ Configuració ▸ Dispositius vinculats ▸ Vincula un dispositiu, i escaneja aquest codi.</div>
+  <h1 id="login-tit"></h1>
+  <div class="gris" id="login-ajuda"></div>
   <img id="qr" alt="">
   <div class="gris petit" id="login-estat"></div>
-  <p><button onclick="post(api('admin/wa/mostra'),'',function(){avis(T('S\'ha obert el WhatsApp a la pantalla del PC.'))})">Mostra-ho a la pantalla del PC</button></p>
+  <p><button onclick="post(api(base() + 'mostra'),'',function(){avis(T('S\'ha obert a la pantalla del PC.'))})">Mostra-ho a la pantalla del PC</button></p>
 </div>
 <script src="comu.js"></script>
 <script>
 dinsCasa('missatges');
 $('b-env').innerHTML = svg('M2.01 21L23 12 2.01 3 2 10l15 2-15 2z');
-var W = { xat: '', t: null, tx: null, llista: [], darrer: '' };
-
+var W = { xat: '', t: null, tx: null, llista: [], darrer: '', srv: '', actius: [], tot: {} };
+/* els serveis: clau, nom de la pestanya, funció a Configuració, adreça de l'API, instruccions per vincular */
+var SRV = [
+  ['wa', 'WhatsApp', 'whatsapp', 'admin/wa/', 'Connecta el WhatsApp', 'Al telèfon: WhatsApp ▸ Configuració ▸ Dispositius vinculats ▸ Vincula un dispositiu, i escaneja aquest codi.'],
+  ['sms', 'SMS', 'sms', 'admin/xat/sms/', 'Connecta Google Messages', 'Al telèfon: Missatges de Google ▸ la teva foto o el menú ▸ Vinculació de dispositius (Missatges per a la web) ▸ Escàner de codis QR, i escaneja aquest codi.'],
+  ['fb', 'Messenger', 'messenger', 'admin/xat/fb/', 'Connecta el Messenger', 'Cal iniciar la sessió de Facebook un cop a l\'Edge del PC. Prem el botó de sota: s\'obrirà a la pantalla del PC.']
+];
+function srvDe(k) { for (var i = 0; i < SRV.length; i++) if (SRV[i][0] == k) return SRV[i]; return SRV[0]; }
+function base() { return srvDe(W.srv)[3]; }
 function ini(n) { return (n || '?').replace(/[^A-Za-zÀ-ú0-9]/g, '').charAt(0).toUpperCase() || '?'; }
+/* les pestanyes dels serveis activats a Configuració, amb els no llegits */
+function pintaTabs() {
+  var h = '';
+  for (var i = 0; i < W.actius.length; i++) {
+    var sv = W.actius[i], n = W.tot[sv[0]] || 0;
+    h += '<button class="' + (sv[0] == W.srv ? 'on' : '') + '" onclick="triaSrv(\'' + sv[0] + '\')">' + esc(T(sv[1])) + (n ? '<i>' + (n > 99 ? '99+' : n) + '</i>' : '') + '</button>';
+  }
+  $('tabs').innerHTML = h;
+  $('tabs').style.display = W.actius.length > 1 ? '' : 'none';
+  $('wa').style.top = $('login').style.top = W.actius.length > 1 ? '50px' : '0';
+}
+function triaSrv(k, xat) {
+  if (k != W.srv) { W.srv = k; W.xat = ''; W.llista = []; W.darrer = ''; tancaXat(); $('buit').style.display = ''; $('cap').style.display = 'none'; $('msgs').style.display = 'none'; $('peu').style.display = 'none'; $('xats').innerHTML = '<div class="gris" style="padding:16px">' + T('Connectant…') + '</div>'; }
+  if (xat) W.pendent = xat;
+  try { localStorage.setItem('msgSrv', k); } catch (e) { }
+  pintaTabs();
+  estat();
+}
+function comptes() {
+  for (var i = 0; i < W.actius.length; i++) (function (sv) {
+    getJson(api(sv[3] + 'nous', { des: Date.now() }), function (d) { W.tot[sv[0]] = d && d.total ? d.total : 0; pintaTabs(); }, function () { });
+  })(W.actius[i]);
+  clearTimeout(W.tc); W.tc = setTimeout(comptes, 20000);
+}
+function inicia(srv, xat) {
+  dades('ajustos', function (a) {
+    a = a || {};
+    W.actius = [];
+    for (var i = 0; i < SRV.length; i++) if (a[SRV[i][2]]) W.actius.push(SRV[i]);
+    if (!W.actius.length) W.actius.push(SRV[0]);
+    var k = srv;
+    if (!k) { try { k = localStorage.getItem('msgSrv'); } catch (e) { } }
+    var ok = false; for (i = 0; i < W.actius.length; i++) if (W.actius[i][0] == k) ok = true;
+    W.srv = '';
+    triaSrv(ok ? k : W.actius[0][0], xat);
+    comptes();
+  });
+}
 function estat() {
-  getJson(api('admin/wa/estat'), function (d) {
+  var sv = srvDe(W.srv), k = W.srv;
+  getJson(api(sv[3] + 'estat'), function (d) {
+    if (W.srv != k) return;
     if (d && d.sessio) { $('login').style.display = 'none'; carregaXats(); return; }
     $('login').style.display = 'block';
-    $('login-estat').textContent = d && d.carregant ? T('Carregant WhatsApp Web…') : '';
-    getJson(api('admin/wa/qr'), function (u) { if (u) $('qr').src = u; }, function () { });
+    $('login-tit').textContent = T(sv[4]);
+    $('login-ajuda').textContent = d && d.pin ? T('Facebook demana el PIN dels xats xifrats. Prem el botó de sota i posa\'l a la pantalla del PC.') : T(sv[5]);
+    $('login-estat').textContent = d && d.carregant ? T('Carregant…') : '';
+    $('qr').style.display = d && d.qr ? '' : 'none';
+    if (d && d.qr) getJson(api(sv[3] + 'qr'), function (u) { if (u && W.srv == k) $('qr').src = u; }, function () { });
     clearTimeout(W.t); W.t = setTimeout(estat, 5000);
   }, function (st, txt) {
     var m = ''; try { m = JSON.parse(txt).error; } catch (e) { }
-    $('xats').innerHTML = '<div class="ajuda" style="margin:16px">' + (st == 401 ? T('Cal la contrasenya del servidor (Configuració).') : T('No puc connectar amb WhatsApp.') + ' ' + esc(m || '')) + '</div>';
+    $('xats').innerHTML = '<div class="ajuda" style="margin:16px">' + (st == 401 ? T('Cal la contrasenya del servidor (Configuració).') : T('No puc connectar.') + ' ' + esc(m || '')) + '</div>';
     clearTimeout(W.t); W.t = setTimeout(estat, 10000);
   });
 }
 function carregaXats() {
-  getJson(api('admin/wa/xats'), function (l) {
+  var k = W.srv;
+  getJson(api(base() + 'xats'), function (l) {
+    if (W.srv != k) return;
     W.llista = l || [];
     var h = '';
     for (var i = 0; i < W.llista.length; i++) {
@@ -95,6 +152,7 @@ function carregaXats() {
         (x.noLlegits ? '<span class="nl">' + x.noLlegits + '</span>' : '<span class="hr">' + esc(x.hora || '') + '</span>') + '</div>';
     }
     $('xats').innerHTML = h || '<div class="gris" style="padding:16px">' + T('Encara no hi ha xats (o s\'estan carregant).') + '</div>';
+    if (W.pendent) { var p = W.pendent; for (var j = 0; j < W.llista.length; j++) if (W.llista[j].nom == p) { W.pendent = ''; obreXat(j); return; } }
     clearTimeout(W.t); W.t = setTimeout(carregaXats, 8000);
   }, function () { clearTimeout(W.t); W.t = setTimeout(estat, 8000); });
 }
@@ -114,7 +172,7 @@ function carregaMsgs() {
   clearTimeout(W.tx);
   if (!W.xat) return;
   var xat = W.xat;
-  getJson(api('admin/wa/missatges', { xat: xat }), function (d) {
+  getJson(api(base() + 'missatges', { xat: xat }), function (d) {
     if (W.xat != xat) return;
     if (d.error) { $('msgs').innerHTML = '<div class="gris">' + esc(d.error) + '</div>'; return; }
     var h = '', l = d.missatges || [];
@@ -137,20 +195,23 @@ function envia() {
   var t = $('text').value;
   if (!retalla(t) || !W.xat) return;
   $('text').value = '';
-  peticio('POST', api('admin/wa/envia', { xat: W.xat }), t, function (txt) {
+  peticio('POST', api(base() + 'envia', { xat: W.xat }), t, function (txt) {
     var d = {}; try { d = JSON.parse(txt); } catch (e) { }
     if (d.ok === false) { avis(d.error || T('No s\'ha pogut enviar'), 4000); $('text').value = t; return; }
     setTimeout(carregaMsgs, 600);
   }, function () { avis(T('No s\'ha pogut enviar'), 4000); $('text').value = t; });
 }
+/* des d'un avís: "servei|nom del xat" */
 window.casaObre = function (a) {
   a = decodeURIComponent(a);
-  for (var i = 0; i < W.llista.length; i++) if (W.llista[i].nom == a) { obreXat(i); return; }
-  W.pendent = a;
+  var k = 'wa', p = a.indexOf('|');
+  if (p > 0 && p < 4) { k = a.substring(0, p); a = a.substring(p + 1); }
+  if (k == W.srv) { for (var i = 0; i < W.llista.length; i++) if (W.llista[i].nom == a) { obreXat(i); return; } W.pendent = a; return; }
+  if (W.actius.length) triaSrv(k, a); else inicia(k, a);
 };
-window.casaAmaga = function () { clearTimeout(W.t); clearTimeout(W.tx); };
-window.casaMostra = function () { estat(); if (W.xat) carregaMsgs(); };
-estat();
+window.casaAmaga = function () { clearTimeout(W.t); clearTimeout(W.tx); clearTimeout(W.tc); };
+window.casaMostra = function () { if (W.srv) { estat(); comptes(); } if (W.xat) carregaMsgs(); };
+inicia();
 </script>
 </body>
 </html>
