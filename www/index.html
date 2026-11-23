@@ -646,12 +646,21 @@ html.sense-flex body.sona #apps,html.sense-flex body.en-app.sona #apps{bottom:66
 /* ---- Sense connexió amb el servidor ---- */
 #fora{display:none;position:fixed;left:50%;top:10px;width:460px;margin-left:-230px;z-index:90;background:#3a2a10;color:#ffd79a;border-radius:12px;padding:10px 14px;font-size:14px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 body.offline #fora{display:block}
-#alarma{position:fixed;left:0;top:0;right:0;bottom:0;z-index:600;background:rgba(10,12,16,.94);display:none;text-align:center}
-#alarma .al-c{position:absolute;left:0;right:0;top:50%;-webkit-transform:translateY(-50%);transform:translateY(-50%)}
-#alarma .al-ic .ic{width:64px;height:64px;fill:#ffab3d}
-#alarma .al-h{font-size:96px;font-weight:200;line-height:1.1}
-#alarma .al-n{font-size:28px;margin:6px 0 34px}
-#alarma .al-b button{font-size:22px;padding:18px 30px;border-radius:18px;margin:8px}
+#alarma{position:fixed;left:0;top:0;right:0;bottom:0;z-index:600;background:#0b0d11;background:radial-gradient(circle at 50% 38%,#2a1d0c 0,#0b0d11 62%);display:none;text-align:center;color:#fff}
+#alarma .al-c{position:absolute;left:0;right:0;top:50%;-webkit-transform:translateY(-50%);transform:translateY(-50%);padding:0 24px}
+#alarma .al-ic{width:96px;height:96px;margin:0 auto 10px;border-radius:48px;background:rgba(255,171,61,.14);position:relative}
+#alarma .al-ic:before{content:'';position:absolute;left:0;top:0;right:0;bottom:0;border-radius:48px;border:2px solid rgba(255,171,61,.6);-webkit-animation:alPols 1.6s ease-out infinite;animation:alPols 1.6s ease-out infinite}
+#alarma .al-ic .ic{width:54px;height:54px;fill:#ffab3d;margin-top:21px}
+@-webkit-keyframes alPols{0%{-webkit-transform:scale(1);opacity:1}100%{-webkit-transform:scale(1.7);opacity:0}}
+@keyframes alPols{0%{transform:scale(1);opacity:1}100%{transform:scale(1.7);opacity:0}}
+#alarma .al-h{font-size:104px;font-weight:200;line-height:1;letter-spacing:-3px;margin-top:8px;font-variant-numeric:tabular-nums}
+#alarma .al-n{font-size:26px;font-weight:600;margin:12px 0 4px}
+#alarma .al-s{font-size:16px;color:#9aa2ad;min-height:20px}
+#alarma .al-b{max-width:380px;margin:34px auto 0}
+#alarma .al-b button{display:block;width:100%;font-size:20px;font-weight:600;padding:17px;border-radius:18px;margin:0 0 12px;background:rgba(255,255,255,.1);color:#fff}
+#alarma .al-b button.al-atura{background:#ffab3d;color:#1a1206;font-size:22px;padding:20px}
+#alarma .al-b button.al-txt{background:none;color:#9aa2ad;font-weight:500;font-size:17px}
+@media (max-height:520px){ #alarma .al-h{font-size:72px} #alarma .al-b{margin-top:18px} #alarma .al-ic{display:none} }
 body.offline .app.cal-servidor,body.offline #nav div.cal-servidor,body.offline .rt.cal-servidor,body.offline .gb.cal-servidor,body.offline .wg,body.offline #b-tele,body.offline #mini-cast,body.offline #tv-b-cast{opacity:.3}
 @media (max-width:500px){#fora{left:8px;right:8px;width:auto;margin-left:0}}
 </style>
@@ -2633,7 +2642,8 @@ function alPerMi(a) { return !a.disp || a.disp == 'tots' || a.disp == DISP.id; }
 function alMira() {
   var n = Date.now(), ara = new Date(), i, a, clau;
   /* si una altra pantalla l'ha aturada (o s'ha esborrat), també s'atura aquí */
-  if (AL.sona) {
+  /* (les proves, des de l'app Alarmes, no són a la llista) */
+  if (AL.sona && AL.sona.clau.indexOf('prova|') !== 0) {
     var vig = null;
     for (i = 0; i < AL.l.length; i++) if (AL.l[i].id == AL.sona.a.id) vig = AL.l[i];
     if (!vig || vig.aturat == AL.sona.clau || (vig.tipus == 'cuina' && vig.fi != AL.sona.a.fi)) alPara(false);
@@ -2691,11 +2701,12 @@ function alSona(a, clau, mut) {
     try { var p = au.play(); if (p && p['catch']) p['catch'](function () { }); } catch (e) { }
   }
   var e = $('alarma'), h = new Date();
+  var sub = mut ? T('Sona a') + ': ' + (a.dispNom || (a.disp == 'pc' ? T('el PC') : T('un altaveu'))) : r ? '📻 ' + r.t : (desp ? '' : T('El temps s\'ha acabat'));
   e.innerHTML = '<div class="al-c"><div class="al-ic">' + svg(desp ? IC_ALARMA : IC_CRONO) + '</div><div class="al-h">' + h.getHours() + ':' + dos(h.getMinutes()) + '</div>' +
-    '<div class="al-n">' + esc(a.nom || (desp ? T('Despertador') : T('Temporitzador'))) + (mut ? '<small style="display:block;font-size:17px;color:#8d95a1;margin-top:6px">' + esc(T('Sona a') + ': ' + (a.dispNom || (a.disp == 'pc' ? T('el PC') : T('un altaveu')))) + '</small>' : '') + '</div>' +
-    '<div class="al-b">' + (desp ? '<button onclick="alPosposa()">' + esc(T('Posposa 10 min')) + '</button>' : '') +
-    (r ? '<button onclick="alPara(true, true)">' + esc(T('Continua escoltant')) + '</button>' : '') +
-    '<button class="pri" onclick="alPara(true)">' + esc(T('Atura')) + '</button></div></div>';
+    '<div class="al-n">' + esc(a.nom || (desp ? T('Despertador') : T('Temporitzador'))) + '</div><div class="al-s">' + esc(sub) + '</div>' +
+    '<div class="al-b"><button class="al-atura" onclick="alPara(true)">' + esc(T('Atura')) + '</button>' +
+    (desp ? '<button onclick="alPosposa()">' + esc(T('Posposa 10 min')) + '</button>' : '') +
+    (r ? '<button class="al-txt" onclick="alPara(true, true)">' + esc(T('Atura l\'alarma i continua escoltant')) + '</button>' : '') + '</div></div>';
   e.style.display = 'block';
   /* com a molt 15 minuts sonant */
   clearTimeout(AL.tmax); AL.tmax = setTimeout(function () { alPara(true); }, 15 * 60000);
@@ -2714,7 +2725,7 @@ function alPara(avisa, segueix) {
   dades('alarmes', function (l) {
     l = l || [];
     for (var i = l.length - 1; i >= 0; i--) if (l[i].id == s.a.id) {
-      if (l[i].tipus == 'cuina') l.splice(i, 1); else { l[i].aturat = s.clau; delete l[i].pospos; }
+      if (l[i].tipus == 'cuina') l.splice(i, 1); else { l[i].aturat = s.clau; delete l[i].pospos; if (!l[i].dies || !l[i].dies.length) l[i].on = false; }
     }
     AL.l = l;
     post(api('dades', { n: 'alarmes' }), JSON.stringify(l), function () { }, function () { });

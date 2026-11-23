@@ -23,6 +23,20 @@
 .fila .ok{width:28px;text-align:center;-webkit-flex:none;flex:none;font-size:18px}
 .fila button{margin-left:8px;-webkit-flex:none;flex:none}
 .peu{text-align:right;margin-top:6px}
+/* Temporitzador */
+.son-g{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:10px -5px 4px}
+.son-g button{width:calc(33.33% - 10px);margin:5px;padding:14px 0 11px;border-radius:16px;line-height:1}
+.son-g button b{display:block;font-size:26px;font-weight:600}
+.son-g button small{display:block;font-size:12px;color:#8d95a1;margin-top:4px}
+.son-g button.on{background:#5e5ce6;color:#fff}
+.son-g button.on small{color:rgba(255,255,255,.75)}
+#son-actiu .sa{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;background:rgba(94,92,230,.16);border-radius:18px;padding:14px 16px;margin:12px 0 6px}
+#son-actiu .sa .t{font-size:40px;font-weight:300;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1}
+#son-actiu .sa .x{-webkit-flex:1;flex:1;margin-left:14px;color:#c9c8ff;font-size:15px}
+.son-tot{-webkit-align-items:flex-start;align-items:flex-start;margin-top:14px}
+.son-tot input{margin-top:3px}
+.son-tot span b{display:block;font-weight:600}
+.son-tot span small{display:block;color:#8d95a1;font-size:14px;margin-top:2px}
 .canal{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)}
 .canal .col{width:16px;height:16px;border-radius:8px;margin-right:12px;-webkit-flex:none;flex:none}
 .canal.off .nm{opacity:.4;text-decoration:line-through}
@@ -171,9 +185,9 @@ body{background:#000}
   <div class="sec" id="s-temporitzador">
     <h2>Temporitzador</h2>
     <div class="desc">Atura la ràdio, la música, la tele o el vídeo d'aquí a una estona. Abans d'aturar-se, el volum baixa a poc a poc.</div>
-    <label class="check"><input type="checkbox" id="son-tot" onchange="ls('sonTot', this.checked)"> Atura-ho tot: també el que s'envia per Cast i el que sona a les altres pantalles de Hearth</label>
-    <div class="peu" id="son-b"></div>
-    <div class="gris" id="son-estat" style="margin-top:12px"></div>
+    <div id="son-actiu"></div>
+    <div class="son-g" id="son-b"></div>
+    <label class="check son-tot"><input type="checkbox" id="son-tot" onchange="ls('sonTot', this.checked)"><span><b>Atura-ho tot</b><small>També el que s'envia per Cast i el que sona a les altres pantalles de Hearth</small></span></label>
   </div>
 
   <div class="sec" id="s-funcions">
@@ -1094,11 +1108,17 @@ function nomSec(id) { for (var g = 0; g < MENU.length; g++) for (var i = 0; i < 
 /* ---------- Temporitzador per dormir ---------- */
 function sonPinta() {
   var m = [15, 30, 45, 60, 90, 120], h = '', fi = Casa && Casa.sonFi ? Casa.sonFi() : 0, i;
-  for (i = 0; i < m.length; i++) h += '<button onclick="sonTria(' + m[i] + ')">' + m[i] + ' min</button> ';
-  if (fi) h += '<button onclick="sonTria(0)">' + esc(T('Cancel·la')) + '</button>';
+  var queda = fi ? fi - Date.now() : 0;
+  for (i = 0; i < m.length; i++) h += '<button onclick="sonTria(' + m[i] + ')"><b>' + m[i] + '</b><small>min</small></button>';
   $('son-b').innerHTML = h;
-  if (fi) { var d = new Date(fi), q = Math.max(1, Math.round((fi - Date.now()) / 60000)); $('son-estat').textContent = T('S\'aturarà a les') + ' ' + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ' (' + q + ' min)'; }
-  else $('son-estat').textContent = T('Desactivat');
+  sonActiu();
+}
+function sonActiu() {
+  var fi = Casa && Casa.sonFi ? Casa.sonFi() : 0, queda = fi ? fi - Date.now() : 0;
+  if (fi && queda > 0) {
+    var d = new Date(fi), s = Math.ceil(queda / 1000);
+    $('son-actiu').innerHTML = '<div class="sa"><div class="t">' + Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60) + '</div><div class="x">' + esc(T('S\'aturarà a les') + ' ' + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes()) + '</div><button onclick="sonTria(0)">' + esc(T('Cancel·la')) + '</button></div>';
+  } else $('son-actiu').innerHTML = '';
 }
 function sonTria(m) {
   if (!Casa || !Casa.son) return;
@@ -1107,7 +1127,7 @@ function sonTria(m) {
   avis(m ? T('Temporitzador') + ': ' + m + ' min' : T('Temporitzador desactivat'));
   try { valorsMenu(); } catch (e) { }
 }
-setInterval(function () { if ($('s-temporitzador') && /\bon\b/.test($('s-temporitzador').className)) sonPinta(); }, 20000);
+setInterval(function () { if ($('s-temporitzador') && /\bon\b/.test($('s-temporitzador').className) && Casa && Casa.sonFi) sonActiu(); }, 1000);
 function obreSec(id) {
   if (id == 'temporitzador') setTimeout(function () { $('son-tot').checked = ls('sonTot') !== false; sonPinta(); }, 0);
   if (!$('s-' + id)) id = 'inici';
