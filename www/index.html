@@ -1670,7 +1670,6 @@ function tvMode(m) {
 /* Un toc: en petit, maximitza; en gran, mostra els controls.
    Dos tocs seguits: maximitza i omple d'amplada; un altre doble toc omple d'alçada (retalla els costats); el següent el torna a fer petit */
 function tvToc() {
-  if (NAV_TELE) { if (TV.mode == 'gran') tvMostraCtl(); else tvMode('gran'); return; }
   var ara = +new Date(), doble = ara - (TV.tocT || 0) < 380;
   TV.tocT = doble ? 0 : ara;
   if (doble) {
@@ -1687,8 +1686,7 @@ function tvToc() {
 function tvAjusta() {
   var v = $('tv-v'), t = $('tv'), st = v.style;
   var vw = v.videoWidth, vh = v.videoHeight, W = t.clientWidth, H = t.clientHeight;
-  /* al navegador d'una tele, el vídeo es deixa com sempre (la LG el mostrava negre si se li canviava la mida a mà) */
-  if (TV.mode != 'gran' || !vw || !vh || !W || !H || NAV_TELE) { st.left = st.top = st.width = st.height = ''; return; }
+  if (TV.mode != 'gran' || !vw || !vh || !W || !H) { st.left = st.top = st.width = st.height = ''; return; }
   var a = vw / vh, w, h;
   if (TV.ajust == 'v') { h = H; w = Math.round(H * a); } else { w = W; h = Math.round(W / a); }
   st.width = w + 'px'; st.height = h + 'px'; st.left = Math.round((W - w) / 2) + 'px'; st.top = Math.round((H - h) / 2) + 'px';
