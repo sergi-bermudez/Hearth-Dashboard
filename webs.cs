@@ -22,7 +22,7 @@ public static class Webs
         public double Cx, Cy, Cw, Ch;
         public bool Retall;
         public string Clica = ""; public DateTime Clicat = DateTime.MinValue;
-        public bool Camera, VideoTrobat; public DateTime Buscat = DateTime.MinValue, Entrat = DateTime.MinValue;
+        public bool Camera, VideoTrobat, Aparcada; public DateTime Buscat = DateTime.MinValue, Entrat = DateTime.MinValue;
     }
     static readonly Dictionary<string, Captura> obertes = new Dictionary<string, Captura>();
     static readonly object lk = new object();
@@ -195,6 +195,15 @@ public static class Webs
             foreach (Captura c in velles) obertes.Remove(c.Id);
         }
         foreach (Captura c in velles) { try { c.Pag.Tanca(); } catch { } try { Edge.TancaPagina(c.Target); } catch { } }
+        // una camera que fa un minut que ningu mira: s'atura el directe (les cameres solars gasten bateria mentre emeten)
+        // tornant la pestanya a la web d'inici; la sessio es mante perque la pestanya no es tanca
+        List<Captura> aparca = new List<Captura>();
+        lock (lk) foreach (Captura c in obertes.Values) if (c.Camera && !c.Aparcada && (DateTime.Now - c.Vist).TotalSeconds > 50) aparca.Add(c);
+        foreach (Captura c in aparca)
+        {
+            lock (c.Lk) { c.Aparcada = true; c.VideoTrobat = false; c.Retall = false; c.Cx = 0; c.Cy = 0; c.Cw = c.W; c.Ch = c.H; c.Darrera = null; }
+            try { c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", c.Url), 10000); Registre(c, "ningu la mira: s'atura el directe"); } catch { }
+        }
     }
 
     static byte[] Imatge(string id, bool completa, int minMs)
@@ -208,6 +217,7 @@ public static class Webs
             try { Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{var d=document.documentElement;if(d&&{2}!=1&&d.style.zoom!='{2}')d.style.zoom='{2}';if(Math.abs(window.scrollX-{0})>2||Math.abs(window.scrollY-{1})>2)window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy, c.Zoom), 3000); } catch { }
         if (!id.StartsWith("nav-") && (DateTime.Now - c.Clicat).TotalSeconds > 10) EngegaDirecte(c);
         if (c.Camera && (DateTime.Now - c.Buscat).TotalSeconds > 5) BuscaVideo(c);
+        c.Aparcada = false;
         lock (c.Lk)
         {
             c.Vist = DateTime.Now;
