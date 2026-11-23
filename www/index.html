@@ -1731,11 +1731,14 @@ function tvLloc() {
   var clau = TV.mode + '|' + A.vista + '|' + t.style.width + '|' + t.style.height + '|' + t.style.left + '|' + t.style.top;
   if (clau != TV.darrerLloc) {
     TV.darrerLloc = clau;
-    refresca();
     var v = $('tv-v');
-    v.style.webkitTransform = 'translateZ(0)'; t.style.webkitTransform = 'translateZ(0)';
-    v.style.width = '99.9%';
-    setTimeout(function () { v.style.webkitTransform = ''; t.style.webkitTransform = ''; v.style.width = ''; tvAjusta(); void v.offsetHeight; }, 60);
+    /* l'empenta només a l'iPhone/iPad: a les teles (LG) cada canvi de mida del vídeo l'atura i el deixa negre */
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      refresca();
+      v.style.webkitTransform = 'translateZ(0)'; t.style.webkitTransform = 'translateZ(0)';
+      v.style.width = '99.9%';
+      setTimeout(function () { v.style.webkitTransform = ''; t.style.webkitTransform = ''; v.style.width = ''; tvAjusta(); void v.offsetHeight; }, 60);
+    } else setTimeout(tvAjusta, 60);
     /* el navegador d'algunes teles (LG) atura el vídeo quan canvia de mida o de lloc: si no l'ha aturat qui mira, continua */
     setTimeout(function () { if (TV.canal && v.paused && !TV.pausaUsuari && v.getAttribute('src')) { var p = v.play(); if (p && p['catch']) p['catch'](function () { }); } }, 700);
   }
