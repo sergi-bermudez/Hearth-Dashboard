@@ -39,6 +39,14 @@
 #n-adr{-webkit-flex:1;flex:1;min-width:0;height:36px;border:0;background:transparent;color:transparent;font-size:16px;padding:0 10px;border-radius:10px;-webkit-appearance:none}
 #n-form.edita #n-adr{color:#fff}
 #n-form.edita #n-cad{display:none}
+#n-fav{width:34px;height:36px;padding:0;background:transparent;-webkit-flex:none;flex:none;font-size:20px;color:#d7dbe0}
+#n-fav.on{color:#ffcc00}
+#n-sug{position:absolute;left:96px;right:52px;top:48px;background:#2b2e34;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:none;z-index:5;max-height:70vh;overflow-y:auto}
+#n-sug .sg{padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.06);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#n-sug .sg:hover,#n-sug .sg.on{background:#3a3e46}
+#n-sug .sg small{color:#9aa3af;margin-left:8px}
+#n-sug .sg .tr{float:right;color:#9aa3af;padding:0 4px}
+#n-sug .cap{padding:8px 14px 4px;font-size:12px;color:#9aa3af;letter-spacing:1px;text-transform:uppercase}
 #n-rec{width:36px;height:36px;padding:0;background:transparent;-webkit-flex:none;flex:none}
 #n-rec .ic{width:20px;height:20px}
 #n-prog{position:absolute;left:0;right:0;bottom:-1px;height:2px;overflow:hidden}
@@ -64,9 +72,10 @@
     <button class="nb" onclick="tanca()" title="Webs"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></svg></button>
     <button class="nb" onclick="navAcc('nav-enrere')" title="Enrere"><svg class="ic" viewBox="0 0 24 24"><path d="M15.4 7.4L14 6l-6 6 6 6 1.4-1.4L10.8 12z"/></svg></button>
     <button class="nb" onclick="navAcc('nav-endavant')" title="Endavant"><svg class="ic" viewBox="0 0 24 24"><path d="M8.6 16.6L10 18l6-6-6-6-1.4 1.4 4.6 4.6z"/></svg></button>
-    <form id="n-form" onsubmit="navVes($('n-adr').value);return false"><span id="n-cad"></span><input id="n-adr" type="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Busca o escriu una adreça" onfocus="navAdrFocus(true)" onblur="navAdrFocus(false)"><button type="button" id="n-rec" onclick="navAcc('nav-recarrega')" title="Recarrega"><svg class="ic" viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button></form>
+    <form id="n-form" onsubmit="navVes($('n-adr').value);return false"><span id="n-cad"></span><input id="n-adr" type="text" inputmode="url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Busca o escriu una adreça" onfocus="navAdrFocus(true)" onblur="navAdrFocus(false)" oninput="navSuggereix(true)" onkeydown="if(event.keyCode==8||event.keyCode==46)NAVS.esborra=1"><button type="button" id="n-fav" onclick="navFavorit()" title="Afegeix als favorits">☆</button><button type="button" id="n-rec" onclick="navAcc('nav-recarrega')" title="Recarrega"><svg class="ic" viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button></form>
     <button class="nb" onclick="navTeclat()" title="Escriu a la web"><svg class="ic" viewBox="0 0 24 24"><path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg></button>
     <div id="n-prog"><div></div></div>
+    <div id="n-sug"></div>
   </div>
   <div id="marc"><div id="estat">Carregant…</div><img id="img" alt=""><div id="punt"></div>
     <div id="tecl"><form onsubmit="navEscriu(true);return false"><input id="tecl-t" type="text" autocapitalize="off" autocorrect="off"><button type="button" onclick="navEscriu(false)">Posa</button><button class="pri" type="submit">Envia ↵</button><button type="button" onclick="$('tecl').style.display='none'">✕</button></form></div></div>
@@ -167,7 +176,64 @@ function obreNav(q) {
 }
 function navAdrFocus(f) {
   $('n-form').className = f ? 'edita' : '';
-  if (f) setTimeout(function () { try { $('n-adr').setSelectionRange(0, 9999); } catch (e) { } }, 0);
+  if (f) { setTimeout(function () { try { $('n-adr').setSelectionRange(0, 9999); } catch (e) { } }, 0); navSuggereix(false); }
+  else setTimeout(function () { $('n-sug').style.display = 'none'; }, 250);
+}
+/* ---------- Favorits (de tota la casa) i historial (d'aquest aparell) ---------- */
+var NAVS = { fav: [], hist: ls('navHist') || [], esborra: 0 };
+dades('navfav', function (d) { NAVS.fav = d || []; navPintaFav(); });
+function navHost(u) { var m = /^https?:\/\/(?:www\.)?([^\/?#]+)/i.exec(u || ''); return m ? m[1] : u; }
+function navEsFav(u) { for (var i = 0; i < NAVS.fav.length; i++) if (NAVS.fav[i].u == u) return i; return -1; }
+function navPintaFav() { var b = $('n-fav'), u = W.info && W.info.url; if (!b) return; var on = u && navEsFav(u) >= 0; b.className = on ? 'on' : ''; b.innerHTML = on ? '★' : '☆'; }
+function navDesaFav() { post(api('dades', { n: 'navfav' }), JSON.stringify(NAVS.fav), function () { }, errXarxa('desar els favorits')); }
+function navFavorit() {
+  var u = W.info && W.info.url; if (!u || !/^https?:/i.test(u)) return;
+  var i = navEsFav(u);
+  if (i >= 0) NAVS.fav.splice(i, 1); else NAVS.fav.unshift({ u: u, t: (W.info.titol || navHost(u)).substring(0, 120) });
+  navDesaFav(); navPintaFav();
+}
+function navTreuFav(i, e) { if (e) e.stopPropagation(); NAVS.fav.splice(i, 1); navDesaFav(); navPintaFav(); navSuggereix(false); }
+function navHistorial(u, t) {
+  if (!u || !/^https?:/i.test(u)) return;
+  for (var i = NAVS.hist.length - 1; i >= 0; i--) if (NAVS.hist[i].u == u) NAVS.hist.splice(i, 1);
+  NAVS.hist.unshift({ u: u, t: (t || '').substring(0, 120) });
+  if (NAVS.hist.length > 200) NAVS.hist.length = 200;
+  ls('navHist', NAVS.hist);
+}
+/* el que s'escriu es compara amb els favorits i l'historial; si una adreça comença igual, es completa sola */
+function navSuggereix(completa) {
+  var inp = $('n-adr'), q = inp.value, sel = 0;
+  try { if (inp.selectionStart != inp.selectionEnd) { q = q.substring(0, inp.selectionStart); } } catch (e) { }
+  var ql = q.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, ''), l = [], vist = {}, h = '', i, x;
+  function afegeix(x, fav, idx) {
+    if (vist[x.u] || l.length >= 8) return;
+    var hs = (x.u.replace(/^https?:\/\//i, '').replace(/^www\./i, '')).toLowerCase();
+    if (ql && hs.indexOf(ql) < 0 && (x.t || '').toLowerCase().indexOf(ql) < 0) return;
+    vist[x.u] = 1; l.push({ u: x.u, t: x.t, fav: fav, i: idx, hs: hs });
+  }
+  for (i = 0; i < NAVS.fav.length; i++) afegeix(NAVS.fav[i], true, i);
+  if (ql) for (i = 0; i < NAVS.hist.length; i++) afegeix(NAVS.hist[i], false);
+  /* autocompletar: la primera adreça que comença pel que s'ha escrit (no quan s'esborra) */
+  if (completa && ql && !NAVS.esborra) {
+    for (i = 0; i < l.length; i++) {
+      var host = navHost(l[i].u).toLowerCase();
+      if (host.indexOf(ql) === 0 && host.length > ql.length) {
+        inp.value = q + host.substring(ql.length);
+        try { inp.setSelectionRange(q.length, inp.value.length); } catch (e) { }
+        break;
+      }
+    }
+  }
+  NAVS.esborra = 0;
+  if (!l.length) { $('n-sug').style.display = 'none'; return; }
+  h = ql ? '' : '<div class="cap">' + esc(T('Favorits')) + '</div>';
+  for (i = 0; i < l.length; i++) {
+    x = l[i];
+    h += '<div class="sg" onmousedown="navVes(' + js(x.u) + ')">' + (x.fav ? '★ ' : '') + esc(x.t || x.hs) + '<small>' + esc(navHost(x.u)) + '</small>' +
+      (x.fav ? '<span class="tr" onmousedown="navTreuFav(' + x.i + ',event)" title="' + esc(T('Treu dels favorits')) + '">✕</span>' : '') + '</div>';
+  }
+  $('n-sug').innerHTML = h;
+  $('n-sug').style.display = 'block';
 }
 function navPinta(url, titol) {
   $('n-adr').value = url || '';
@@ -183,6 +249,7 @@ function navProg(on) {
 }
 function navVes(u) {
   if (!W.obert || !W.obert.nav) return;
+  $('n-sug').style.display = 'none';
   $('n-adr').blur();
   navPinta(u);
   navProg(true);
@@ -223,6 +290,8 @@ function navInfo() {
     if (document.activeElement != $('n-adr')) navPinta(d.url, d.titol);
     var abans = W.info;
     W.info = d;
+    if (d.url && (!abans || abans.url != d.url || abans.titol != d.titol)) navHistorial(d.url, d.titol);
+    navPintaFav();
     /* mentre la web es carrega (o acaba de canviar d'adreça), captures seguides fins que acabi */
     if (d.carregant || (abans && abans.url != d.url)) {
       if (!W.carregant) navProg(true);

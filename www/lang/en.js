@@ -1000,3 +1000,6 @@ TR.en["Obre"]="Open";
 TR.en["Posa"]="Fill in";
 TR.en["Envia ↵"]="Send ↵";
 TR.en["Les webs s'obren en un navegador amagat al PC, de la mida d'aquesta pantalla, i aquí en veus la imatge. Toca per fer-hi un clic, arrossega per moure-la i fes servir ⌨ per escriure."]="Web pages open in a hidden browser on the PC, sized to this screen, and you see the picture here. Tap to click, drag to scroll and use ⌨ to type.";
+TR.en["Favorits"]="Favourites";
+TR.en["Treu dels favorits"]="Remove from favourites";
+TR.en["Afegeix als favorits"]="Add to favourites";

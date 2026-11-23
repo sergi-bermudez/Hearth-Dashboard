@@ -1000,3 +1000,6 @@ TR.fr["Obre"]="Ouvrir";
 TR.fr["Posa"]="Remplir";
 TR.fr["Envia ↵"]="Envoyer ↵";
 TR.fr["Les webs s'obren en un navegador amagat al PC, de la mida d'aquesta pantalla, i aquí en veus la imatge. Toca per fer-hi un clic, arrossega per moure-la i fes servir ⌨ per escriure."]="Les pages s'ouvrent dans un navigateur caché sur le PC, à la taille de cet écran, et vous en voyez l'image ici. Touchez pour cliquer, faites glisser pour défiler et utilisez ⌨ pour écrire.";
+TR.fr["Favorits"]="Favoris";
+TR.fr["Treu dels favorits"]="Retirer des favoris";
+TR.fr["Afegeix als favorits"]="Ajouter aux favoris";
