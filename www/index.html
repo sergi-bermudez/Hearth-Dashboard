@@ -30,8 +30,8 @@
 var HEARTH_ERRS = [];
 window.onerror = function (m, u, l) { HEARTH_ERRS.push(m + ' (' + String(u || '').split('/').pop() + ':' + l + ')'); };
 function hearthRepara() {
-  try { localStorage.clear(); } catch (e) { }
-  try { document.cookie = 'hdisp=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'; } catch (e) { }
+  /* s'esborren les dades locals, però no l'identificador d'aquest aparell: si no, en perdria els ajustos */
+  try { var id = localStorage.getItem('casa.disp'); localStorage.clear(); if (id) localStorage.setItem('casa.disp', id); } catch (e) { }
   var fet = function () { location.reload(); };
   try {
     if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {

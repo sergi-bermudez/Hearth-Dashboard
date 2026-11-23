@@ -371,6 +371,18 @@ function registraAmb(ip, ok) {
           delete d[dups[i]];
         }
         if (millor != DISP.id) { DISP.id = millor; ls('disp', millor); desaGaleta('hdisp', millor); canviat = true; }
+        /* els ajustos propis poden ser en un dels duplicats i no en el que es queda: s'hi passen */
+        var dupsVells = dups.slice(1);
+        dades('disp_' + millor, function (pm) {
+          if (pm && pm.propi) return;
+          (function prova(i) {
+            if (i >= dupsVells.length) return;
+            dades('disp_' + dupsVells[i], function (px) {
+              if (px && (px.propi || px.tele || px.retard)) post(api('dades', { n: 'disp_' + millor }), JSON.stringify(px), function () { if (window.carregaAjustos) carregaAjustos(); }, function () { });
+              else prova(i + 1);
+            });
+          })(0);
+        });
       }
     }
     var e = d[DISP.id] || {};
