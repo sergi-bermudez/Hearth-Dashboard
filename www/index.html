@@ -576,6 +576,9 @@ body.lat .d-dock .app{width:auto;-webkit-flex:none;flex:none;margin:9px 0}
 html.nav-tele #dash{padding:34px 44px 28px}
 html.nav-tele body.lat #dash{padding-right:150px}
 html.nav-tele body.lat .d-dock{right:30px}
+/* passi de fotos en una tele: rellotge, informació i TV lluny de les vores */
+html.nav-tele #marc .hora{left:60px;bottom:44px}
+html.nav-tele #mc-info{right:60px;bottom:44px}
 /* la TV a pantalla completa en una tele: els controls i els canals, lluny de les vores (moltes teles en retallen un tros) */
 html.nav-tele #tv.gran .tv-ctl{padding:34px 56px 16px}
 html.nav-tele #tv.gran .tv-canals{padding:14px 56px 40px}
@@ -1739,7 +1742,8 @@ function tvLloc() {
 }
 function tvLlocFet() {
   var t = $('tv');
-  var W = document.documentElement.clientWidth, H = document.documentElement.clientHeight, st = t.style, vod = TV.canal.vod ? ' vod' : '';
+  /* la part de la pàgina que de debò es veu (a la LG la pàgina diu que és més ampla que la pantalla) */
+  var W = Math.min(document.documentElement.clientWidth, window.innerWidth || 1e5), H = Math.min(document.documentElement.clientHeight, window.innerHeight || 1e5), st = t.style, vod = TV.canal.vod ? ' vod' : '';
   var sa = document.documentElement.className.indexOf('sa') >= 0 ? 20 : 0;
   if (TV.mode == 'gran') {
     t.className = 'gran' + vod + (t.className.indexOf('amaga') >= 0 ? ' amaga' : '');
@@ -1754,7 +1758,8 @@ function tvLlocFet() {
     /* Passi de fotos: la TV a dalt a la dreta, el rellotge queda a baix a l'esquerra */
     w = Math.min(440, Math.round(W * 0.42)); h = Math.round(w * 9 / 16);
     t.className = 'marc' + vod;
-    st.width = w + 'px'; st.height = h + 'px'; st.left = (W - w - 24) + 'px'; st.top = (24 + sa) + 'px';
+    var vora = NAV_TELE ? 56 : 24;
+    st.width = w + 'px'; st.height = h + 'px'; st.left = (W - w - vora) + 'px'; st.top = (vora + sa) + 'px';
     return;
   }
   var p = $('sona-tv');
@@ -2042,13 +2047,15 @@ function marcSona() {
       '<button onclick="tvAtura()">' + svg(IC.tanca) + '</button>';
     m.style.top = Math.round(r.bottom + 10) + 'px';
     m.style.width = Math.round(r.width) + 'px';
+    m.style.right = Math.round(Math.min(document.documentElement.clientWidth, window.innerWidth || 1e5) - r.right) + 'px';
   } else {
     var radio = it.k == 'radio';
     h = '<div class="lg' + (radio ? '' : ' art') + '" style="background-image:' + bg(it.art) + ';' + (it.art ? '' : 'background-color:rgba(255,255,255,.2)') + '"></div>' +
       '<div class="flex1" style="min-width:0"><b class="una" style="display:block">' + esc(it.t) + '</b><span class="gris una" style="display:block">' + esc(it.s || '') + '</span></div>' +
       '<button onclick="repPlay()" id="mc-play"></button>' + (radio ? '' : '<button onclick="repSeguent()">' + svg(IC.seg) + '</button>');
-    m.style.top = (24 + sa) + 'px';
+    m.style.top = ((NAV_TELE ? 56 : 24) + sa) + 'px';
     m.style.width = '';
+    m.style.right = (NAV_TELE ? 56 : 24) + 'px';
   }
   m.innerHTML = h;
   m.style.display = '-webkit-flex';
