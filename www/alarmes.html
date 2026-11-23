@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="stylesheet" href="comu.css">
+<script src="i18n.js"></script>
+<title>Alarmes</title>
+<style>
+#pag{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 22px 40px}
+h2.g{font-size:15px;color:#8d95a1;text-transform:uppercase;letter-spacing:.06em;margin:22px 0 10px}
+.rap{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin:0 -5px}
+.rap button{margin:5px;min-width:76px;font-size:18px;padding:14px 12px;border-radius:16px}
+.nou{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-top:10px;-webkit-flex-wrap:wrap;flex-wrap:wrap}
+.nou input{margin:5px;font-size:17px}
+.nou input.mn{width:90px}
+.nou input.nm{-webkit-flex:1;flex:1;min-width:140px}
+.cr{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;background:#1c1f24;border-radius:18px;padding:14px 16px;margin:8px 0}
+.cr .t{font-size:40px;font-weight:300;min-width:150px;font-variant-numeric:tabular-nums}
+.cr .n{-webkit-flex:1;flex:1;font-size:17px;min-width:0}
+.cr .n small{display:block;color:#8d95a1;font-size:13px;margin-top:2px}
+.cr button{margin-left:8px}
+.cr.off{opacity:.5}
+.sw{width:52px;height:32px;border-radius:16px;background:#3a3f47;position:relative;-webkit-flex:none;flex:none;cursor:pointer;margin-left:8px}
+.sw i{position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:13px;background:#fff;-webkit-transition:left .15s;transition:left .15s}
+.sw.on{background:#30d158}
+.sw.on i{left:23px}
+#form{display:none;background:#1c1f24;border-radius:18px;padding:16px;margin:10px 0}
+#form .fila{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin:8px 0;-webkit-flex-wrap:wrap;flex-wrap:wrap}
+#form .fila>label{width:150px;color:#aeb5bf}
+#form input,#form select{font-size:17px}
+.dies span{display:inline-block;width:40px;height:40px;line-height:40px;text-align:center;border-radius:20px;background:#2c3036;margin:3px;cursor:pointer;font-weight:600}
+.dies span.on{background:#ffab3d;color:#111}
+</style>
+</head>
+<body>
+<div id="pag">
+  <h1>Alarmes</h1>
+  <h2 class="g">Temporitzadors</h2>
+  <div class="rap" id="rap"></div>
+  <div class="nou"><input type="number" class="mn" id="t-min" placeholder="min" min="1" max="600" inputmode="numeric"><input type="text" class="nm" id="t-nom" placeholder="Nom (p. ex. Pasta)"><button class="pri" onclick="tempNou()">Engega</button></div>
+  <div id="temps"></div>
+  <h2 class="g">Despertadors</h2>
+  <div id="desps"></div>
+  <div id="form">
+    <div class="fila"><label>Hora</label><input type="time" id="d-hora" value="07:30"></div>
+    <div class="fila"><label>Nom</label><input type="text" id="d-nom" placeholder="Despertador"></div>
+    <div class="fila"><label>Dies</label><div class="dies" id="d-dies"></div></div>
+    <div class="fila"><label>So</label><select id="d-so" class="sel"></select></div>
+    <div class="fila"><label>Pantalla</label><select id="d-disp" class="sel"></select></div>
+    <div class="fila"><button onclick="formTanca()">Cancel·la</button> <button onclick="formProva()">Prova</button> <button class="pri" onclick="formDesa()">Desa</button></div>
+  </div>
+  <p><button onclick="formObre(-1)">+ Nou despertador</button></p>
+</div>
+<script src="comu.js"></script>
+<script>
+dinsCasa('alarmes');
+var AL = { l: [], ed: -1, dies: [], pant: [], t: null };
+var DIESC = [T('dg'), T('dl'), T('dt'), T('dc'), T('dj'), T('dv'), T('ds')];
+function id() { return 'a' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36); }
+function carrega(ok) { dades('alarmes', function (d) { AL.l = d || []; pinta(); if (ok) ok(); }); }
+/* desa i avisa la pantalla d'inici (que és qui fa sonar les alarmes) */
+function desa(l, ok) {
+  AL.l = l;
+  post(api('dades', { n: 'alarmes' }), JSON.stringify(l), function () { try { if (Casa && Casa.alarmes) Casa.alarmes(l); } catch (e) { } pinta(); if (ok) ok(); }, errXarxa(T('desar')));
+}
+/* llegeix, canvia i desa (per no trepitjar el que hagi canviat una altra pantalla) */
+function canvia(f, ok) { dades('alarmes', function (d) { var l = d || []; f(l); desa(l, ok); }); }
+
+/* ---------- Temporitzadors de cuina ---------- */
+function tempPosa(min, nom) {
+  if (!(min > 0)) return;
+  var a = { id: id(), tipus: 'cuina', nom: nom || (min + ' min'), min: min, fi: Date.now() + min * 60000, disp: DISP.id };
+  canvia(function (l) { l.push(a); }, function () { avis(T('Temporitzador') + ': ' + a.nom); });
+}
+function tempNou() {
+  var m = parseFloat($('t-min').value);
+  if (!(m > 0)) { avis(T('Escriu els minuts'), 2500); return; }
+  tempPosa(m, retalla($('t-nom').value));
+  $('t-min').value = ''; $('t-nom').value = '';
+}
+function tempTreu(i) { var x = AL.l[i]; canvia(function (l) { for (var k = l.length - 1; k >= 0; k--) if (l[k].id == x.id) l.splice(k, 1); }); }
+function falta(ms) { ms = Math.max(0, ms); var s = Math.ceil(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); s = s % 60; return (h ? h + ':' + dos(m) : m) + ':' + dos(s); }
+function nomPant(d) { if (!d || d == 'tots') return T('Totes les pantalles'); if (d == DISP.id) return T('Aquesta pantalla'); for (var i = 0; i < AL.pant.length; i++) if (AL.pant[i].id == d) return AL.pant[i].nom; return T('Una altra pantalla'); }
+
+/* ---------- Despertadors ---------- */
+function radiosPare() { try { return window.parent.A.radios || []; } catch (e) { return []; } }
+function textDies(d) {
+  if (!d || !d.length || d.length == 7) return T('Cada dia');
+  if (d.length == 5 && d.indexOf(0) < 0 && d.indexOf(6) < 0) return T('Feiners');
+  if (d.length == 2 && d.indexOf(0) >= 0 && d.indexOf(6) >= 0) return T('Cap de setmana');
+  var o = [1, 2, 3, 4, 5, 6, 0], r = [];
+  for (var i = 0; i < o.length; i++) if (d.indexOf(o[i]) >= 0) r.push(DIESC[o[i]]);
+  return r.join(' ');
+}
+function textSo(s) {
+  if (s && s.indexOf('radio:') === 0) { var x = radiosPare()[+s.substring(6)]; return x ? '📻 ' + x.t : T('Ràdio'); }
+  return T('So d\'alarma');
+}
+function despOn(i) { var x = AL.l[i]; canvia(function (l) { for (var k = 0; k < l.length; k++) if (l[k].id == x.id) l[k].on = l[k].on === false; }); }
+function despTreu(i) { var x = AL.l[i]; if (!confirm(T('Esborrar aquest despertador?'))) return; canvia(function (l) { for (var k = l.length - 1; k >= 0; k--) if (l[k].id == x.id) l.splice(k, 1); }); formTanca(); }
+
+function pinta() {
+  var h = '', i, x, n = Date.now(), tp = '', dp = '';
+  for (i = 0; i < AL.l.length; i++) {
+    x = AL.l[i];
+    if (x.tipus == 'cuina') {
+      var acabat = n >= x.fi;
+      tp += '<div class="cr"><div class="t" data-fi="' + x.fi + '">' + (acabat ? '0:00' : falta(x.fi - n)) + '</div><div class="n">' + esc(x.nom) + '<small>' + esc(nomPant(x.disp)) + '</small></div><button onclick="tempTreu(' + i + ')">' + esc(T('Cancel·la')) + '</button></div>';
+    } else {
+      dp += '<div class="cr' + (x.on === false ? ' off' : '') + '"><div class="t">' + esc(x.hora) + '</div><div class="n">' + esc(x.nom || T('Despertador')) + '<small>' + esc(textDies(x.dies)) + ' · ' + esc(textSo(x.so)) + ' · ' + esc(nomPant(x.disp)) + '</small></div>' +
+        '<button onclick="formObre(' + i + ')">' + esc(T('Edita')) + '</button><div class="sw' + (x.on === false ? '' : ' on') + '" onclick="despOn(' + i + ')"><i></i></div></div>';
+    }
+  }
+  $('temps').innerHTML = tp;
+  $('desps').innerHTML = dp || '<div class="gris">' + esc(T('Encara no hi ha cap despertador.')) + '</div>';
+}
+/* el compte enrere es mou cada segon sense tornar a dibuixar-ho tot */
+setInterval(function () {
+  var l = document.querySelectorAll('[data-fi]'), n = Date.now();
+  for (var i = 0; i < l.length; i++) l[i].textContent = falta(+l[i].getAttribute('data-fi') - n);
+}, 1000);
+
+function pintaRapids() {
+  var m = [1, 3, 5, 10, 15, 20, 30, 45, 60], h = '';
+  for (var i = 0; i < m.length; i++) h += '<button onclick="tempPosa(' + m[i] + ')">' + m[i] + ' min</button>';
+  $('rap').innerHTML = h;
+}
+function pintaDies() {
+  var o = [1, 2, 3, 4, 5, 6, 0], h = '';
+  for (var i = 0; i < o.length; i++) h += '<span class="' + (AL.dies.indexOf(o[i]) >= 0 ? 'on' : '') + '" onclick="triaDia(' + o[i] + ')">' + esc(DIESC[o[i]]) + '</span>';
+  $('d-dies').innerHTML = h;
+}
+function triaDia(d) { var p = AL.dies.indexOf(d); if (p >= 0) AL.dies.splice(p, 1); else AL.dies.push(d); pintaDies(); }
+function formObre(i) {
+  AL.ed = i;
+  var x = i >= 0 ? AL.l[i] : { hora: '07:30', nom: '', dies: [1, 2, 3, 4, 5], so: 'bip', disp: DISP.id };
+  $('d-hora').value = x.hora; $('d-nom').value = x.nom || '';
+  AL.dies = (x.dies || []).slice(); pintaDies();
+  var r = [], h = '<option value="bip">' + esc(T('So d\'alarma')) + '</option>';
+  r = radiosPare();
+  for (var k = 0; k < r.length; k++) h += '<option value="radio:' + k + '">📻 ' + esc(r[k].t) + '</option>';
+  $('d-so').innerHTML = h; $('d-so').value = x.so || 'bip';
+  var p = '<option value="' + esc(DISP.id) + '">' + esc(T('Aquesta pantalla')) + '</option><option value="tots">' + esc(T('Totes les pantalles')) + '</option>';
+  for (k = 0; k < AL.pant.length; k++) p += '<option value="' + esc(AL.pant[k].id) + '">' + esc(AL.pant[k].nom) + '</option>';
+  if (x.disp && x.disp != 'tots' && x.disp != DISP.id && p.indexOf('value="' + x.disp + '"') < 0) p += '<option value="' + esc(x.disp) + '">' + esc(T('Una altra pantalla')) + '</option>';
+  $('d-disp').innerHTML = p; $('d-disp').value = x.disp || DISP.id;
+  $('form').style.display = 'block';
+  $('form').querySelector('.fila:last-child').innerHTML = '<button onclick="formTanca()">' + esc(T('Cancel·la')) + '</button> ' + (i >= 0 ? '<button onclick="despTreu(' + i + ')">' + esc(T('Esborra')) + '</button> ' : '') + '<button onclick="formProva()">' + esc(T('Prova')) + '</button> <button class="pri" onclick="formDesa()">' + esc(T('Desa')) + '</button>';
+  try { $('form').scrollIntoView(); } catch (e) { }
+}
+function formTanca() { $('form').style.display = 'none'; AL.ed = -1; }
+function formDades() { return { hora: $('d-hora').value || '07:30', nom: retalla($('d-nom').value), dies: AL.dies.slice(), so: $('d-so').value, disp: $('d-disp').value }; }
+function formProva() { var a = formDades(); a.id = 'prova'; a.tipus = 'desp'; if (Casa && Casa.alarmaProva) Casa.alarmaProva(a); }
+function formDesa() {
+  var d = formDades(), ed = AL.ed >= 0 ? AL.l[AL.ed] : null;
+  if (!/^\d{1,2}:\d\d$/.test(d.hora)) { avis(T('Hora no vàlida'), 2500); return; }
+  canvia(function (l) {
+    if (ed) { for (var k = 0; k < l.length; k++) if (l[k].id == ed.id) { for (var c in d) if (d.hasOwnProperty(c)) l[k][c] = d[c]; l[k].on = true; delete l[k].aturat; delete l[k].pospos; } }
+    else { d.id = id(); d.tipus = 'desp'; d.on = true; l.push(d); }
+  }, function () { formTanca(); avis(T('Desat')); });
+}
+function pantalles() { getJson(api('pantalles/llista', { d: DISP.id, _: Date.now() }), function (l) { AL.pant = l || []; pinta(); }, function () { }); }
+
+window.casaMostra = function () { carrega(); pantalles(); clearInterval(AL.t); AL.t = setInterval(carrega, 15000); };
+window.casaAmaga = function () { clearInterval(AL.t); };
+pintaRapids();
+window.casaMostra();
+</script>
+</body>
+</html>

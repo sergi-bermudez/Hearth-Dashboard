@@ -646,6 +646,12 @@ html.sense-flex body.sona #apps,html.sense-flex body.en-app.sona #apps{bottom:66
 /* ---- Sense connexió amb el servidor ---- */
 #fora{display:none;position:fixed;left:50%;top:10px;width:460px;margin-left:-230px;z-index:90;background:#3a2a10;color:#ffd79a;border-radius:12px;padding:10px 14px;font-size:14px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 body.offline #fora{display:block}
+#alarma{position:fixed;left:0;top:0;right:0;bottom:0;z-index:600;background:rgba(10,12,16,.94);display:none;text-align:center}
+#alarma .al-c{position:absolute;left:0;right:0;top:50%;-webkit-transform:translateY(-50%);transform:translateY(-50%)}
+#alarma .al-ic .ic{width:64px;height:64px;fill:#ffab3d}
+#alarma .al-h{font-size:96px;font-weight:200;line-height:1.1}
+#alarma .al-n{font-size:28px;margin:6px 0 34px}
+#alarma .al-b button{font-size:22px;padding:18px 30px;border-radius:18px;margin:8px}
 body.offline .app.cal-servidor,body.offline #nav div.cal-servidor,body.offline .rt.cal-servidor,body.offline .gb.cal-servidor,body.offline .wg,body.offline #b-tele,body.offline #mini-cast,body.offline #tv-b-cast{opacity:.3}
 @media (max-width:500px){#fora{left:8px;right:8px;width:auto;margin-left:0}}
 </style>
@@ -688,6 +694,7 @@ body.offline .app.cal-servidor,body.offline #nav div.cal-servidor,body.offline .
   <div id="nav"></div>
 </div>
 
+<div id="alarma"></div>
 <div id="tv">
   <video id="tv-v" webkit-playsinline playsinline></video>
   <div class="tv-capa" id="tv-capa" onclick="if (+new Date() - (TV.touchT || 0) > 700) tvToc()"></div>
@@ -734,6 +741,7 @@ var APPS = [
   { id: 'futbol', nom: 'Futbol', ic: 'M12 2a10 10 0 100 20 10 10 0 000-20zm1 3.3l1.35-.95a8 8 0 014.3 3.14l-.39 1.32-1.35.46L13 6.7V5.3zM9.65 4.35L11 5.3v1.4L7.1 9.27l-1.35-.46-.39-1.32a8 8 0 014.29-3.14zM7.08 17.11l-1.14.1A7.95 7.95 0 014 12c0-.12.01-.23.02-.35l1-.73 1.38.48 1.46 4.35-.78 1.36zm7.42 2.59a7.9 7.9 0 01-5 0l-.69-1.49.64-1.1h4.11l.64 1.11-.7 1.48zM14.27 15H9.73l-1.35-4.02L12 8.44l3.63 2.54L14.27 15zm3.79 2.21l-1.14-.1-.79-1.37 1.46-4.36 1.39-.47 1 .73L20 12a7.95 7.95 0 01-1.94 5.21z', c1: '#30d158', c2: '#0b7a3b' },
   { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12' },
   { id: 'compra', nom: 'Compra', ic: IC_CARRO, c1: '#ffc24d', c2: '#e07b12' },
+  { id: 'alarmes', nom: 'Alarmes', ic: 'M22 5.72l-4.6-3.86-1.29 1.53 4.6 3.86L22 5.72zM7.88 3.39L6.6 1.86 2 5.71l1.29 1.53 4.59-3.85zM12.5 8H11v6l4.75 2.85.75-1.23-4-2.37V8zM12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9a9 9 0 000-18zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z', c1: '#ffab3d', c2: '#e05d12' },
   { id: 'fotos', nom: 'Fotos', ic: IC.fotos, c1: '#3fd18b', c2: '#14905a' },
   { id: 'missatges', nom: 'Missatges', ic: IC.missatges, c1: '#3ad07a', c2: '#0f8a55' },
   { id: 'docs', nom: 'Documents', ic: IC.docs, c1: '#43b4ff', c2: '#1a6fc4' },
@@ -744,7 +752,7 @@ var APPS = [
 var GRUPS = [
   { id: 'escoltar', nom: 'Escoltar', ic: IC.musica, c1: '#ff7a59', c2: '#c2185b', apps: ['musica', 'spotify', 'radio', 'podcasts'] },
   { id: 'mirar', nom: 'Mirar', ic: IC.pelis, c1: '#5a7bff', c2: '#3a2bb0', apps: ['pelis', 'tv', 'youtube', 'futbol'] },
-  { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12', apps: ['casa', 'compra'] },
+  { id: 'casa', nom: 'Casa', ic: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z', c1: '#ffc24d', c2: '#e07b12', apps: ['casa', 'compra', 'alarmes'] },
   { id: 'fotos', nom: 'Fotos', ic: IC.fotos, c1: '#3fd18b', c2: '#14905a', apps: ['fotos'] },
   { id: 'missatges', nom: 'Missatges', ic: IC.missatges, c1: '#3ad07a', c2: '#0f8a55', apps: ['missatges'] },
   { id: 'docs', nom: 'Documents', ic: IC.docs, c1: '#43b4ff', c2: '#1a6fc4', apps: ['docs'] },
@@ -2607,6 +2615,107 @@ function casaToca(i) {
 }
 
 /* ---------- API per a les apps ---------- */
+/* ---------- Alarmes: temporitzadors de cuina i despertadors (app Alarmes; desats al servidor a «alarmes») ---------- */
+var AL = { l: [], sona: null, fets: ls('alFets') || {}, tv: null, tmax: null };
+function alCarrega() { dades('alarmes', function (d) { if (d) AL.l = d; alMira(); }); }
+setTimeout(alCarrega, 3000);
+setInterval(alCarrega, 30000);
+setInterval(function () { alMira(); }, 1000);
+function alPerMi(a) { return !a.disp || a.disp == 'tots' || a.disp == DISP.id; }
+function alMira() {
+  var n = Date.now(), ara = new Date(), i, a, clau;
+  /* si una altra pantalla l'ha aturada (o s'ha esborrat), també s'atura aquí */
+  if (AL.sona) {
+    var vig = null;
+    for (i = 0; i < AL.l.length; i++) if (AL.l[i].id == AL.sona.a.id) vig = AL.l[i];
+    if (!vig || vig.aturat == AL.sona.clau || (vig.tipus == 'cuina' && vig.fi != AL.sona.a.fi)) alPara(false);
+  }
+  for (i = 0; i < AL.l.length; i++) {
+    a = AL.l[i]; clau = null;
+    if (!alPerMi(a)) continue;
+    if (a.tipus == 'cuina') { if (a.fi && n >= a.fi && n - a.fi < 3600000) clau = a.id + '|' + a.fi; }
+    else if (a.on !== false) {
+      if (a.pospos && n >= a.pospos && n - a.pospos < 3600000) clau = a.id + '|p' + a.pospos;
+      else {
+        var hm = (a.hora || '').split(':');
+        if (hm.length == 2 && (!a.dies || !a.dies.length || a.dies.indexOf(ara.getDay()) >= 0) && ara.getHours() == +hm[0] && ara.getMinutes() == +hm[1]) clau = a.id + '|' + ara.getFullYear() + '-' + ara.getMonth() + '-' + ara.getDate();
+      }
+    }
+    if (!clau || AL.fets[clau] || a.aturat == clau || (AL.sona && AL.sona.clau == clau)) continue;
+    AL.fets[clau] = n;
+    for (var k in AL.fets) if (AL.fets.hasOwnProperty(k) && n - AL.fets[k] > 3 * 864e5) delete AL.fets[k];
+    ls('alFets', AL.fets);
+    alSona(a, clau);
+    return;
+  }
+}
+/* un so de «bip bip bip» fet aquí mateix (WAV), que es repeteix */
+function alBip() {
+  if (AL.bip) return AL.bip;
+  var sr = 8000, d = [], i, j, pat = [[880, .14], [0, .1], [880, .14], [0, .1], [880, .14], [0, .7]];
+  for (j = 0; j < pat.length; j++) for (i = 0; i < pat[j][1] * sr; i++) d.push(pat[j][0] ? Math.round(128 + 90 * Math.sin(2 * Math.PI * pat[j][0] * i / sr)) : 128);
+  var n = d.length, b = 'RIFF' + le(36 + n, 4) + 'WAVEfmt ' + le(16, 4) + le(1, 2) + le(1, 2) + le(sr, 4) + le(sr, 4) + le(1, 2) + le(8, 2) + 'data' + le(n, 4);
+  for (i = 0; i < n; i++) b += String.fromCharCode(d[i]);
+  function le(v, m) { var s = ''; for (var k = 0; k < m; k++) { s += String.fromCharCode(v & 255); v = v >>> 8; } return s; }
+  AL.bip = 'data:audio/wav;base64,' + btoa(b);
+  return AL.bip;
+}
+function alSona(a, clau) {
+  if (AL.sona) alPara(false);
+  AL.sona = { a: a, clau: clau, radio: false };
+  if (TV.canal) tvAtura(true);
+  var desp = a.tipus != 'cuina', r = desp && a.so && a.so.indexOf('radio:') === 0 ? (A.radios || [])[+a.so.substring(6)] : null;
+  if (r) {
+    AL.sona.radio = true;
+    repInicia([radioItem(r)], 0);
+    /* el volum puja a poc a poc durant un minut (on es pot) */
+    if (VOL.ok) { var v0 = VOL.v == null ? 100 : VOL.v, k = 0; posaVolum(Math.min(v0, 15)); clearInterval(AL.tv); AL.tv = setInterval(function () { k++; posaVolum(Math.min(v0, 15 + (v0 - 15) * k / 30)); if (k >= 30) clearInterval(AL.tv); }, 2000); }
+  } else {
+    repAtura();
+    au.src = alBip(); au.loop = true;
+    try { var p = au.play(); if (p && p['catch']) p['catch'](function () { }); } catch (e) { }
+  }
+  var e = $('alarma'), h = new Date();
+  e.innerHTML = '<div class="al-c"><div class="al-ic">' + svg(desp ? IC_ALARMA : IC_CRONO) + '</div><div class="al-h">' + h.getHours() + ':' + dos(h.getMinutes()) + '</div>' +
+    '<div class="al-n">' + esc(a.nom || (desp ? T('Despertador') : T('Temporitzador'))) + '</div>' +
+    '<div class="al-b">' + (desp ? '<button onclick="alPosposa()">' + esc(T('Posposa 10 min')) + '</button>' : '') +
+    (r ? '<button onclick="alPara(true, true)">' + esc(T('Continua escoltant')) + '</button>' : '') +
+    '<button class="pri" onclick="alPara(true)">' + esc(T('Atura')) + '</button></div></div>';
+  e.style.display = 'block';
+  /* com a molt 15 minuts sonant */
+  clearTimeout(AL.tmax); AL.tmax = setTimeout(function () { alPara(true); }, 15 * 60000);
+}
+/* atura; si «avisa», també a les altres pantalles (es desa al servidor) */
+function alPara(avisa, segueix) {
+  var s = AL.sona;
+  if (!s) return;
+  AL.sona = null;
+  clearTimeout(AL.tmax); clearInterval(AL.tv);
+  $('alarma').style.display = 'none';
+  if (!s.radio) { au.loop = false; if (au.src.indexOf('data:audio/wav') === 0) { au.pause(); au.removeAttribute('src'); } }
+  else if (!segueix) repAtura();
+  if (!avisa) return;
+  dades('alarmes', function (l) {
+    l = l || [];
+    for (var i = l.length - 1; i >= 0; i--) if (l[i].id == s.a.id) {
+      if (l[i].tipus == 'cuina') l.splice(i, 1); else { l[i].aturat = s.clau; delete l[i].pospos; }
+    }
+    AL.l = l;
+    post(api('dades', { n: 'alarmes' }), JSON.stringify(l), function () { }, function () { });
+  });
+}
+function alPosposa() {
+  var s = AL.sona; if (!s) return;
+  alPara(false);
+  dades('alarmes', function (l) {
+    l = l || [];
+    for (var i = 0; i < l.length; i++) if (l[i].id == s.a.id) { l[i].aturat = s.clau; l[i].pospos = Date.now() + 10 * 60000; }
+    AL.l = l;
+    post(api('dades', { n: 'alarmes' }), JSON.stringify(l), function () { avis(T('Tornarà a sonar d\'aquí a 10 minuts')); }, function () { });
+  });
+}
+var IC_ALARMA = 'M22 5.72l-4.6-3.86-1.29 1.53 4.6 3.86L22 5.72zM7.88 3.39L6.6 1.86 2 5.71l1.29 1.53 4.59-3.85zM12.5 8H11v6l4.75 2.85.75-1.23-4-2.37V8zM12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9a9 9 0 000-18zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z';
+var IC_CRONO = 'M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.962 8.962 0 0012 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z';
 /* ---------- Temporitzador per dormir (Configuració ▸ Temporitzador): atura el so, la tele i els vídeos d'aquest aparell ---------- */
 var SON = { fi: 0, t: null, tf: null };
 function sonPosa(min) {
@@ -2643,6 +2752,7 @@ function sonAturaFora() {
   }, function () { });
 }
 window.Casa = {
+  alarmes: function (l) { AL.l = l || []; alMira(); }, alarmaProva: function (a) { alSona(a, 'prova|' + Date.now()); },
   son: sonPosa, sonFi: function () { return SON.fi; },
   R: R, au: au,
   instal: function () { return instalApp(); }, potInstal: function () { return !!INST.ev; }, installada: esInstallada,
