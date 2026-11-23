@@ -2784,10 +2784,9 @@ function aplicaTele() {
   var t = modeTele();
   /* el mode tele el decideix l'ajust d'aquest aparell (o ?tele=1 a l'adreça); en canviar es torna a carregar perquè les apps ho agafin */
   if (A.ajustosCarregats && (ls('modeTele') === true) != t) { ls('modeTele', t); if (!TELE.perUrl) { location.reload(); return; } }
-  /* al navegador d'una tele, tot més gran encara que no sigui mode tele: es mira des del sofà */
-  var z = t ? Math.min(window.innerWidth / 1024, window.innerHeight / 768) : NAV_TELE ? Math.min(window.innerWidth / 1280, window.innerHeight / 720) : 1;
+  var z = t ? Math.min(window.innerWidth / 1024, window.innerHeight / 768) : 1;
   if (NAV_TELE && document.documentElement.className.indexOf('nav-tele') < 0) document.documentElement.className += ' nav-tele';
-  document.documentElement.style.zoom = (t || NAV_TELE) && z > 1.05 ? z.toFixed(2) : '';
+  document.documentElement.style.zoom = t && z > 1.05 ? z.toFixed(2) : '';
 }
 window.addEventListener('resize', function () { if (window.A && A.ajustos) aplicaTele(); });
 function lleuger() { var v = A.ajustos.lleuger; return v === 'si' || v === true ? true : v === 'no' ? false : IOS_VELL || NAV_TELE; }
