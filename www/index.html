@@ -1681,15 +1681,17 @@ function tvMode(m) {
 function tvToc() {
   var ara = +new Date(), doble = ara - (TV.tocT || 0) < 380;
   TV.tocT = doble ? 0 : ara;
+  /* en gran, cada doble toc: sencera (com ve) → omplint l'amplada → omplint l'alçada → petita */
   if (doble) {
-    if (TV.modeAbans != 'gran') { TV.ajust = 'h'; tvAjusta(); }
-    else if (TV.ajust != 'v') { TV.ajust = 'v'; tvAjusta(); }
-    else { TV.ajust = 'h'; tvMode('normal'); }
+    if (TV.modeAbans != 'gran') { TV.ajust = 'c'; tvAjusta(); }
+    else if (!TV.ajust || TV.ajust == 'c') { TV.ajust = 'h'; tvAjusta(); }
+    else if (TV.ajust == 'h') { TV.ajust = 'v'; tvAjusta(); }
+    else { TV.ajust = 'c'; tvMode('normal'); }
     TV.modeAbans = TV.mode;
     return;
   }
   TV.modeAbans = TV.mode;
-  if (TV.mode == 'gran') tvMostraCtl(); else { TV.ajust = 'h'; tvMode('gran'); }
+  if (TV.mode == 'gran') tvMostraCtl(); else { TV.ajust = 'c'; tvMode('gran'); }
 }
 /* Com omple el vídeo la pantalla gran: 'h' tota l'amplada, 'v' tota l'alçada (calculat a mà: l'iOS 9 no fa object-fit als vídeos) */
 function tvAjusta() {
@@ -1702,10 +1704,10 @@ function tvAjusta() {
     /* el vídeo es queda de la mida de la pantalla i només canvia com s'hi encaixa la imatge: les teles (LG) aturen
        el vídeo si se li canvia la mida a l'element */
     st.left = st.top = st.width = st.height = '';
-    st.objectFit = TV.ajust == 'v' ? (a > ap ? 'cover' : 'contain') : (a < ap ? 'cover' : 'contain');
+    st.objectFit = TV.ajust == 'v' ? (a > ap ? 'cover' : 'contain') : TV.ajust == 'h' ? (a < ap ? 'cover' : 'contain') : 'contain';
   } else {
     var w, h;
-    if (TV.ajust == 'v') { h = H; w = Math.round(H * a); } else { w = W; h = Math.round(W / a); }
+    if (TV.ajust == 'v') { h = H; w = Math.round(H * a); } else if (TV.ajust == 'h') { w = W; h = Math.round(W / a); } else { var k = Math.min(W / vw, H / vh); w = Math.round(vw * k); h = Math.round(vh * k); }
     st.width = w + 'px'; st.height = h + 'px'; st.left = Math.round((W - w) / 2) + 'px'; st.top = Math.round((H - h) / 2) + 'px';
   }
   /* si el navegador l'ha aturat igualment, continua (si no l'ha aturat qui mira) */
@@ -1749,10 +1751,20 @@ function tvLlocFet() {
   /* la part de la pàgina que de debò es veu (a la LG la pàgina diu que és més ampla que la pantalla) */
   var W = Math.min(document.documentElement.clientWidth, window.innerWidth || 1e5), H = Math.min(document.documentElement.clientHeight, window.innerHeight || 1e5), st = t.style, vod = TV.canal.vod ? ' vod' : '';
   var sa = document.documentElement.className.indexOf('sa') >= 0 ? 20 : 0;
+  /* Amb el mode tele la pàgina està ampliada (zoom): les mides de la finestra i de getBoundingClientRect van en píxels
+     de pantalla, però el que es posa a style es torna a ampliar. Sense dividir-ho, la TV quedava 1,5 vegades més gran
+     i desplaçada (fora de la pantalla, amb els controls tallats i els clics on no tocava). */
+  /* Es mesura amb un element fix que ocupa tota la finestra: la seva mida ja és en les unitats de style, sigui quin sigui
+     el navegador (els antics i els nous no compten el zoom igual) */
+  var pr = $('tv-mida');
+  if (!pr) { pr = document.createElement('div'); pr.id = 'tv-mida'; pr.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;visibility:hidden;pointer-events:none;z-index:-1'; document.body.appendChild(pr); }
+  if (pr.offsetWidth) { W = pr.offsetWidth; H = pr.offsetHeight; }
+  /* i getBoundingClientRect, en unitats de style: es compara amb la mida de la mateixa sonda */
+  var rp = pr.getBoundingClientRect(), z = rp.width && pr.offsetWidth ? rp.width / pr.offsetWidth : 1;
   if (TV.mode == 'gran') {
     t.className = 'gran' + vod + (t.className.indexOf('amaga') >= 0 ? ' amaga' : '');
     /* la mida de la finestra que es veu (a algunes teles la pàgina és més gran que la pantalla, o s'ha desplaçat) */
-    var Wv = window.innerWidth || W, Hv = window.innerHeight || H;
+    var Wv = W, Hv = H;
     try { window.scrollTo(0, 0); document.body.scrollTop = 0; document.documentElement.scrollTop = 0; } catch (e) { }
     st.left = '0'; st.top = '0'; st.width = Math.min(W, Wv) + 'px'; st.height = Math.min(H, Hv) + 'px';
     return;
@@ -1770,7 +1782,7 @@ function tvLlocFet() {
   if (A.vista == 'dash' && p) {
     var r = p.getBoundingClientRect();
     t.className = 'dash' + vod;
-    st.left = r.left + 'px'; st.top = r.top + 'px'; st.width = r.width + 'px'; st.height = r.height + 'px';
+    st.left = ((r.left - rp.left) / z) + 'px'; st.top = ((r.top - rp.top) / z) + 'px'; st.width = (r.width / z) + 'px'; st.height = (r.height / z) + 'px';
     return;
   }
   w = TV.miniMida == 'p' ? Math.round(W * 0.26) : TV.miniMida == 'g' ? Math.round(W * 0.5) : (W > 900 ? 360 : 300); h = Math.round(w * 9 / 16);
