@@ -61,7 +61,16 @@ h2.g{font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#8d95a1;ma
 #camg .bt{position:absolute;top:12px;background:rgba(0,0,0,.55);color:#fff;border-radius:14px;padding:10px 16px;font-size:15px}
 #camg .tn{position:absolute;left:16px;bottom:14px;background:rgba(0,0,0,.55);padding:6px 12px;border-radius:10px;font-weight:600}
 @media (orientation:portrait) and (max-width:600px){ .cam{width:100%} }
-@media (orientation:portrait){ .ap{width:33.33%} }
+.ap.m-m,.ap.m-g{width:50%}
+.ap.m-g .c{height:312px}
+.ap .mes{display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin-top:8px;font-size:13px}
+.ap .mes div{width:50%;padding:2px 8px 2px 0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ap .mes span{color:#8d95a1;margin-right:6px}
+.ap.on .mes span{color:#6b6458}
+.ap.m-p .mes{display:none}
+.ap canvas.gc{position:absolute;left:14px;right:14px;bottom:12px;height:110px;width:calc(100% - 28px)}
+#det .mides button{margin-left:6px}
+@media (orientation:portrait){ .ap{width:33.33%} .ap.m-m,.ap.m-g{width:66.66%} }
 </style>
 </head>
 <body>
@@ -86,7 +95,7 @@ var ICA = {
 };
 var GRUPS_CAT = [['llum', 'Llums', ['dj', 'dd', 'fwd', 'tgq', 'xdd', 'dc', 'tyndj', 'gyd']], ['endoll', 'Endolls i interruptors', ['cz', 'pc', 'kg', 'tdq', 'dlq', 'qjdcz']], ['persiana', 'Persianes i cortines', ['cl', 'clkg', 'mc']], ['clima', 'Clima', ['wk', 'kt', 'qn', 'rs', 'fs', 'kj', 'cs', 'wkf']], ['sensor', 'Sensors', ['wsdcg', 'mcs', 'pir', 'ywbj', 'rqbj', 'sj', 'co2bj', 'pm2.5', 'hjjcy', 'ldcg']]];
 var INTERRUPTORS = ['switch_led', 'switch', 'switch_1', 'switch_2', 'switch_3', 'switch_4', 'switch_usb1', 'led_switch'];
-var CA = { l: [], fav: [], t: null, ocupat: 0, sp: {}, det: null, graf: null, punts: null };
+var CA = { l: [], fav: [], t: null, ocupat: 0, sp: {}, det: null, graf: null, punts: null, mides: {}, hist: {} };
 
 function tipus(d) {
   for (var i = 0; i < GRUPS_CAT.length; i++) if (GRUPS_CAT[i][2].indexOf(d.cat) >= 0) return GRUPS_CAT[i][0];
@@ -239,14 +248,18 @@ function pinta() {
   }
   $('cont').innerHTML = h || '<div class="gris">' + T('No hi ha cap aparell.') + '</div>';
   camRefresca();
+  grafsCaixes();
 }
 function rajola(i) {
   var d = CA.l[i], sw = interruptor(d), on = sw && d.estat[sw], b = brillantor(d), t = tipus(d), fav = CA.fav.indexOf(d.id) >= 0, extra = '';
   if (b && sw) extra = '<input type="range" min="' + b.min + '" max="' + b.max + '" value="' + d.estat[b.codi] + '" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation();CA.ocupat=Date.now()" onchange="brillo(' + i + ',this.value)">';
   else if (d.cat == 'cl' || d.estat.control != null) extra = '<div class="bts"><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'open\')">▲</button><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'stop\')">■</button><button onclick="event.stopPropagation();ordre(' + i + ',\'control\',\'close\')">▼</button></div>';
-  return '<div class="ap' + (on ? ' on' : '') + (d.online ? '' : ' off-line') + '"><div class="c" onclick="toca(' + i + ')">' +
+  var m = mida(d), mes = '', gc = primer(d, TEMPS) || primer(d, HUMS);
+  if (m != 'p' && d.online) mes = mesDades(d, m == 'g' ? 10 : 4);
+  if (m == 'g' && gc && !extra && d.online) mes += '<canvas class="gc" data-id="' + esc(d.id) + '" data-c="' + gc + '"></canvas>';
+  return '<div class="ap m-' + m + (on ? ' on' : '') + (d.online ? '' : ' off-line') + '"><div class="c" onclick="toca(' + i + ')">' +
     svg(ICA[t] || ICA.altre) + (sw ? '<button class="inf" onclick="event.stopPropagation();obreDet(' + i + ')">i</button>' : '') + '<button class="fav' + (fav ? ' si' : '') + '" onclick="event.stopPropagation();canviaFav(' + i + ')">' + svg(ICA.estrella) + '</button>' +
-    '<div class="nm">' + esc(d.nom) + '</div>' + lecturaGran(d) + '<div class="es">' + esc(textEstat(d)) + '</div>' + extra + '</div></div>';
+    '<div class="nm">' + esc(d.nom) + '</div>' + lecturaGran(d) + '<div class="es">' + esc(textEstat(d)) + '</div>' + mes + extra + '</div></div>';
 }
 function toca(i) {
   var d = CA.l[i], sw = interruptor(d);
@@ -292,6 +305,10 @@ function pintaDet() {
   }
   CA.grans = grans; CA.files = l;
   for (k = 0; k < l.length; k++) h += filaDet(d, i, k);
+  var md = mida(d), ms = [['p', 'Petita'], ['m', 'Mitjana'], ['g', 'Gran']];
+  h += '<div class="fl mides"><span class="k">' + esc(T('Mida de la caixa')) + '</span>';
+  for (k = 0; k < ms.length; k++) h += '<button class="' + (md == ms[k][0] ? 'si' : '') + '" onclick="canviaMida(\'' + ms[k][0] + '\')">' + esc(T(ms[k][1])) + '</button>';
+  h += '</div>';
   $('detc').innerHTML = h;
   if (CA.graf && CA.punts && CA.punts.codi == CA.graf) dibuixaGraf();
 }
@@ -325,35 +342,84 @@ function carregaGraf() {
     var g = $('graf'); if (g) g.style.display = 'none';
   });
 }
-function dibuixaGraf() {
-  var g = $('graf'), i = trobaDisp(CA.det);
-  if (!g || i < 0) return;
-  var d = CA.l[i], c = CA.punts.codi, p = [], k, n, o, mn = 1e9, mx = -1e9, ara = Date.now(), t0 = ara - 864e5;
-  for (k = 0; k < CA.punts.l.length; k++) {
-    var x = +CA.punts.l[k][0], y = parseFloat(CA.punts.l[k][1]);
+/* dibuixa 24 h d'una lectura en un canvas; compacte = sense eixos (per a les caixes grans) */
+function tracaGraf(g, d, c, punts, compacte) {
+  var p = [], k, n, o, mn = 1e9, mx = -1e9, ara = Date.now(), t0 = ara - 864e5;
+  for (k = 0; k < punts.length; k++) {
+    var x = +punts[k][0], y = parseFloat(punts[k][1]);
     if (isNaN(x) || isNaN(y)) continue;
     o = {}; o[c] = y;
     n = valorNum({ id: d.id, estat: o }, c);
     if (n) p.push([x, n.n]);
   }
-  if (p.length < 2) { $('grafi').innerHTML = T('Encara no hi ha prou dades de les últimes 24 hores.'); g.style.display = 'none'; return; }
+  if (p.length < 2) return null;
   p.sort(function (a, b) { return a[0] - b[0]; });
   for (k = 0; k < p.length; k++) { if (p[k][1] < mn) mn = p[k][1]; if (p[k][1] > mx) mx = p[k][1]; }
   var rmn = mn, rmx = mx;
   if (mx - mn < 1) { mx += .5; mn -= .5; }
   var r = window.devicePixelRatio || 1, W = g.offsetWidth, H = g.offsetHeight;
+  if (!W || !H) return null;
   g.width = W * r; g.height = H * r;
   var cx = g.getContext('2d'); cx.scale(r, r);
-  var L = 34, B = 18;
+  var L = compacte ? 2 : 34, B = compacte ? 4 : 18, Tp = compacte ? 4 : 6;
   function fx(t) { return L + (W - L - 4) * (t - t0) / (ara - t0); }
-  function fy(v) { return 6 + (H - B - 12) * (1 - (v - mn) / (mx - mn)); }
-  cx.font = '11px sans-serif'; cx.fillStyle = '#8d95a1'; cx.strokeStyle = 'rgba(255,255,255,.08)'; cx.lineWidth = 1;
-  for (k = 0; k <= 2; k++) { var v = mn + (mx - mn) * k / 2, yy = fy(v); cx.beginPath(); cx.moveTo(L, yy); cx.lineTo(W, yy); cx.stroke(); cx.fillText(v.toFixed(mx - mn < 5 ? 1 : 0), 2, yy + 4); }
-  for (k = 0; k <= 4; k++) { var tt = t0 + 864e5 * k / 4, dt = new Date(tt); cx.fillText((dt.getHours() < 10 ? '0' : '') + dt.getHours() + 'h', Math.max(L, Math.min(fx(tt) - 8, W - 24)), H - 3); }
+  function fy(v) { return Tp + (H - B - Tp - (compacte ? 0 : 6)) * (1 - (v - mn) / (mx - mn)); }
+  if (!compacte) {
+    cx.font = '11px sans-serif'; cx.fillStyle = '#8d95a1'; cx.strokeStyle = 'rgba(255,255,255,.08)'; cx.lineWidth = 1;
+    for (k = 0; k <= 2; k++) { var v = mn + (mx - mn) * k / 2, yy = fy(v); cx.beginPath(); cx.moveTo(L, yy); cx.lineTo(W, yy); cx.stroke(); cx.fillText(v.toFixed(mx - mn < 5 ? 1 : 0), 2, yy + 4); }
+    for (k = 0; k <= 4; k++) { var tt = t0 + 864e5 * k / 4, dt = new Date(tt); cx.fillText((dt.getHours() < 10 ? '0' : '') + dt.getHours() + 'h', Math.max(L, Math.min(fx(tt) - 8, W - 24)), H - 3); }
+  } else {
+    cx.beginPath(); cx.moveTo(fx(p[0][0]), H);
+    for (k = 0; k < p.length; k++) cx.lineTo(fx(p[k][0]), fy(p[k][1]));
+    cx.lineTo(fx(p[p.length - 1][0]), H); cx.closePath();
+    cx.fillStyle = 'rgba(255,171,61,.14)'; cx.fill();
+  }
   cx.strokeStyle = '#ffab3d'; cx.lineWidth = 2; cx.beginPath();
   for (k = 0; k < p.length; k++) { if (k) cx.lineTo(fx(p[k][0]), fy(p[k][1])); else cx.moveTo(fx(p[k][0]), fy(p[k][1])); }
   cx.stroke();
-  $('grafi').innerHTML = esc(T('Últimes 24 hores') + ' · ' + T('mín.') + ' ' + rmn.toFixed(1) + ' · ' + T('màx.') + ' ' + rmx.toFixed(1));
+  return { mn: rmn, mx: rmx };
+}
+function dibuixaGraf() {
+  var g = $('graf'), i = trobaDisp(CA.det);
+  if (!g || i < 0) return;
+  var m = tracaGraf(g, CA.l[i], CA.punts.codi, CA.punts.l, false);
+  if (!m) { $('grafi').innerHTML = T('Encara no hi ha prou dades de les últimes 24 hores.'); g.style.display = 'none'; return; }
+  $('grafi').innerHTML = esc(T('Últimes 24 hores') + ' · ' + T('mín.') + ' ' + m.mn.toFixed(1) + ' · ' + T('màx.') + ' ' + m.mx.toFixed(1));
+}
+/* ---------- Mides de les caixes: petita (1 casella), mitjana (2 d'ample) i gran (2×2) ---------- */
+function mida(d) { return CA.mides[d.id] || 'p'; }
+function canviaMida(m) {
+  var i = trobaDisp(CA.det); if (i < 0) return;
+  if (m == 'p') delete CA.mides[CA.l[i].id]; else CA.mides[CA.l[i].id] = m;
+  post(api('dades', { n: 'casa_mides' }), JSON.stringify(CA.mides), function () { }, errXarxa(T('desar')));
+  CA.ocupat = 0; pinta(); pintaDet();
+}
+/* les lectures que no surten en gran: a la caixa mitjana unes quantes, a la gran totes */
+function mesDades(d, max) {
+  var e = d.estat, k, h = '', n = 0, fora = [primer(d, TEMPS), primer(d, HUMS), interruptor(d), 'battery_state'].concat(BATS);
+  var b = brillantor(d); if (b) fora.push(b.codi);
+  for (k in e) if (e.hasOwnProperty(k)) {
+    if (fora.indexOf(k) >= 0 || e[k] == null || typeof e[k] == 'object' || /^colour_data|countdown/.test(k)) continue;
+    if (n >= max) break;
+    h += '<div><span>' + esc(nomCodi(k)) + '</span>' + esc(textValor(d, k)) + '</div>'; n++;
+  }
+  return n ? '<div class="mes">' + h + '</div>' : '';
+}
+/* l'historial de les caixes grans, guardat 10 minuts */
+function grafsCaixes() {
+  var cs = document.querySelectorAll('canvas.gc'), k;
+  for (k = 0; k < cs.length; k++) (function (g) {
+    var id = g.getAttribute('data-id'), c = g.getAttribute('data-c'), i = trobaDisp(id), clau = id + '|' + c, h = CA.hist[clau];
+    if (i < 0) return;
+    if (h && h.l) tracaGraf(g, CA.l[i], c, h.l, true);
+    if (h && Date.now() - h.t < 6e5) return;
+    CA.hist[clau] = { t: Date.now(), l: h ? h.l : null };
+    getJson(api('tuya/historial', { id: id, codi: c }), function (r) {
+      CA.hist[clau] = { t: Date.now(), l: (r && r.punts) || [] };
+      var gs = document.querySelectorAll('canvas.gc'), j;
+      for (j = 0; j < gs.length; j++) if (gs[j].getAttribute('data-id') == id && gs[j].getAttribute('data-c') == c) tracaGraf(gs[j], CA.l[trobaDisp(id)], c, CA.hist[clau].l, true);
+    }, function () { });
+  })(cs[k]);
 }
 function canviaFav(i) {
   var id = CA.l[i].id, p = CA.fav.indexOf(id);
@@ -452,7 +518,7 @@ function escena(i) {
 window.casaMostra = function () { CA.visible = true; carrega(true); camCarrega(); };
 window.casaAmaga = function () { CA.visible = false; clearTimeout(CA.t); tancaDet(); camTanca(); camAtura(); };
 CA.visible = true;
-dades('casa_fav', function (f) { CA.fav = f || []; carrega(); escenes(); camCarrega(); });
+dades('casa_fav', function (f) { CA.fav = f || []; dades('casa_mides', function (m) { CA.mides = m && typeof m == 'object' && !m.length ? m : {}; carrega(); escenes(); camCarrega(); }); });
 </script>
 </body>
 </html>
