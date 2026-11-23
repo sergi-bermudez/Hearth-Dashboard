@@ -115,7 +115,7 @@ public static class Webs
 
     static void NavTecla(Cdp p, string tecla)
     {
-        int codi = tecla == "Enter" ? 13 : tecla == "Backspace" ? 8 : tecla == "Tab" ? 9 : tecla == "Escape" ? 27 : 0;
+        int codi = tecla == "Enter" ? 13 : tecla == "Backspace" ? 8 : tecla == "Tab" ? 9 : tecla == "Escape" ? 27 : tecla == "End" ? 35 : 0;
         if (codi == 0) return;
         Dictionary<string, object> d = CasaServidor.Dic("type", "rawKeyDown", "key", tecla, "code", tecla, "windowsVirtualKeyCode", codi, "nativeVirtualKeyCode", codi);
         p.Envia("Input.dispatchKeyEvent", d, 5000);
@@ -190,7 +190,8 @@ public static class Webs
         List<Captura> velles = new List<Captura>();
         lock (lk)
         {
-            foreach (Captura c in obertes.Values) if ((DateTime.Now - c.Vist).TotalMinutes > 15) velles.Add(c);
+            // les cameres es queden obertes (aixi no cal tornar a iniciar la sessio), tret que ningu les miri en un dia
+            foreach (Captura c in obertes.Values) if ((DateTime.Now - c.Vist).TotalMinutes > (c.Camera ? 1440 : 15)) velles.Add(c);
             foreach (Captura c in velles) obertes.Remove(c.Id);
         }
         foreach (Captura c in velles) { try { c.Pag.Tanca(); } catch { } try { Edge.TancaPagina(c.Target); } catch { } }
@@ -249,7 +250,7 @@ public static class Webs
                 if (!string.IsNullOrEmpty(r) && r.IndexOf('|') >= 0)
                 {
                     string[] pp = r.Split('|');
-                    if (pp[0] != "") { ClicReal(c, pp[0]); Thread.Sleep(600); try { NavTecla(c.Pag, "Escape"); } catch { } Thread.Sleep(200); }
+                    if (pp[0] != "") Desperta(c, pp[0]);
                     ClicReal(c, pp[1]);
                     Registre(c, "toca \"" + passes[int.Parse(pp[2])] + "\"");
                     Thread.Sleep(2500);
@@ -320,6 +321,20 @@ public static class Webs
         catch { }
     }
 
+    // L'Edge omple l'usuari i la contrasenya desats, pero la web (Vue, React...) no se n'assabenta fins que algu escriu:
+    // un clic de debo al camp, un espai escrit i esborrat (esdeveniments d'entrada de debo amb tot el valor) i, per si de cas,
+    // els esdeveniments input/change a tots els camps plens. Despres, Escape tanca el desplegable de contrasenyes.
+    static void Desperta(Captura c, string xy)
+    {
+        ClicReal(c, xy);
+        Thread.Sleep(500);
+        try { NavTecla(c.Pag, "End"); } catch { }
+        try { c.Pag.Envia("Input.insertText", CasaServidor.Dic("text", " "), 3000); NavTecla(c.Pag, "Backspace"); } catch { }
+        try { Edge.Avalua(c.Pag, "(function(){var l=document.querySelectorAll('input'),i,n=0;for(i=0;i<l.length;i++)if(l[i].value){l[i].dispatchEvent(new Event('input',{bubbles:true}));l[i].dispatchEvent(new Event('change',{bubbles:true}));n++;}return n;})()", 3000); } catch { }
+        try { NavTecla(c.Pag, "Escape"); } catch { }
+        Thread.Sleep(250);
+    }
+
     static bool EntraSol(Captura c)
     {
         string r = Convert.ToString(Edge.Avalua(c.Pag, LOGIN_JS, 4000));
@@ -329,11 +344,7 @@ public static class Webs
         if ((DateTime.Now - c.Entrat).TotalSeconds < 30) return true;
         c.Entrat = DateTime.Now;
         // l'Edge nomes deixa fer servir la contrasenya emplenada despres d'un gest de debo: primer un clic al camp
-        ClicReal(c, pb[0]);
-        Thread.Sleep(700);
-        // un clic a fora tanca el desplegable de contrasenyes desades que pot tapar el boto
-        try { NavTecla(c.Pag, "Escape"); } catch { }
-        Thread.Sleep(200);
+        Desperta(c, pb[0]);
         if (pb[1] != "") ClicReal(c, pb[1]);
         else { ClicReal(c, pb[0]); NavTecla(c.Pag, "Enter"); }
         Registre(c, "inici de sessio: camp " + pb[0] + ", boto " + (pb[1] != "" ? pb[1] : "(Enter)"));

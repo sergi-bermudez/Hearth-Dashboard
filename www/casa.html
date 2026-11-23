@@ -481,7 +481,7 @@ function camObre(i) {
   var w = CM.l[i];
   CM.gran = w;
   camAtura();
-  $('camg').innerHTML = '<img id="camg-i"' + (CM[w.id] ? ' src="' + esc(CM[w.id]) + '"' : '') + '><div class="tn">' + esc(w.nom || '') + '</div>' +
+  $('camg').innerHTML = '<img id="camg-i" onclick="camToc(event)"' + (CM[w.id] ? ' src="' + esc(CM[w.id]) + '"' : '') + '><div class="tn">' + esc(w.nom || '') + '</div>' +
     '<div class="bts"><button class="bt" onclick="camEdita()">✎ ' + esc(T('Edita')) + '</button><button class="bt" onclick="camWeb()">' + esc(T('Controls')) + '</button><button class="bt" onclick="camTanca()">✕</button></div>' +
     (CM.l.length > 1 ? '<button class="bt" style="left:12px" onclick="camObre(' + ((i + 1) % CM.l.length) + ')">' + esc(T('Següent')) + ' ›</button>' : '');
   $('camg').style.display = 'block';
@@ -509,6 +509,15 @@ function camEdita() {
       avis(T('Desat'), 2000);
     }, errXarxa(T('desar')));
   });
+}
+/* un toc a la imatge en gran és un toc a la web de la càmera (per entrar al compte, triar la càmera...) */
+function camToc(ev) {
+  var w = CM.gran, im = $('camg-i'); if (!w || !im.naturalWidth) return;
+  var W = im.clientWidth, H = im.clientHeight, sc = Math.min(W / im.naturalWidth, H / im.naturalHeight);
+  var dw = im.naturalWidth * sc, dh = im.naturalHeight * sc, r = im.getBoundingClientRect();
+  var fx = (ev.clientX - r.left - (W - dw) / 2) / dw, fy = (ev.clientY - r.top - (H - dh) / 2) / dh;
+  if (fx < 0 || fy < 0 || fx > 1 || fy > 1) return;
+  post(api('web/clic', { id: w.id, x: fx.toFixed(4), y: fy.toFixed(4) }), '', function () { }, function () { });
 }
 function camTanca() { CM.gran = null; clearTimeout(CM.tg); $('camg').style.display = 'none'; camRefresca(); }
 /* per moure la càmera, parlar o veure gravacions: la web sencera al navegador */
