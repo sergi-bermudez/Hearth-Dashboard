@@ -44,17 +44,18 @@ svg{display:inline-block}
 .app .bx svg{width:28px;height:28px;fill:#fff;vertical-align:middle}
 .app span{display:block;font-size:12px}
 /* el que sona i les ràdios preferides, a baix */
-#sona{position:absolute;left:40px;right:150px;bottom:128px;display:none;padding:10px;border-radius:16px;background:#1b1f26;background:rgba(20,22,28,.72);white-space:nowrap}
+#sona{position:absolute;left:40px;right:150px;bottom:128px;height:80px;display:none;padding:0;border-radius:16px;overflow:hidden;background:#1b1f26;background:rgba(20,22,28,.72);white-space:nowrap}
 #rapid{position:absolute;left:40px;right:150px;bottom:20px;height:100px;overflow:hidden;white-space:nowrap}
 .rt{display:inline-block;vertical-align:top;width:76px;margin-right:10px;text-align:center;cursor:pointer;border-radius:16px;padding:4px 0;white-space:normal}
 .rt .lg{width:64px;height:64px;margin:0 auto 4px;border-radius:14px;background:#fff center no-repeat;background-size:70%}
 .rt span{display:block;font-size:12px;height:28px;overflow:hidden;text-shadow:0 1px 6px rgba(0,0,0,.7)}
-.sn-art{display:inline-block;vertical-align:middle;width:60px;height:60px;border-radius:10px;background:#2a2f38 center no-repeat;background-size:cover;margin-right:18px}
-.sn-tx{display:inline-block;vertical-align:middle;width:45%;overflow:hidden}
+/* posicions fixes: als navegadors vells els inline-block alineats al mig es descolen del fons */
+.sn-art{position:absolute;left:10px;top:10px;width:60px;height:60px;border-radius:10px;background:#2a2f38 center no-repeat;background-size:cover}
+.sn-tx{position:absolute;left:86px;top:10px;right:150px;height:62px;overflow:hidden}
 .sn-tx small{display:block;font-size:11px;letter-spacing:1px;opacity:.75;text-transform:uppercase}
 .sn-tx b{display:block;font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sn-tx span{display:block;font-size:14px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sn-ctl{display:inline-block;vertical-align:middle}
+.sn-ctl{position:absolute;right:12px;top:15px}
 .sn-ctl button{width:50px;height:50px;padding:0;border-radius:25px;margin:0 10px 0 0}
 .sn-ctl button.gp{background:#fff}
 .sn-ctl button.gp svg{fill:#111}
