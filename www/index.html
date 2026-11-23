@@ -1214,7 +1214,7 @@ function demanaToc(el, titol) {
   try { $('toca-b').focus(); } catch (e) { }
 }
 function repPlay() {
-  if (TV.canal) { var v = $('tv-v'); if (v.paused) v.play(); else v.pause(); return; }
+  if (TV.canal) { var v = $('tv-v'); if (v.paused) { TV.pausaUsuari = false; v.play(); } else { TV.pausaUsuari = true; v.pause(); } return; }
   if (!R.cua.length) return;
   if (R.cua[R.pos].pcm && USA_PCM && R.cua[R.pos].k != 'spotify') { pcmCommuta(); return; }
   if (R.cua[R.pos].k == 'spotify') { spOrdre('playpausa'); if (!R.cua[R.pos].pcm && au.paused && R.cua[R.pos].u) au.play(); return; }
@@ -1474,6 +1474,7 @@ function htmlVolum() { return VOL.ok ? '<input type="range" class="vol" min="0" 
 /* ---------- TV en directe i vídeo (pel·lícules, YouTube) al mateix reproductor ---------- */
 var TV = { canal: null, cands: [], i: 0, t: null, mode: 'normal', estat: '', amagaT: null, mida: ls('tvMida') || 'm', miniMida: ls('tvMiniMida') || 'm', desT: 0, represa: null };
 function tvObre(canal, gran) {
+  TV.pausaUsuari = false;
   if (R.cua.length) repAtura();
   if (TV.canal && TV.canal.vod) vodDesa();
   TV.canal = canal;
@@ -1703,6 +1704,8 @@ function tvLloc() {
     v.style.webkitTransform = 'translateZ(0)'; t.style.webkitTransform = 'translateZ(0)';
     v.style.width = '99.9%';
     setTimeout(function () { v.style.webkitTransform = ''; t.style.webkitTransform = ''; v.style.width = ''; tvAjusta(); void v.offsetHeight; }, 60);
+    /* el navegador d'algunes teles (LG) atura el vídeo quan canvia de mida o de lloc: si no l'ha aturat qui mira, continua */
+    setTimeout(function () { if (TV.canal && v.paused && !TV.pausaUsuari && v.getAttribute('src')) { var p = v.play(); if (p && p['catch']) p['catch'](function () { }); } }, 700);
   }
 }
 function tvLlocFet() {
@@ -1814,7 +1817,7 @@ function pintaSona(intern) {
     var kick = vod ? (c.k == 'yt' ? 'YouTube' : T('Pel·lícula')) : '<span class="directe">' + T('DIRECTE') + '</span>' + T('Televisió');
     var ctl = '<div class="s-ctl"><button class="mida" onclick="tvMidaCanvia()" title="' + esc(T('Mida')) + '">' + (TV.mida == 'p' ? 'S' : TV.mida == 'm' ? 'M' : 'L') + '</button>' +
       (vod ? '<button onclick="vodSalta(-15)">' + svg(IC.enrere) + '</button><button onclick="repPlay()" id="s-play"></button><button onclick="vodSalta(30)">' + svg(IC.endavant) + '</button>'
-        : '<button onclick="tvCanvia(-1)">' + svg(IC.ant) + '</button><button onclick="tvCanvia(1)">' + svg(IC.seg) + '</button>') +
+        : '<button onclick="tvCanvia(-1)">' + svg(IC.ant) + '</button><button onclick="repPlay()" id="s-play"></button><button onclick="tvCanvia(1)">' + svg(IC.seg) + '</button>') +
       '<button onclick="tvMode(\'gran\')">' + svg(IC.gran) + '</button><button onclick="castObre()">' + svg(IC_CAST) + '</button><button onclick="tvAtura()">' + svg(IC.tanca) + '</button>' + htmlVolumTv() + '</div>';
     h = '<div class="s-tvw' + (pila ? ' pila' : '') + '"><div id="sona-tv" style="width:' + Wt + 'px;height:' + Ht + 'px' + (pila ? ';margin:0 auto' : '') + '"></div><div class="s-info">' +
       '<div class="s-kick">' + kick + '</div><div class="s-tit una">' + esc(c.nom) + '</div><div class="s-sub una" id="s-tvestat">' + esc(TV.estat || (vod ? (c.s || '') : T('En directe'))) + '</div>' +

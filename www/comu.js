@@ -1,6 +1,9 @@
 /* Casa · utilitats comunes (ES5, compatible amb Safari 9 / iPad 3) */
 var EXT_VID = ['mp4', 'm4v', 'mov'];
 var EXT_VLC = ['mkv', 'avi', 'wmv', 'mpg', 'mpeg', 'ts', 'webm', 'flv', 'm2ts', 'vob'];
+/* «Obrir a VLC» només a l'iPhone/iPad (és on hi ha l'app i on Safari no els sap fer sonar). A la resta (teles, Android, PC)
+   es prova de reproduir-los directament: molts navegadors sí que en saben */
+if (!/iPhone|iPad|iPod/.test(navigator.userAgent) && !(/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)) { EXT_VID = EXT_VID.concat(EXT_VLC); EXT_VLC = []; }
 var EXT_AUD = ['mp3', 'm4a', 'm4b', 'aac', 'wav', 'aif', 'aiff'];
 var EXT_AUD_NO = ['flac', 'ogg', 'opus', 'wma', 'ape'];
 var EXT_IMG = ['jpg', 'jpeg', 'png', 'gif', 'bmp'];
