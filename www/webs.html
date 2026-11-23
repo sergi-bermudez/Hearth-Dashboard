@@ -259,28 +259,63 @@ function navMou(dx, dy, x0, y0) {
   post(api('web/roda', { id: W.obert.id, d: Math.round(-dy), dx: Math.round(-dx), x: ((x0 - r.left) / r.width).toFixed(3), y: ((y0 - r.top) / r.height).toFixed(3) }), '', navRefresca, errXarxa('moure la web'));
 }
 (function () {
-  var m = $('marc'), T0 = null;
+  /* Un dit: toc = clic; arrossegar = desplaçar la web (es va enviant mentre el dit es mou; la imatge no es mou).
+     Dos dits: pessigar = ampliar o reduir la web (com a un mòbil) */
+  var m = $('marc'), T0 = null, P0 = null;
+  function dist(e) { var a = e.touches[0], b = e.touches[1]; return Math.sqrt(Math.pow(a.clientX - b.clientX, 2) + Math.pow(a.clientY - b.clientY, 2)); }
+  function envia() {
+    if (!T0) return;
+    var dx = T0.x1 - T0.xs, dy = T0.y1 - T0.ys;
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+    T0.xs = T0.x1; T0.ys = T0.y1; T0.mogut = true;
+    navMou(Math.abs(dx) > Math.abs(dy) * 2 ? dx * 1.3 : 0, dy * 1.3, T0.x, T0.y);
+  }
   m.addEventListener('touchstart', function (e) {
-    if (!W.obert || !W.obert.nav || e.touches.length != 1 || e.target.tagName == 'INPUT' || e.target.tagName == 'BUTTON') { T0 = null; return; }
-    var t = e.touches[0]; T0 = { x: t.clientX, y: t.clientY, x1: t.clientX, y1: t.clientY, t: Date.now() };
+    if (!W.obert || !W.obert.nav || e.target.tagName == 'INPUT' || e.target.tagName == 'BUTTON') { T0 = P0 = null; return; }
+    if (e.touches.length == 2) {
+      clearInterval(T0 && T0.iv); T0 = null;
+      var a = e.touches[0], b = e.touches[1];
+      P0 = { d: dist(e), x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2, s: 1 };
+      e.preventDefault();
+      return;
+    }
+    if (e.touches.length != 1) return;
+    var t = e.touches[0];
+    T0 = { x: t.clientX, y: t.clientY, x1: t.clientX, y1: t.clientY, xs: t.clientX, ys: t.clientY, t: Date.now() };
   }, false);
   m.addEventListener('touchmove', function (e) {
+    if (P0 && e.touches.length == 2) {
+      e.preventDefault();
+      P0.s = dist(e) / P0.d;
+      /* mentre es pessiga, la imatge s'amplia com a vista prèvia */
+      var im = $('img'), r = im.getBoundingClientRect(), tr = 'scale(' + P0.s.toFixed(3) + ')';
+      im.style.webkitTransformOrigin = im.style.transformOrigin = (P0.x - r.left) + 'px ' + (P0.y - r.top) + 'px';
+      im.style.webkitTransform = tr; im.style.transform = tr;
+      return;
+    }
     if (!T0) return;
     var t = e.touches[0]; T0.x1 = t.clientX; T0.y1 = t.clientY;
     e.preventDefault();
-    /* la imatge segueix el dit mentre arriba la nova */
-    var im = $('img'), tr = 'translate(' + Math.round(T0.x1 - T0.x) + 'px,' + Math.round(T0.y1 - T0.y) + 'px)';
-    im.style.webkitTransform = tr; im.style.transform = tr;
+    var dx = T0.x1 - T0.x, dy = T0.y1 - T0.y;
+    if (!T0.iv && Math.sqrt(dx * dx + dy * dy) >= 14) { envia(); T0.iv = setInterval(envia, 150); }
   }, false);
   m.addEventListener('touchend', function (e) {
-    if (!T0) return;
-    var dx = T0.x1 - T0.x, dy = T0.y1 - T0.y, a = T0; T0 = null;
     W.touchT = +new Date();
+    if (P0) {
+      if (e.touches.length) return;
+      e.preventDefault();
+      var p = P0; P0 = null;
+      if (Math.abs(p.s - 1) > 0.06) navPessic(p.x, p.y, p.s);
+      else { var im = $('img'); im.style.webkitTransform = im.style.transform = ''; }
+      return;
+    }
+    if (!T0) return;
+    var a = T0; T0 = null;
+    clearInterval(a.iv);
     e.preventDefault();
+    if (a.iv) { T0 = a; envia(); T0 = null; return; }
     /* un toc encara que el dit es mogui una mica (passa molt a l'iPad) */
-    var dist = Math.sqrt(dx * dx + dy * dy), curt = Date.now() - a.t < 300;
-    if (dist < 14 || (curt && dist < 28)) { var im = $('img'); im.style.webkitTransform = im.style.transform = ''; navClic(a.x, a.y); }
-    else navMou(Math.abs(dx) > Math.abs(dy) * 2 ? dx * 1.2 : 0, dy * 1.2, a.x, a.y);
+    navClic(a.x, a.y);
   }, false);
   m.addEventListener('wheel', function (e) {
     if (!W.obert || !W.obert.nav) return;
@@ -289,6 +324,11 @@ function navMou(dx, dy, x0, y0) {
     W.rw = setTimeout(function () { var d = W.rdy; W.rdy = 0; navMou(0, -d, W.rx, W.ry); }, 120);
   }, false);
 })();
+function navPessic(cx, cy, s) {
+  var r = $('img').getBoundingClientRect();
+  navProg(true);
+  post(api('web/nav-pessic', { id: W.obert.id, x: ((cx - r.left) / r.width).toFixed(4), y: ((cy - r.top) / r.height).toFixed(4), s: s.toFixed(3) }), '', navRefresca, errXarxa('ampliar'));
+}
 /* si la pantalla gira o canvia de mida, la web del PC també */
 window.addEventListener('resize', function () {
   if (!W.obert || !W.obert.nav) return;
@@ -307,8 +347,10 @@ window.casaObre = function (a) {
 dades('webs', function (d) {
   W.defs = d || [];
   pinta();
-  var h = W.pendent || (location.hash.length > 1 ? decodeURIComponent(location.hash.substring(1)) : '');
-  if (h) for (var i = 0; i < W.defs.length; i++) if (W.defs[i].id == h) obre(i);
+  var h = W.pendent || (location.hash.length > 1 ? decodeURIComponent(location.hash.substring(1)) : ''), ja = false;
+  if (h) for (var i = 0; i < W.defs.length; i++) if (W.defs[i].id == h) { obre(i); ja = true; }
+  /* l'app s'obre directament al navegador (les webs desades, amb el botó de la graella) */
+  if (!ja) obreNav('');
 });
 </script>
 </body>

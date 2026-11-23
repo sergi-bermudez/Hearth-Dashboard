@@ -18,7 +18,7 @@ public static class Webs
         public byte[] Darrera;
         public DateTime Quan = DateTime.MinValue, Vist = DateTime.Now;
         public readonly object Lk = new object();
-        public int W, H; public double Dsf = 1; public bool Mobil;
+        public int W, H; public double Dsf = 1, Zoom = 1; public bool Mobil;
         public double Cx, Cy, Cw, Ch;
         public bool Retall;
     }
@@ -170,6 +170,9 @@ public static class Webs
     static byte[] Imatge(string id, bool completa, int minMs)
     {
         Captura c = Obre(id);
+        // el zoom del pessic es mant\u00e9 en canviar de pagina
+        if (id.StartsWith("nav-") && Math.Abs(c.Zoom - 1) > 0.01)
+            try { Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{var d=document.documentElement;if(d&&d.style.zoom!='{0}')d.style.zoom='{0}';return 1;}})()", c.Zoom), 3000); } catch { }
         lock (c.Lk)
         {
             c.Vist = DateTime.Now;
@@ -262,6 +265,7 @@ public static class Webs
                 case "nav-ves":
                     {
                         Captura c = Obre(id);
+                        c.Zoom = 1;
                         c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", NavUrl(CasaServidor.Q(q, "u"))), 15000);
                         c.Quan = DateTime.MinValue;
                         CasaServidor.Text(res, "{\"ok\":true}", "application/json");
@@ -293,6 +297,23 @@ public static class Webs
                     {
                         Captura c = Obre(id);
                         c.Pag.Envia("Page.reload", null, 10000);
+                        c.Quan = DateTime.MinValue;
+                        CasaServidor.Text(res, "{\"ok\":true}", "application/json");
+                        return;
+                    }
+                case "nav-pessic":
+                    {
+                        // ampliar o reduir la web (pessigar a la pantalla): zoom CSS de la pagina, mantenint el punt pessigat al seu lloc
+                        Captura c = Obre(id);
+                        double fx, fy, sc;
+                        double.TryParse(CasaServidor.Q(q, "x"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out fx);
+                        double.TryParse(CasaServidor.Q(q, "y"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out fy);
+                        if (!double.TryParse(CasaServidor.Q(q, "s"), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out sc)) sc = 1;
+                        double nou = Math.Max(0.5, Math.Min(4, c.Zoom * sc));
+                        double px = fx * c.W, py = fy * c.H, f = nou / c.Zoom;
+                        c.Zoom = nou;
+                        Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                            "(function(){{var d=document.documentElement,x=window.scrollX,y=window.scrollY;d.style.zoom={0};window.scrollTo((x+{1})*{3}-{1},(y+{2})*{3}-{2});return 1;}})()", nou, px, py, f), 5000);
                         c.Quan = DateTime.MinValue;
                         CasaServidor.Text(res, "{\"ok\":true}", "application/json");
                         return;
