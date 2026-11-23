@@ -22,6 +22,7 @@ public static class Webs
         public double Cx, Cy, Cw, Ch;
         public bool Retall;
         public string Clica = ""; public DateTime Clicat = DateTime.MinValue;
+        public bool Camera, VideoTrobat; public DateTime Buscat = DateTime.MinValue;
     }
     static readonly Dictionary<string, Captura> obertes = new Dictionary<string, Captura>();
     static readonly object lk = new object();
@@ -137,6 +138,9 @@ public static class Webs
         if (def == null) throw new Exception("Aquesta web no existeix");
         string url = def.ContainsKey("url") ? def["url"].ToString() : "";
         int w = (int)Num(def, "w", 1280), h = (int)Num(def, "h", 800);
+        // una camera s'obre sempre a la mateixa mida gran (el retall segueix el video), sigui quin sigui l'aparell on es va retallar
+        bool esCam = def.ContainsKey("lloc") && Convert.ToString(def["lloc"]) == "casa";
+        if (esCam) { w = 1600; h = 900; }
         Captura c;
         lock (lk)
         {
@@ -151,7 +155,10 @@ public static class Webs
             c.Pag.Connecta(Edge.WsPagina(c.Target));
             c.Pag.Envia("Page.enable", null, 5000);
             Edge.FesVisible(c.Pag);
-            c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", w, "height", h, "deviceScaleFactor", 1, "mobile", false), 5000);
+            bool mob = !esCam && def.ContainsKey("mobil") && def["mobil"] is bool && (bool)def["mobil"];
+            c.Mobil = mob;
+            c.Pag.Envia("Emulation.setDeviceMetricsOverride", CasaServidor.Dic("width", w, "height", h, "deviceScaleFactor", 1, "mobile", mob), 5000);
+            if (mob) try { c.Pag.Envia("Emulation.setTouchEmulationEnabled", CasaServidor.Dic("enabled", true, "maxTouchPoints", 1), 5000); } catch { }
             Clip(c, def);
             c.Pag.Envia("Page.navigate", CasaServidor.Dic("url", url), 10000);
             obertes[id] = c;
@@ -166,9 +173,14 @@ public static class Webs
         // un widget retallat des del navegador: la pagina desplacada i ampliada com estava quan es va retallar
         c.Sx = Num(def, "sx", 0); c.Sy = Num(def, "sy", 0); c.Zoom = Num(def, "zoom", 1);
         Dictionary<string, object> cl = def.ContainsKey("clip") ? def["clip"] as Dictionary<string, object> : null;
-        c.Retall = cl != null && Num(cl, "w", 0) > 10 && Num(cl, "h", 0) > 10;
-        if (c.Retall) { c.Cx = Num(cl, "x", 0); c.Cy = Num(cl, "y", 0); c.Cw = Num(cl, "w", c.W); c.Ch = Num(cl, "h", c.H); }
-        else { c.Cx = 0; c.Cy = 0; c.Cw = c.W; c.Ch = c.H; }
+        c.Camera = def.ContainsKey("lloc") && Convert.ToString(def["lloc"]) == "casa";
+        if (!c.Camera) c.VideoTrobat = false;
+        if (!c.VideoTrobat)
+        {
+            c.Retall = !c.Camera && cl != null && Num(cl, "w", 0) > 10 && Num(cl, "h", 0) > 10;
+            if (c.Retall) { c.Cx = Num(cl, "x", 0); c.Cy = Num(cl, "y", 0); c.Cw = Num(cl, "w", c.W); c.Ch = Num(cl, "h", c.H); }
+            else { c.Cx = 0; c.Cy = 0; c.Cw = c.W; c.Ch = c.H; }
+        }
         c.Clica = def.ContainsKey("clica") && def["clica"] != null ? def["clica"].ToString().Trim() : "";
     }
 
@@ -194,6 +206,7 @@ public static class Webs
         if (!id.StartsWith("nav-") && (c.Sx > 0 || c.Sy > 0 || Math.Abs(c.Zoom - 1) > 0.01))
             try { Edge.Avalua(c.Pag, string.Format(System.Globalization.CultureInfo.InvariantCulture, "(function(){{var d=document.documentElement;if(d&&{2}!=1&&d.style.zoom!='{2}')d.style.zoom='{2}';if(Math.abs(window.scrollX-{0})>2||Math.abs(window.scrollY-{1})>2)window.scrollTo({0},{1});return 1;}})()", c.Sx, c.Sy, c.Zoom), 3000); } catch { }
         if (!id.StartsWith("nav-") && (DateTime.Now - c.Clicat).TotalSeconds > 10) EngegaDirecte(c);
+        if (c.Camera && (DateTime.Now - c.Buscat).TotalSeconds > 5) BuscaVideo(c);
         lock (c.Lk)
         {
             c.Vist = DateTime.Now;
@@ -247,6 +260,28 @@ public static class Webs
         "for(i=0;i<bs.length;i++){var t=(bs[i].innerText||bs[i].value||'').replace(/\\s+/g,' ').replace(/^ | $/g,'');if(t.length<30&&re.test(t)&&vis(bs[i])&&(!b||b.contains(bs[i])))b=bs[i];}" +
         "if(!b){b=(f||document).querySelector('button[type=submit],input[type=submit]')||(f||document).querySelector('button');}" +
         "return mig(p)+'|'+(b&&vis(b)?mig(b):'');})()";
+
+    // Una camera: el retall segueix el video (el mes gran de la pagina), sigui on sigui, encara que la web canvi\u00ef de disseny
+    static void BuscaVideo(Captura c)
+    {
+        c.Buscat = DateTime.Now;
+        try
+        {
+            string r = Convert.ToString(Edge.Avalua(c.Pag, "(function(){var v=document.querySelectorAll('video,canvas'),b=null,a=0,i,r;" +
+                "for(i=0;i<v.length;i++){r=v[i].getBoundingClientRect();if(r.width>160&&r.height>90&&r.width*r.height>a){a=r.width*r.height;b=r;}}" +
+                "if(!b)return '';var x=Math.max(0,b.left),y=Math.max(0,b.top),w=Math.min(innerWidth,b.right)-x,h=Math.min(innerHeight,b.bottom)-y;" +
+                "if(w<160||h<90)return '';return [x,y,w,h].map(Math.round).join(',');})()", 3000));
+            if (string.IsNullOrEmpty(r)) return;
+            string[] a = r.Split(',');
+            lock (c.Lk)
+            {
+                c.Cx = double.Parse(a[0], System.Globalization.CultureInfo.InvariantCulture); c.Cy = double.Parse(a[1], System.Globalization.CultureInfo.InvariantCulture);
+                c.Cw = double.Parse(a[2], System.Globalization.CultureInfo.InvariantCulture); c.Ch = double.Parse(a[3], System.Globalization.CultureInfo.InvariantCulture);
+                c.Retall = true; c.VideoTrobat = true;
+            }
+        }
+        catch { }
+    }
 
     static void ClicReal(Captura c, string xy)
     {

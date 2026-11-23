@@ -512,7 +512,7 @@ function wgCrea() {
   var w = { id: 'w' + Math.random().toString(36).substring(2, 10), nom: $('wg-nom').value || i.titol || '', url: i.url, w: mi.w, h: mi.h,
     sx: Math.round(i.sx || 0), sy: Math.round(i.sy || 0), zoom: i.zoom || 1,
     clip: { x: Math.round(s.x * kx), y: Math.round(s.y * ky), w: Math.round(s.w * kx), h: Math.round(s.h * ky) },
-    mode: c == 'directe' ? 'directe' : 'imatge', interval: c == 'directe' ? 3 : +c, mida: $('wg-mida').value };
+    mode: c == 'directe' ? 'directe' : 'imatge', interval: c == 'directe' ? 3 : +c, mida: $('wg-mida').value, mobil: mi.w < 700 };
   if ($('wg-lloc').value == 'casa') { w.lloc = 'casa'; w.clica = $('wg-clica').value.replace(/^\s+|\s+$/g, ''); }
   WG.l.unshift(w);
   wgDesa(function () { avis(w.lloc == 'casa' ? T('Càmera afegida a Casa') : T('Widget afegit a la pantalla d\'inici'), 3000); });
