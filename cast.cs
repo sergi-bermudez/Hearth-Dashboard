@@ -245,7 +245,8 @@ public static class Cast
         public TcpClient Tcp;
         public SslStream S;
         public readonly object Esc = new object();
-        public string Transport = "", SessioApp = "";
+        public string Transport = "", SessioApp = "", AppId = "";
+        public bool ErrLlanca, ErrCarrega;
         public long MediaSessio = 0;
         public string Estat = "", Titol = "";
         public double Volum = -1;
@@ -316,6 +317,8 @@ public static class Cast
                 string ty = d.ContainsKey("type") ? d["type"] as string : "";
                 if (ns == NsBeat && ty == "PING") { try { Envia(s, font, NsBeat, "{\"type\":\"PONG\"}"); } catch { } continue; }
                 if (ty == "CLOSE" && font != "receiver-0") { s.Estat = "IDLE"; continue; }
+                if (ty == "LAUNCH_ERROR") { s.ErrLlanca = true; continue; }
+                if (ns == NsMedia && (ty == "LOAD_FAILED" || ty == "INVALID_REQUEST")) { s.ErrCarrega = true; continue; }
                 if (ty == "RECEIVER_STATUS" && d.ContainsKey("status"))
                 {
                     Dictionary<string, object> st = d["status"] as Dictionary<string, object>;
@@ -325,9 +328,9 @@ public static class Cast
                     if (apps != null && apps.Length > 0)
                     {
                         Dictionary<string, object> a = apps[0] as Dictionary<string, object>;
-                        if (a != null) { s.Transport = a.ContainsKey("transportId") ? a["transportId"] as string : ""; s.SessioApp = a.ContainsKey("sessionId") ? a["sessionId"] as string : ""; }
+                        if (a != null) { s.Transport = a.ContainsKey("transportId") ? a["transportId"] as string : ""; s.SessioApp = a.ContainsKey("sessionId") ? a["sessionId"] as string : ""; s.AppId = a.ContainsKey("appId") ? a["appId"] as string ?? "" : ""; }
                     }
-                    else { s.Transport = ""; s.Estat = "IDLE"; }
+                    else { s.Transport = ""; s.AppId = ""; s.Estat = "IDLE"; }
                 }
                 if (ty == "MEDIA_STATUS" && d.ContainsKey("status"))
                 {
@@ -373,14 +376,57 @@ public static class Cast
         }
     }
 
+    const string AppGeneric = "CC1AD845", AppHearth = "227343F1";
+    static readonly Dictionary<string, DateTime> appFallada = new Dictionary<string, DateTime>();
+    // Ajust "castApp" (Configuracio): buit = el receptor de Hearth; "CC1AD845" = sempre el generic de Google
+    static string AppCast()
+    {
+        try
+        {
+            string f = Path.Combine(CasaServidor.DirDades, "ajustos.json");
+            if (File.Exists(f))
+            {
+                Dictionary<string, object> d = new JavaScriptSerializer().DeserializeObject(File.ReadAllText(f, Encoding.UTF8)) as Dictionary<string, object>;
+                object v;
+                if (d != null && d.TryGetValue("castApp", out v) && v != null)
+                {
+                    string a = v.ToString().Trim().ToUpperInvariant();
+                    if (Regex.IsMatch(a, "^[0-9A-F]{8}$")) return a;
+                }
+            }
+        }
+        catch { }
+        return AppHearth;
+    }
+    static bool ObreApp(Sessio s, string app, int ms)
+    {
+        if (s.AppId == app && !string.IsNullOrEmpty(s.Transport)) return true;
+        s.ErrLlanca = false;
+        Envia(s, "receiver-0", NsRec, "{\"type\":\"LAUNCH\",\"appId\":\"" + app + "\",\"requestId\":" + (++s.ReqId) + "}");
+        for (int i = 0; i < ms / 150; i++)
+        {
+            if (s.ErrLlanca) return false;
+            if (s.AppId == app && !string.IsNullOrEmpty(s.Transport)) return true;
+            Thread.Sleep(150);
+        }
+        return false;
+    }
+
     static void CastCarrega(Disp x, string url, string ct, bool directe, string titol, string img)
     {
         Sessio s = Connecta(x);
         s.Titol = titol;
-        // Obre el reproductor per defecte de Google
-        Envia(s, "receiver-0", NsRec, "{\"type\":\"LAUNCH\",\"appId\":\"CC1AD845\",\"requestId\":" + (++s.ReqId) + "}");
-        for (int i = 0; i < 60 && (s.Transport == "" || s.Transport == null); i++) Thread.Sleep(150);
-        if (string.IsNullOrEmpty(s.Transport)) throw new Exception(x.Nom + " no ha obert el reproductor");
+        // Obre el receptor de Hearth (o el que s'hagi triat a Configuracio); si l'aparell no el pot obrir
+        // (aplicacio no publicada i aparell no registrat, sense internet...), el reproductor generic de Google
+        string app = AppCast();
+        bool obert = false;
+        if (app != AppGeneric)
+        {
+            DateTime f;
+            bool fallat; lock (lk) fallat = appFallada.TryGetValue(x.Id + "|" + app, out f) && (DateTime.Now - f).TotalMinutes < 30;
+            if (!fallat) { obert = ObreApp(s, app, 9000); if (!obert) lock (lk) appFallada[x.Id + "|" + app] = DateTime.Now; }
+        }
+        if (!obert && !ObreApp(s, AppGeneric, 9000)) throw new Exception(x.Nom + " no ha obert el reproductor");
         Envia(s, s.Transport, NsConn, "{\"type\":\"CONNECT\"}");
         Dictionary<string, object> meta = new Dictionary<string, object>();
         // "Canco \u00b7 Artista \u00b7 Disc" en camps separats: el receptor ho pinta en linies curtes en lloc d'una de molt llarga
@@ -401,9 +447,20 @@ public static class Cast
         media["contentId"] = url; media["contentType"] = ct; media["streamType"] = directe ? "LIVE" : "BUFFERED"; media["metadata"] = meta;
         Dictionary<string, object> load = new Dictionary<string, object>();
         load["type"] = "LOAD"; load["requestId"] = ++s.ReqId; load["media"] = media; load["autoplay"] = true; load["currentTime"] = 0;
-        s.MediaSessio = 0;
+        if (EnviaLoad(s, load)) return;
+        // el receptor de Hearth no ha pogut obrir aquest so (format, adreca...): es torna a provar amb el generic de Google
+        if (s.AppId != AppGeneric)
+        {
+            lock (lk) appFallada[x.Id + "|" + s.AppId] = DateTime.Now;
+            if (ObreApp(s, AppGeneric, 9000)) { Envia(s, s.Transport, NsConn, "{\"type\":\"CONNECT\"}"); load["requestId"] = ++s.ReqId; EnviaLoad(s, load); }
+        }
+    }
+    static bool EnviaLoad(Sessio s, Dictionary<string, object> load)
+    {
+        s.MediaSessio = 0; s.ErrCarrega = false;
         Envia(s, s.Transport, NsMedia, load);
-        for (int i = 0; i < 50 && s.MediaSessio == 0; i++) Thread.Sleep(200);
+        for (int i = 0; i < 50 && s.MediaSessio == 0 && !s.ErrCarrega; i++) Thread.Sleep(200);
+        return s.MediaSessio != 0 && !s.ErrCarrega;
     }
 
     static void CastOrdre(Disp x, string o, double v)
