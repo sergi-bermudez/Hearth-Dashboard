@@ -13,7 +13,7 @@ public static class Pantalles
 {
     // Una pantalla que no es veu (pestanya de fons, finestra tapada) avisa molt menys sovint: el navegador l'alenteix
     static bool Viva(P p) { return (DateTime.Now - p.Vist).TotalSeconds < (p.Amagat ? 150 : 25); }
-    class P { public string Nom = ""; public string Sona = ""; public bool Pausa; public bool Tele, Amagat; public DateTime Vist; public List<object> Ordres = new List<object>(); }
+    class P { public string Nom = ""; public string Sona = "", Tit = "", Sub = "", Art = "", Tipus = ""; public bool Pausa; public bool Tele, Amagat, VolC, Apagada; public int Vol = -1; public DateTime Vist; public List<object> Ordres = new List<object>(); }
     static readonly Dictionary<string, P> llista = new Dictionary<string, P>();
     static readonly object lk = new object();
 
@@ -67,6 +67,10 @@ public static class Pantalles
                 p.Amagat = CasaServidor.Q(q, "amagat") == "1";
                 // el que sona en aquella pantalla, per poder-la controlar des d'una altra
                 p.Sona = CasaServidor.Q(q, "sona"); p.Pausa = CasaServidor.Q(q, "pausa") == "1";
+                // per al comandament a distancia: titol, subtitol, caratula, tipus, volum i si es pot canviar, pantalla apagada
+                p.Tit = CasaServidor.Q(q, "tit"); p.Sub = CasaServidor.Q(q, "sub"); p.Art = CasaServidor.Q(q, "art"); p.Tipus = CasaServidor.Q(q, "k");
+                int vol; p.Vol = int.TryParse(CasaServidor.Q(q, "vol"), out vol) ? vol : -1;
+                p.VolC = CasaServidor.Q(q, "volc") == "1"; p.Apagada = CasaServidor.Q(q, "apagada") == "1";
                 ordres = p.Ordres.ToArray();
                 p.Ordres.Clear();
             }
@@ -85,7 +89,10 @@ public static class Pantalles
             lock (lk)
                 foreach (KeyValuePair<string, P> kv in llista)
                     if (kv.Key != d && Viva(kv.Value))
-                        r.Add(CasaServidor.Dic("id", kv.Key, "nom", kv.Value.Nom, "tele", kv.Value.Tele, "sona", kv.Value.Sona, "pausa", kv.Value.Pausa));
+                    {
+                        P v = kv.Value;
+                        r.Add(CasaServidor.Dic("id", kv.Key, "nom", v.Nom, "tele", v.Tele, "sona", v.Sona, "pausa", v.Pausa, "tit", v.Tit, "sub", v.Sub, "art", v.Art, "k", v.Tipus, "vol", v.Vol, "volc", v.VolC, "apagada", v.Apagada, "amagat", v.Amagat));
+                    }
             CasaServidor.Json(res, r.ToArray());
             return;
         }

@@ -409,9 +409,10 @@ public static class Cast
     static void CastOrdre(Disp x, string o, double v)
     {
         Sessio s = Connecta(x);
-        if (o == "vol")
+        if (o == "vol" || o == "volabs")
         {
-            double nou = Math.Max(0, Math.Min(1, (s.Volum < 0 ? 0.5 : s.Volum) + v));
+            // "vol": puja o baixa (v = +-0.05); "volabs": el volum exacte (v de 0 a 1), per a la barra del comandament
+            double nou = Math.Max(0, Math.Min(1, o == "volabs" ? v : (s.Volum < 0 ? 0.5 : s.Volum) + v));
             Envia(s, "receiver-0", NsRec, "{\"type\":\"SET_VOLUME\",\"volume\":{\"level\":" + nou.ToString(System.Globalization.CultureInfo.InvariantCulture) + "},\"requestId\":" + (++s.ReqId) + "}");
             s.Volum = nou;
             return;
