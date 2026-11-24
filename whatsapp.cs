@@ -100,6 +100,13 @@ public static class WhatsApp
         try { Console.WriteLine("  WhatsApp: no s'ha obert el xat. " + Crida("diag(" + Js(nom) + ")", 4000)); } catch { }
     }
 
+    // Missatges nous des d'un moment (ms), per a la pantalla de la tele (Cast); null si WhatsApp no esta obert
+    public static string Nous(long des)
+    {
+        lock (lk) { if (sessio == null || !sessio.Viu) return null; }
+        try { return Crida("nous(" + des + ")", 6000); } catch { return null; }
+    }
+
     public static void AlArrencar()
     {
         try

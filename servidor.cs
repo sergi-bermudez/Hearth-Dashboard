@@ -843,6 +843,8 @@ public static class CasaServidor
     }
 
     internal static string Miniatura(string full, int m) { return Miniatura(full, m, false); }
+    // Les fotos de l'index (rel, data, [1 si es video]) per al fons de la tele
+    internal static List<object[]> FotosIndex() { return FotoLlista ?? FotosDeLaCache(); }
     internal static string Miniatura(string full, int m, bool qualsevol)
     {
         FileInfo fi = new FileInfo(full);

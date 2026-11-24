@@ -29,7 +29,7 @@ cast-media-player { --theme-hue: 20; --progress-color: #f2845c;
 .ag { font-size: 2.36vh; line-height: 3.2vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw; }
 .ag i { display: inline-block; width: 1.25vh; height: 1.25vh; border-radius: 50%; margin-right: 1.1vh; vertical-align: .15vh; }
 .ag b { font-weight: 700; margin-right: .9vh; }
-#temps { flex: none; text-align: right; max-width: 46%; }
+#temps-c { flex: none; text-align: right; max-width: 46%; }
 .t-ara { display: flex; align-items: center; justify-content: flex-end; }
 .t-ara svg { width: 9.7vh; height: 9.7vh; margin-right: 1.4vh; filter: drop-shadow(0 .14vh .83vh rgba(0,0,0,.4)); }
 .t-ara .gr { font-size: 7.8vh; font-weight: 200; line-height: 1; }
@@ -50,6 +50,25 @@ cast-media-player { --theme-hue: 20; --progress-color: #f2845c;
 #tit { font-size: 6.4vh; font-weight: 700; line-height: 1.12; letter-spacing: -.07vh; margin: 1vh 0 .8vh;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 #sub { font-size: 3.2vh; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#fons.foto { inset: 0; filter: brightness(.78); transition: opacity 1.2s; }
+#fons2 { position: absolute; inset: 0; background: center/cover no-repeat; filter: brightness(.78); opacity: 0; transition: opacity 1.5s; }
+#fons2.on { opacity: 1; }
+#fpeu { position: absolute; right: 3.9vh; bottom: 7.6vh; font-size: 1.8vh; opacity: .85; text-shadow: 0 .14vh .7vh rgba(0,0,0,.5); }
+/* message bubble, like the dashboard's */
+#notif { position: absolute; left: 50%; top: 2.5vh; transform: translate(-50%, -16vh); transition: transform .5s; display: flex; align-items: center;
+  background: rgba(28,31,38,.96); border-radius: 2.2vh; padding: 1.8vh 3vh 1.8vh 1.9vh; min-width: 40vw; max-width: 60vw; box-shadow: 0 .8vh 3vh rgba(0,0,0,.4); text-shadow: none; }
+#notif.on { transform: translate(-50%, 0); }
+#nf-av { width: 6.1vh; height: 6.1vh; border-radius: 50%; background: #25d366 center/cover no-repeat; flex: none; margin-right: 1.9vh; text-align: center; line-height: 6.1vh; font-size: 2.8vh; font-weight: 700; color: #111; }
+#nf-nom { font-size: 2.5vh; font-weight: 700; }
+#nf-text { font-size: 2.2vh; opacity: .85; margin-top: .3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 48vw; }
+/* home and cooking timers, under the weather */
+#extra { margin-top: 1.6vh; }
+.cs { font-size: 2.08vh; opacity: .92; line-height: 3vh; white-space: nowrap; }
+.cs b { font-weight: 600; }
+.tm { display: inline-flex; align-items: center; background: rgba(0,0,0,.35); border-radius: 3vh; padding: .7vh 1.8vh; margin-top: 1vh; font-size: 2.5vh; text-shadow: none; }
+.tm b { font-variant-numeric: tabular-nums; font-weight: 700; margin-left: 1.2vh; }
+.tm.sona { background: #e5484d; animation: bat 1s infinite; }
+@keyframes bat { 50% { opacity: .55; } }
 #marca { position: absolute; right: 3.9vh; bottom: 3.33vh; display: flex; align-items: center; font-size: 2vh; opacity: .8; }
 #marca img { width: 3.6vh; height: 3.6vh; border-radius: .8vh; margin-right: 1vh; }
 </style>
@@ -57,33 +76,35 @@ cast-media-player { --theme-hue: 20; --progress-color: #f2845c;
 <body>
 <cast-media-player></cast-media-player>
 <div id="tauler">
-  <div id="fons" class="buit"></div><div id="ombra"></div>
+  <div id="fons" class="buit"></div><div id="fons2"></div><div id="ombra"></div>
   <div id="dash">
     <div class="cap">
       <div class="hora-b"><div id="salut"></div><div id="hora"></div><div id="data"></div><div id="agenda"></div></div>
-      <div id="temps"></div>
+      <div id="temps-c"><div id="temps"></div><div id="extra"></div></div>
     </div>
     <div class="mig"></div>
     <div id="sona"><div id="art"></div><div id="info"><div id="kick"></div><div id="tit"></div><div id="sub"></div></div></div>
   </div>
+  <div id="fpeu"></div>
+  <div id="notif"><div id="nf-av"></div><div><div id="nf-nom"></div><div id="nf-text"></div></div></div>
   <div id="marca"><img src="logo.png" alt="">Hearth</div>
 </div>
 <script>
 var $ = function (id) { return document.getElementById(id); };
 var D = {};          /* what Hearth sent: k, ll, nom, ciutat, lat, lon, agenda */
-var TEMPS = null, tempsHora = 0;
+var TEMPS = null, tempsHora = 0, FOTO = {}, TM = [], DIF = 0, NF_T = null;
 
 /* ---------- texts (same wording as the dashboard) ---------- */
 var TX = {
-  ca: { dia: 'Bon dia', tarda: 'Bona tarda', nit: 'Bona nit', avui: 'Avui', dema: 'Demà', tot: 'Tot el dia', radio: 'Ràdio en directe', musica: 'Música', podcast: 'Pòdcast', pausa: 'En pausa', max: 'Màx.', min: 'Mín.',
+  ca: { llums: 'llums enceses', llum: 'llum encesa', nou: 'Missatge nou', dia: 'Bon dia', tarda: 'Bona tarda', nit: 'Bona nit', avui: 'Avui', dema: 'Demà', tot: 'Tot el dia', radio: 'Ràdio en directe', musica: 'Música', podcast: 'Pòdcast', pausa: 'En pausa', max: 'Màx.', min: 'Mín.',
     w: ['Serè', 'Gairebé serè', 'Parcialment ennuvolat', 'Ennuvolat', 'Boira', 'Plugim', 'Pluja', 'Neu', 'Ruixats', 'Xàfecs de neu', 'Tempesta'] },
-  es: { dia: 'Buenos días', tarda: 'Buenas tardes', nit: 'Buenas noches', avui: 'Hoy', dema: 'Mañana', tot: 'Todo el día', radio: 'Radio en directo', musica: 'Música', podcast: 'Pódcast', pausa: 'En pausa', max: 'Máx.', min: 'Mín.',
+  es: { llums: 'luces encendidas', llum: 'luz encendida', nou: 'Mensaje nuevo', dia: 'Buenos días', tarda: 'Buenas tardes', nit: 'Buenas noches', avui: 'Hoy', dema: 'Mañana', tot: 'Todo el día', radio: 'Radio en directo', musica: 'Música', podcast: 'Pódcast', pausa: 'En pausa', max: 'Máx.', min: 'Mín.',
     w: ['Despejado', 'Casi despejado', 'Parcialmente nublado', 'Nublado', 'Niebla', 'Llovizna', 'Lluvia', 'Nieve', 'Chubascos', 'Chubascos de nieve', 'Tormenta'] },
-  en: { dia: 'Good morning', tarda: 'Good afternoon', nit: 'Good evening', avui: 'Today', dema: 'Tomorrow', tot: 'All day', radio: 'Live radio', musica: 'Music', podcast: 'Podcast', pausa: 'Paused', max: 'High', min: 'Low',
+  en: { llums: 'lights on', llum: 'light on', nou: 'New message', dia: 'Good morning', tarda: 'Good afternoon', nit: 'Good evening', avui: 'Today', dema: 'Tomorrow', tot: 'All day', radio: 'Live radio', musica: 'Music', podcast: 'Podcast', pausa: 'Paused', max: 'High', min: 'Low',
     w: ['Clear', 'Mostly clear', 'Partly cloudy', 'Cloudy', 'Fog', 'Drizzle', 'Rain', 'Snow', 'Showers', 'Snow showers', 'Thunderstorm'] },
-  fr: { dia: 'Bonjour', tarda: 'Bon après-midi', nit: 'Bonsoir', avui: "Aujourd'hui", dema: 'Demain', tot: 'Toute la journée', radio: 'Radio en direct', musica: 'Musique', podcast: 'Podcast', pausa: 'En pause', max: 'Max.', min: 'Min.',
+  fr: { llums: 'lumières allumées', llum: 'lumière allumée', nou: 'Nouveau message', dia: 'Bonjour', tarda: 'Bon après-midi', nit: 'Bonsoir', avui: "Aujourd'hui", dema: 'Demain', tot: 'Toute la journée', radio: 'Radio en direct', musica: 'Musique', podcast: 'Podcast', pausa: 'En pause', max: 'Max.', min: 'Min.',
     w: ['Dégagé', 'Plutôt dégagé', 'Partiellement nuageux', 'Nuageux', 'Brouillard', 'Bruine', 'Pluie', 'Neige', 'Averses', 'Averses de neige', 'Orage'] },
-  pt: { dia: 'Bom dia', tarda: 'Boa tarde', nit: 'Boa noite', avui: 'Hoje', dema: 'Amanhã', tot: 'Todo o dia', radio: 'Rádio em direto', musica: 'Música', podcast: 'Podcast', pausa: 'Em pausa', max: 'Máx.', min: 'Mín.',
+  pt: { llums: 'luzes acesas', llum: 'luz acesa', nou: 'Nova mensagem', dia: 'Bom dia', tarda: 'Boa tarde', nit: 'Boa noite', avui: 'Hoje', dema: 'Amanhã', tot: 'Todo o dia', radio: 'Rádio em direto', musica: 'Música', podcast: 'Podcast', pausa: 'Em pausa', max: 'Máx.', min: 'Mín.',
     w: ['Limpo', 'Quase limpo', 'Parcialmente nublado', 'Nublado', 'Nevoeiro', 'Chuvisco', 'Chuva', 'Neve', 'Aguaceiros', 'Aguaceiros de neve', 'Trovoada'] }
 };
 function ll() { return TX[D.ll] ? D.ll : (navigator.language || 'en').substring(0, 2) in TX ? (navigator.language || 'en').substring(0, 2) : 'en'; }
@@ -164,6 +185,62 @@ function pintaTemps() {
     '<div class="t-ds">' + esc(t('max') + ' ' + Math.round(dd.temperature_2m_max[0]) + '° · ' + t('min') + ' ' + Math.round(dd.temperature_2m_min[0]) + '°') + '</div>';
 }
 
+/* ---------- live data from Hearth (every 15 s) ---------- */
+function rebDades(m) {
+  if (!m) return;
+  if (m.tipus == 'foto') return rebFoto(m);
+  if (m.tipus != 'dades') return;
+  var k = D.k; D = m; if (!D.k) D.k = k;
+  if (m.araMs) DIF = m.araMs - Date.now();
+  TM = m.temporitzadors || [];
+  if (m.notif) notif(m.notif);
+  rellotge(); carregaTemps(); extres();
+}
+function rebFoto(m) {
+  if (!FOTO[m.id]) FOTO = {}, FOTO[m.id] = { n: m.n, p: [], c: 0 };
+  var f = FOTO[m.id];
+  if (m.data) f.data = m.data;
+  if (!f.p[m.i]) { f.p[m.i] = m.d; f.c++; }
+  if (f.c < f.n) return;
+  var url = 'data:image/jpeg;base64,' + f.p.join(''), im = new Image();
+  im.onload = function () {
+    /* crossfade, like the dashboard's background photos */
+    var a = $('fons'), b = $('fons2');
+    b.style.backgroundImage = 'url("' + url + '")'; b.className = 'on';
+    setTimeout(function () { a.className = 'foto'; a.style.backgroundImage = b.style.backgroundImage; b.className = ''; }, 1600);
+    var d = new Date(f.data || 0), loc = { ca: 'ca-ES', es: 'es-ES', en: 'en-GB', fr: 'fr-FR', pt: 'pt-PT' }[ll()];
+    try { $('fpeu').textContent = f.data ? majuscula(d.toLocaleDateString(loc, { month: 'long', year: 'numeric' })) : ''; } catch (e) { }
+    TE_FOTO = true;
+  };
+  im.src = url;
+}
+var TE_FOTO = false;
+function notif(n) {
+  $('nf-av').style.backgroundImage = n.img ? 'url("' + n.img + '")' : '';
+  $('nf-av').textContent = n.img ? '' : ((n.nom || '?').charAt(0).toUpperCase());
+  $('nf-av').style.background = n.img ? '' : (n.srv == 'fb' ? '#0a7cff' : n.srv == 'sms' ? '#1a73e8' : '#25d366');
+  $('nf-nom').textContent = (n.nom || t('nou')) + (n.srv == 'sms' ? ' · SMS' : n.srv == 'fb' ? ' · Messenger' : '');
+  $('nf-text').textContent = n.text || '';
+  $('notif').className = 'on';
+  clearTimeout(NF_T); NF_T = setTimeout(function () { $('notif').className = ''; }, 9000);
+}
+function extres() {
+  var h = '', c = D.casa;
+  if (c) {
+    (c.termos || []).slice(0, 3).forEach(function (x) {
+      h += '<div class="cs">' + esc(x.nom) + ' <b>' + String(Math.round(x.temp * 10) / 10).replace('.', ll() == 'en' ? '.' : ',') + '°</b>' + (x.hum != null ? ' · ' + Math.round(x.hum) + '%' : '') + '</div>';
+    });
+    if (c.llums > 0) h += '<div class="cs">' + c.llums + ' ' + esc(c.llums == 1 ? t('llum') : t('llums')) + '</div>';
+  }
+  var ara = Date.now() + DIF;
+  TM.forEach(function (x) {
+    var r = Math.max(0, Math.round((x.fi - ara) / 1000)), sona = x.fi <= ara;
+    h += '<div><span class="tm' + (sona ? ' sona' : '') + '">⏲ ' + esc(x.nom || '') + '<b>' + Math.floor(r / 60) + ':' + dos(r % 60) + '</b></span></div>';
+  });
+  $('extra').innerHTML = h;
+}
+setInterval(function () { if (TM.length) extres(); }, 1000);
+
 /* ---------- now playing ---------- */
 var ctx = cast.framework.CastReceiverContext.getInstance();
 var pm = ctx.getPlayerManager();
@@ -173,7 +250,7 @@ var IC_NOTA = 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 
 function pinta() {
   var m = pm.getMediaInformation();
   var audio = !!m && /^audio\//.test(m.contentType || '');
-  if (m && m.customData) { D = m.customData; carregaTemps(); }
+  if (m && m.customData) { var k0 = m.customData.k; if (D.tipus == 'dades') D.k = k0; else D = m.customData; carregaTemps(); extres(); }
   $('tauler').className = audio ? 'on' : '';
   if (!audio) return;
   var md = m.metadata || {}, k = D.k || '', radio = k == 'radio' || m.streamType === 'LIVE';
@@ -184,8 +261,7 @@ function pinta() {
   $('art').style.backgroundImage = img ? 'url("' + img + '")' : '';
   $('art').innerHTML = img ? '' : '<svg viewBox="0 0 24 24"><path d="' + (radio ? IC_RADIO : IC_NOTA) + '"/></svg>';
   /* the cover, blurred, as the background (the dashboard uses a photo) */
-  $('fons').className = img && !radio ? '' : 'buit';
-  $('fons').style.backgroundImage = img && !radio ? 'url("' + img + '")' : '';
+  if (!TE_FOTO) { $('fons').className = img && !radio ? '' : 'buit'; $('fons').style.backgroundImage = img && !radio ? 'url("' + img + '")' : ''; }
   rellotge(); estat();
 }
 function estat() {
@@ -202,7 +278,10 @@ pm.addEventListener(E.MEDIA_STATUS, function () { if (!$('tauler').className) pi
 pm.addEventListener([E.PAUSE, E.PLAY, E.PLAYING], estat);
 setInterval(function () { rellotge(); carregaTemps(); }, 15000);
 
+var NS = 'urn:x-cast:cat.hearth';
+ctx.addCustomMessageListener(NS, function (e) { var d = e.data; if (typeof d == 'string') { try { d = JSON.parse(d); } catch (x) { return; } } rebDades(d); });
 var opts = new cast.framework.CastReceiverOptions();
+opts.customNamespaces = {}; opts.customNamespaces[NS] = cast.framework.system.MessageType.JSON;
 opts.maxInactivity = 3600;   /* keep the session while a radio plays for hours */
 ctx.start(opts);
 </script>

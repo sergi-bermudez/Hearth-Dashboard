@@ -223,6 +223,45 @@ public static class Tuya
     }
 
     // Configuracio (nomes des de l'administracio): el secret no es torna mai sencer
+    // Termometres i llums per a la pantalla de la tele (Cast): [{nom, temp, hum}] i quantes llums hi ha enceses.
+    // Fa servir la llista de fa menys de 2 minuts; si Tuya no esta configurat, null.
+    public static Dictionary<string, object> Resum()
+    {
+        Dictionary<string, object> a = Ajustos();
+        if (S(a, "id") == "" || S(a, "secret") == "") return null;
+        string r;
+        lock (lk) { r = (DateTime.Now - cauData).TotalSeconds < 120 ? cauDisp : null; }
+        if (r == null) { r = Compacta(Llista()); lock (lk) { cauDisp = r; cauData = DateTime.Now; } }
+        object[] l = new JavaScriptSerializer().DeserializeObject(r) as object[];
+        List<object> termos = new List<object>();
+        int llums = 0;
+        string[] cats = { "dj", "dd", "fwd", "tgq", "xdd", "dc", "tyndj", "gyd" };
+        if (l != null) foreach (object o in l)
+            {
+                Dictionary<string, object> d = o as Dictionary<string, object>;
+                if (d == null || !(d["online"] is bool && (bool)d["online"])) continue;
+                Dictionary<string, object> st = d["estat"] as Dictionary<string, object> ?? new Dictionary<string, object>();
+                object v;
+                double? temp = null, hum = null;
+                if (st.TryGetValue("va_temperature", out v) && v is int) temp = (int)v / 10.0;
+                else if (st.TryGetValue("temp_indoor", out v) && v is int) temp = (int)v / 10.0;
+                else if (st.TryGetValue("temp_current", out v) && v is int) temp = Math.Abs((int)v) > 60 ? (int)v / 10.0 : (int)v;
+                foreach (string h in new string[] { "va_humidity", "humidity_value", "humidity_current" })
+                    if (hum == null && st.TryGetValue(h, out v) && v is int) hum = (int)v > 100 ? (int)v / 10.0 : (int)v;
+                if (temp != null && S(d, "cat") != "kt")
+                {
+                    Dictionary<string, object> t = new Dictionary<string, object>();
+                    t["nom"] = S(d, "nom"); t["temp"] = temp.Value; if (hum != null) t["hum"] = hum.Value;
+                    termos.Add(t);
+                }
+                if (Array.IndexOf(cats, S(d, "cat")) >= 0)
+                    foreach (string sw in Interruptors) if (st.TryGetValue(sw, out v) && v is bool) { if ((bool)v) llums++; break; }
+            }
+        Dictionary<string, object> res = new Dictionary<string, object>();
+        res["termos"] = termos; res["llums"] = llums;
+        return res;
+    }
+
     public static void Ajusta(HttpListenerContext ctx)
     {
         HttpListenerResponse res = ctx.Response;

@@ -26,6 +26,15 @@ public static class Xats
         serveis["fb"] = new Servei { Clau = "fb", Funcio = "messenger", Url = "https://www.facebook.com/messages/t/", Domini = "facebook.com/messages", Pont = "messenger-pont.js" };
     }
 
+    // Missatges nous d'un servei (sms, fb) des d'un moment (ms), per a la tele; null si no esta obert
+    public static string Nous(string clau, long des)
+    {
+        Servei s;
+        if (!serveis.TryGetValue(clau, out s)) return null;
+        lock (s.Lk) { if (s.Sessio == null || !s.Sessio.Viu) return null; }
+        try { return Crida(s, "nous(" + des + ")", 6000); } catch { return null; }
+    }
+
     public static string Funcio(string clau) { Servei s; return serveis.TryGetValue(clau, out s) ? s.Funcio : null; }
 
     static string Pont(Servei s) { return File.ReadAllText(Path.Combine(CasaServidor.DirArrel, s.Pont), Encoding.UTF8); }

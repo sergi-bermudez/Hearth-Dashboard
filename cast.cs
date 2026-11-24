@@ -247,6 +247,9 @@ public static class Cast
         public readonly object Esc = new object();
         public string Transport = "", SessioApp = "", AppId = "";
         public bool ErrLlanca, ErrCarrega;
+        public string K = "";
+        public long MsgDes = 0;
+        public DateTime FotoHora = DateTime.MinValue;
         public long MediaSessio = 0;
         public string Estat = "", Titol = "";
         public double Volum = -1;
@@ -256,7 +259,8 @@ public static class Cast
     }
 
     const string NsConn = "urn:x-cast:com.google.cast.tp.connection", NsBeat = "urn:x-cast:com.google.cast.tp.heartbeat",
-        NsRec = "urn:x-cast:com.google.cast.receiver", NsMedia = "urn:x-cast:com.google.cast.media";
+        NsRec = "urn:x-cast:com.google.cast.receiver", NsMedia = "urn:x-cast:com.google.cast.media",
+        NsHearth = "urn:x-cast:cat.hearth";
 
     static void Varint(MemoryStream m, long v) { while (v >= 0x80) { m.WriteByte((byte)(v | 0x80)); v >>= 7; } m.WriteByte((byte)v); }
     static void Camp(MemoryStream m, int n, string s) { byte[] b = Encoding.UTF8.GetBytes(s); m.WriteByte((byte)((n << 3) | 2)); Varint(m, b.Length); m.Write(b, 0, b.Length); }
@@ -415,7 +419,9 @@ public static class Cast
     static void CastCarrega(Disp x, string url, string ct, bool directe, string titol, string img, string k)
     {
         Sessio s = Connecta(x);
-        s.Titol = titol;
+        s.Titol = titol; s.K = k ?? "";
+        if (s.MsgDes == 0) s.MsgDes = MsAra();
+        IniciaPont();
         // Obre el receptor de Hearth (o el que s'hagi triat a Configuracio); si l'aparell no el pot obrir
         // (aplicacio no publicada i aparell no registrat, sense internet...), el reproductor generic de Google
         string app = AppCast();
@@ -479,6 +485,172 @@ public static class Cast
         o["ara"] = DateTime.Now.ToString("yyyy-MM-dd'T'HH:mm", System.Globalization.CultureInfo.InvariantCulture);
         return o;
     }
+    // ---------- Canal en directe amb el receptor de Hearth ----------
+    // Cada 15 s: agenda, temps (coordenades), missatges nous, casa (Tuya) i temporitzadors de cuina.
+    // Cada 90 s: una foto per al fons (de les del PC, reduida i enviada a trossos, perque el Chromecast no pot demanar-la al servidor).
+    static Timer pont;
+    static int pontOcupat;
+    static object tuyaCau; static DateTime tuyaHora = DateTime.MinValue;
+    static long MsAra() { return (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalMilliseconds; }
+    static void IniciaPont() { lock (lk) if (pont == null) pont = new Timer(delegate { Pont(); }, null, 4000, 15000); }
+    static void Pont()
+    {
+        if (Interlocked.Exchange(ref pontOcupat, 1) == 1) return;
+        try
+        {
+            List<Sessio> l;
+            lock (lk) l = new List<Sessio>(sessions.Values);
+            Dictionary<string, object> aj = AjustosGen();
+            foreach (Sessio s in l)
+            {
+                if (!s.Viu || string.IsNullOrEmpty(s.Transport) || string.IsNullOrEmpty(s.AppId) || s.AppId == AppGeneric) continue;
+                try
+                {
+                    Dictionary<string, object> d = DadesPantalla(s.K);
+                    d["tipus"] = "dades";
+                    Extres(d, s, aj);
+                    Envia(s, s.Transport, NsHearth, d);
+                    if ((DateTime.Now - s.FotoHora).TotalSeconds >= 90) { s.FotoHora = DateTime.Now; EnviaFoto(s, aj); }
+                }
+                catch (Exception e) { Console.WriteLine("  Cast (tele): " + e.Message); }
+            }
+        }
+        finally { pontOcupat = 0; }
+    }
+    static Dictionary<string, object> AjustosGen()
+    {
+        try
+        {
+            string f = Path.Combine(CasaServidor.DirDades, "ajustos.json");
+            if (File.Exists(f)) return new JavaScriptSerializer().DeserializeObject(File.ReadAllText(f, Encoding.UTF8)) as Dictionary<string, object> ?? new Dictionary<string, object>();
+        }
+        catch { }
+        return new Dictionary<string, object>();
+    }
+    static bool Activat(Dictionary<string, object> aj, string k) { object v; return aj.TryGetValue(k, out v) && v is bool && (bool)v; }
+    static void Extres(Dictionary<string, object> d, Sessio s, Dictionary<string, object> aj)
+    {
+        JavaScriptSerializer js = new JavaScriptSerializer();
+        // missatges: el darrer de nou, com el globus del tauler (amb PIN: sense nom ni text)
+        string[][] srv = { new string[] { "wa", "whatsapp" }, new string[] { "sms", "sms" }, new string[] { "fb", "messenger" } };
+        long des = s.MsgDes;
+        foreach (string[] sv in srv)
+        {
+            if (!Activat(aj, sv[1])) continue;
+            string r = sv[0] == "wa" ? WhatsApp.Nous(des) : Xats.Nous(sv[0], des);
+            if (string.IsNullOrEmpty(r)) continue;
+            object o = null; try { o = js.DeserializeObject(r); } catch { }
+            Dictionary<string, object> od = o as Dictionary<string, object>;
+            object[] ll = od != null && od.ContainsKey("llista") ? od["llista"] as object[] : o as object[];
+            if (ll == null || ll.Length == 0) continue;
+            Dictionary<string, object> n = ll[ll.Length - 1] as Dictionary<string, object>;
+            if (n == null) continue;
+            foreach (object x in ll) { Dictionary<string, object> xd = x as Dictionary<string, object>; long ts; if (xd != null && xd.ContainsKey("ts") && long.TryParse(Convert.ToString(xd["ts"]), out ts) && ts > s.MsgDes) s.MsgDes = ts; }
+            Dictionary<string, object> nf = new Dictionary<string, object>();
+            object pin;
+            bool amaga = aj.TryGetValue("msgPin", out pin) && pin != null && pin.ToString() != "";
+            nf["srv"] = sv[0];
+            nf["nom"] = amaga ? "" : Convert.ToString(n.ContainsKey("nom") ? n["nom"] : "");
+            nf["text"] = amaga ? "" : Convert.ToString(n.ContainsKey("text") ? n["text"] : "");
+            string img = amaga ? "" : Convert.ToString(n.ContainsKey("img") ? n["img"] : "");
+            nf["img"] = img.StartsWith("https://") ? img : "";
+            d["notif"] = nf;
+        }
+        // casa: termometres i llums (cada 2 minuts com a molt)
+        if ((DateTime.Now - tuyaHora).TotalSeconds >= 120)
+        {
+            tuyaHora = DateTime.Now;
+            Thread t = new Thread(delegate () { try { tuyaCau = Tuya.Resum(); } catch { } });
+            t.IsBackground = true; t.Start(); t.Join(4000);
+        }
+        if (tuyaCau != null) d["casa"] = tuyaCau;
+        // temporitzadors de cuina en marxa (o que acaben de sonar)
+        try
+        {
+            string f = Path.Combine(CasaServidor.DirDades, "alarmes.json");
+            if (File.Exists(f))
+            {
+                object[] al;
+                lock (CasaServidor.DadesLock) al = js.DeserializeObject(File.ReadAllText(f, Encoding.UTF8)) as object[];
+                List<object> tm = new List<object>();
+                long ara = MsAra();
+                if (al != null) foreach (object o in al)
+                    {
+                        Dictionary<string, object> a = o as Dictionary<string, object>;
+                        if (a == null || Convert.ToString(a.ContainsKey("tipus") ? a["tipus"] : "") != "cuina") continue;
+                        double fi = 0; try { fi = Convert.ToDouble(a.ContainsKey("fi") ? a["fi"] : 0, System.Globalization.CultureInfo.InvariantCulture); } catch { }
+                        string clau = Convert.ToString(a.ContainsKey("id") ? a["id"] : "") + "|" + Convert.ToString(a.ContainsKey("fi") ? a["fi"] : "", System.Globalization.CultureInfo.InvariantCulture);
+                        if (fi <= 0 || ara - fi > 15 * 60000 || Convert.ToString(a.ContainsKey("aturat") ? a["aturat"] : "") == clau) continue;
+                        Dictionary<string, object> x = new Dictionary<string, object>();
+                        x["nom"] = Convert.ToString(a.ContainsKey("nom") ? a["nom"] : ""); x["fi"] = (long)fi;
+                        tm.Add(x);
+                    }
+                d["temporitzadors"] = tm;
+                d["araMs"] = ara;
+            }
+        }
+        catch { }
+    }
+    static readonly Random atzar = new Random();
+    static void EnviaFoto(Sessio s, Dictionary<string, object> aj)
+    {
+        object fp;
+        if (aj.TryGetValue("fonsPassi", out fp) && fp is bool && !(bool)fp) return;
+        List<object[]> l = CasaServidor.FotosIndex();
+        if (l == null || l.Count == 0) return;
+        // primer els records (tal dia com avui d'altres anys), com el tauler
+        DateTime avui = DateTime.Now;
+        List<object[]> fotos = new List<object[]>(), records = new List<object[]>();
+        foreach (object[] f in l)
+        {
+            if (f.Length > 2) continue;
+            fotos.Add(f);
+            DateTime d = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(Convert.ToDouble(f[1])).ToLocalTime();
+            if (d.Day == avui.Day && d.Month == avui.Month && d.Year < avui.Year) records.Add(f);
+        }
+        if (fotos.Count == 0) return;
+        object[] tria = null;
+        string full = null;
+        for (int prova = 0; prova < 4 && full == null; prova++)
+        {
+            List<object[]> de = records.Count > 0 && atzar.Next(2) == 0 ? records : fotos;
+            tria = de[atzar.Next(de.Count)];
+            string ruta = CasaServidor.Ruta("fotos", Convert.ToString(tria[0]));
+            if (ruta != null && File.Exists(ruta)) full = CasaServidor.Miniatura(ruta, 1280);
+        }
+        if (full == null) return;
+        byte[] b = File.ReadAllBytes(full);
+        if (b.Length > 140000) b = Recomprimeix(full, 60L) ?? b;
+        string b64 = Convert.ToBase64String(b);
+        const int tros = 45000;
+        int n = (b64.Length + tros - 1) / tros;
+        string id = Guid.NewGuid().ToString("N").Substring(0, 8);
+        for (int i = 0; i < n; i++)
+        {
+            Dictionary<string, object> m = new Dictionary<string, object>();
+            m["tipus"] = "foto"; m["id"] = id; m["i"] = i; m["n"] = n; m["d"] = b64.Substring(i * tros, Math.Min(tros, b64.Length - i * tros));
+            if (i == 0) m["data"] = Convert.ToInt64(tria[1]);
+            Envia(s, s.Transport, NsHearth, m);
+        }
+    }
+    static byte[] Recomprimeix(string fitxer, long q)
+    {
+        try
+        {
+            using (System.Drawing.Image img = System.Drawing.Image.FromFile(fitxer))
+            using (MemoryStream ms = new MemoryStream())
+            {
+                System.Drawing.Imaging.ImageCodecInfo jpg = null;
+                foreach (System.Drawing.Imaging.ImageCodecInfo c in System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders()) if (c.MimeType == "image/jpeg") jpg = c;
+                System.Drawing.Imaging.EncoderParameters ep = new System.Drawing.Imaging.EncoderParameters(1);
+                ep.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Quality, q);
+                img.Save(ms, jpg, ep);
+                return ms.ToArray();
+            }
+        }
+        catch { return null; }
+    }
+
     static bool EnviaLoad(Sessio s, Dictionary<string, object> load)
     {
         s.MediaSessio = 0; s.ErrCarrega = false;
