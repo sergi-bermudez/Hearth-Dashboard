@@ -412,7 +412,7 @@ public static class Cast
         return false;
     }
 
-    static void CastCarrega(Disp x, string url, string ct, bool directe, string titol, string img)
+    static void CastCarrega(Disp x, string url, string ct, bool directe, string titol, string img, string k)
     {
         Sessio s = Connecta(x);
         s.Titol = titol;
@@ -447,6 +447,8 @@ public static class Cast
         media["contentId"] = url; media["contentType"] = ct; media["streamType"] = directe ? "LIVE" : "BUFFERED"; media["metadata"] = meta;
         Dictionary<string, object> load = new Dictionary<string, object>();
         load["type"] = "LOAD"; load["requestId"] = ++s.ReqId; load["media"] = media; load["autoplay"] = true; load["currentTime"] = 0;
+        // per al receptor de Hearth: el mateix que es veu al tauler (salutacio, temps, agenda), en l'idioma de qui ho envia
+        if (s.AppId != AppGeneric) try { media["customData"] = DadesPantalla(k); } catch { }
         if (EnviaLoad(s, load)) return;
         // el receptor de Hearth no ha pogut obrir aquest so (format, adreca...): es torna a provar amb el generic de Google
         if (s.AppId != AppGeneric)
@@ -454,6 +456,28 @@ public static class Cast
             lock (lk) appFallada[x.Id + "|" + s.AppId] = DateTime.Now;
             if (ObreApp(s, AppGeneric, 9000)) { Envia(s, s.Transport, NsConn, "{\"type\":\"CONNECT\"}"); load["requestId"] = ++s.ReqId; EnviaLoad(s, load); }
         }
+    }
+    static string darreraLl = "";
+    static object agendaCau; static DateTime agendaHora;
+    static Dictionary<string, object> DadesPantalla(string k)
+    {
+        Dictionary<string, object> o = new Dictionary<string, object>();
+        o["k"] = k ?? ""; o["ll"] = darreraLl;
+        string f = Path.Combine(CasaServidor.DirDades, "ajustos.json");
+        if (File.Exists(f))
+        {
+            Dictionary<string, object> a = new JavaScriptSerializer().DeserializeObject(File.ReadAllText(f, Encoding.UTF8)) as Dictionary<string, object>;
+            if (a != null) foreach (string c in new string[] { "nom", "ciutat", "lat", "lon" }) { object v; if (a.TryGetValue(c, out v) && v != null) o[c] = v.ToString(); }
+        }
+        // l'agenda d'avui i dema, sense fer esperar l'enviament si els calendaris tarden
+        // (es fa servir la de fa menys de 10 minuts i es renova d'amagat)
+        bool fresca = agendaCau != null && (DateTime.Now - agendaHora).TotalMinutes < 10;
+        Thread t = new Thread(delegate () { try { object ag = Agenda.Propers(2, new List<string>()); if (ag != null) { agendaCau = ag; agendaHora = DateTime.Now; } } catch { } });
+        t.IsBackground = true; t.Start();
+        if (!fresca) t.Join(2500);
+        if (agendaCau != null) o["agenda"] = agendaCau;
+        o["ara"] = DateTime.Now.ToString("yyyy-MM-dd'T'HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+        return o;
     }
     static bool EnviaLoad(Sessio s, Dictionary<string, object> load)
     {
@@ -585,7 +609,7 @@ public static class Cast
         if (u.StartsWith("/")) u = b + u;
         if (img.StartsWith("/")) img = b + img;
         string ct = Tipus(u, k);
-        if (d.Tipus == "cast") CastCarrega(d, u, ct, directe, titol, img);
+        if (d.Tipus == "cast") CastCarrega(d, u, ct, directe, titol, img, k);
         else DlnaCarrega(d, u, ct, titol, ct.StartsWith("video") || ct.Contains("mpegURL"));
     }
 
@@ -645,7 +669,8 @@ public static class Cast
             if (d == null) { CasaServidor.Error(res, 404, "No trobo l'aparell; torna a buscar-lo"); return; }
             if (nom == "cast/envia")
             {
-                string u = CasaServidor.Q(q, "u"), k = CasaServidor.Q(q, "k"), titol = CasaServidor.Q(q, "t"), img = CasaServidor.Q(q, "img");
+                string u = CasaServidor.Q(q, "u"), k = CasaServidor.Q(q, "k"), titol = CasaServidor.Q(q, "t"), img = CasaServidor.Q(q, "img"), ll = CasaServidor.Q(q, "ll");
+                if (Regex.IsMatch(ll, "^[a-z]{2}$")) darreraLl = ll;
                 if (u == "") { CasaServidor.Error(res, 400, "Res a enviar"); return; }
                 Carrega(d, u, k, titol, img, port);
                 Dictionary<string, object> o = new Dictionary<string, object>();
